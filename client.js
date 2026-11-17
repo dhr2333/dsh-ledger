@@ -18,6 +18,8 @@ window.__ModuleLoader__.load({
       balance: '/ledger-api/balance',
       metadata: '/ledger-api/metadata',
       draftSubmit: '/ledger-api/draft/submit',
+      draftUpdate: '/ledger-api/draft/update',
+      accountOpen: '/ledger-api/account/open',
       approve: '/ledger-api/draft/approve',
       reject: '/ledger-api/draft/reject',
     };
@@ -34,6 +36,7 @@ window.__ModuleLoader__.load({
       retry: '重试',
       path: '根目录',
       today: '今天',
+      tabTodo: '待办',
       tabReconcile: '对账',
       tabReview: '审核',
       tabAccounts: '账户',
@@ -62,6 +65,15 @@ window.__ModuleLoader__.load({
       reviewHint: 'AI 草稿由核心库入队，面板只负责审核和调用批准/驳回；校验、锁和写入都在核心库里。',
       pendingEmpty: '审核队列为空。',
       approve: '批准',
+      addAccount: '新增账户',
+      accountAdded: '已新增账户 {name}',
+      accountCanonical: '账户名',
+      accountCurrency: '币种',
+      accountOpenDate: '开立日期',
+      draftPayee: '商户',
+      draftNarration: '备注',
+      saveDraft: '保存修改',
+      draftSaved: '草稿已更新',
       approving: '写入中…',
       reject: '驳回',
       rejecting: '驳回中…',
@@ -196,6 +208,7 @@ window.__ModuleLoader__.load({
       retry: 'Retry',
       path: 'Root',
       today: 'Today',
+      tabTodo: 'To do',
       tabReconcile: 'Reconcile',
       tabReview: 'Review',
       tabAccounts: 'Accounts',
@@ -224,6 +237,15 @@ window.__ModuleLoader__.load({
       reviewHint: 'The core queues AI drafts. The panel only reviews them and calls approve or reject; validation, locking and writes all happen in the core.',
       pendingEmpty: 'The review queue is empty.',
       approve: 'Approve',
+      addAccount: 'Add account',
+      accountAdded: 'Account {name} added',
+      accountCanonical: 'Account name',
+      accountCurrency: 'Currency',
+      accountOpenDate: 'Open date',
+      draftPayee: 'Payee',
+      draftNarration: 'Narration',
+      saveDraft: 'Save changes',
+      draftSaved: 'Draft updated',
       approving: 'Writing…',
       reject: 'Reject',
       rejecting: 'Rejecting…',
@@ -653,7 +675,7 @@ window.__ModuleLoader__.load({
       const [loadError, setLoadError] = React.useState(null);
       const [notice, setNotice] = React.useState(null);
       const [actionError, setActionError] = React.useState(null);
-      const [tab, setTab] = React.useState('reconcile');
+      const [tab, setTab] = React.useState('todo');
       const [busy, setBusy] = React.useState(null);
       const [balanceInputs, setBalanceInputs] = React.useState({});
       const [draftEdits, setDraftEdits] = React.useState({});
@@ -662,6 +684,9 @@ window.__ModuleLoader__.load({
       const [rejectReasons, setRejectReasons] = React.useState({});
       const [accountQuery, setAccountQuery] = React.useState('');
       const [accountEdits, setAccountEdits] = React.useState({});
+      const [draftMeta, setDraftMeta] = React.useState({});
+      const [newAccountOpen, setNewAccountOpen] = React.useState(false);
+      const [newAccount, setNewAccount] = React.useState({ account: 'Assets:Savings:Bank:', currency: 'CNY', alias: '', date: '', reconcile: 'none' });
       const [entryOpen, setEntryOpen] = React.useState(false);
       const [entry, setEntry] = React.useState({
         kind: 'expense',
@@ -802,8 +827,7 @@ window.__ModuleLoader__.load({
       }, [accounts, data]);
 
       const tabRows = [
-        { id: 'reconcile', label: t('tabReconcile'), count: dueAccounts.length },
-        { id: 'review', label: t('tabReview'), count: pendingDrafts.length },
+        { id: 'todo', label: t('tabTodo'), count: dueAccounts.length + pendingDrafts.length },
         { id: 'accounts', label: t('tabAccounts'), count: null },
       ];
 
@@ -865,6 +889,48 @@ window.__ModuleLoader__.load({
 
       function postingsFor(draft) {
         return draftEdits[draft.id] ?? draft.postings;
+      }
+
+      function metaFor(draft) {
+        return draftMeta[draft.id] ?? { payee: draft.payee ?? '', narration: draft.narration ?? '' };
+      }
+
+      function saveDraftMeta(draft) {
+        const meta = metaFor(draft);
+        const postings = postingsFor(draft);
+        if (postings.some((posting) => posting.account === null)) {
+          reportError(t('errorUnresolved'));
+          return;
+        }
+        void runAction(`draft-meta:${draft.id}`, async () => {
+          await postJson(API.draftUpdate, {
+            id: draft.id,
+            payee: meta.payee,
+            narration: meta.narration,
+            postings,
+          });
+          return t('draftSaved');
+        }, '');
+      }
+
+      function createAccount() {
+        const account = newAccount.account.trim();
+        if (account === '') {
+          reportError(t('accountCanonical'));
+          return;
+        }
+        const payload = {
+          account,
+          currency: newAccount.currency || ledgerCurrency,
+          date: newAccount.date || today,
+        };
+        if (newAccount.alias.trim() !== '') payload.alias = newAccount.alias.trim();
+        if (newAccount.reconcile !== 'none') payload.reconcile = newAccount.reconcile;
+        void runAction('account-open', async () => {
+          await postJson(API.accountOpen, payload);
+          setNewAccountOpen(false);
+          return fill(t('accountAdded'), { name: account });
+        }, '');
       }
 
       function approveDraft(draft) {
@@ -1071,9 +1137,8 @@ window.__ModuleLoader__.load({
         body = h('div', { style: S.empty }, t('loading'));
       } else {
         showTabs = true;
-        if (tab === 'reconcile') body = renderReconcile();
-        else if (tab === 'review') body = renderReview();
-        else body = renderAccounts();
+        if (tab === 'accounts') body = renderAccounts();
+        else body = h('div', { style: { display: 'grid', gap: 16 } }, renderReconcile(), renderReview());
       }
 
       return h(
@@ -1278,6 +1343,36 @@ window.__ModuleLoader__.load({
               h(Badge, { tone: 'pending' }, t('statusPending')),
             ),
             h(
+              'div',
+              { style: { ...S.row, gap: 6, flexWrap: 'wrap' } },
+              h('input', {
+                style: { ...S.input, width: 220 },
+                placeholder: t('draftPayee'),
+                'aria-label': `${t('draftPayee')} ${draft.id}`,
+                disabled: busy !== null,
+                value: metaFor(draft).payee,
+                onChange: (event) => setDraftMeta((previous) => ({ ...previous, [draft.id]: { ...metaFor(draft), payee: event.target.value } })),
+              }),
+              h('input', {
+                style: { ...S.input, width: 260 },
+                placeholder: t('draftNarration'),
+                'aria-label': `${t('draftNarration')} ${draft.id}`,
+                disabled: busy !== null,
+                value: metaFor(draft).narration,
+                onChange: (event) => setDraftMeta((previous) => ({ ...previous, [draft.id]: { ...metaFor(draft), narration: event.target.value } })),
+              }),
+              h(
+                Button,
+                {
+                  variant: 'outline',
+                  onClick: () => saveDraftMeta(draft),
+                  busy: busy === `draft-meta:${draft.id}`,
+                  disabled: busy !== null || hasUnresolved,
+                },
+                busy === `draft-meta:${draft.id}` ? t('saving') : t('saveDraft'),
+              ),
+            ),
+            h(
               'ul',
               { style: S.postings },
               postings.map((posting, index) =>
@@ -1430,6 +1525,77 @@ window.__ModuleLoader__.load({
             ),
             h('span', { style: S.label }, fill(t('quota'), { count: accounts.length })),
           ),
+          h(
+            'div',
+            { style: S.row },
+            h(
+              Button,
+              { variant: 'outline', onClick: () => setNewAccountOpen((value) => !value), disabled: busy !== null },
+              t('addAccount'),
+            ),
+          ),
+          newAccountOpen
+            ? h(
+                'div',
+                { style: { ...S.card, display: 'grid', gap: 8 } },
+                h(
+                  'div',
+                  { style: { ...S.row, gap: 6, flexWrap: 'wrap' } },
+                  h('input', {
+                    style: { ...S.input, width: 320 },
+                    placeholder: 'Assets:Savings:Bank:Ningbo',
+                    'aria-label': t('accountCanonical'),
+                    disabled: busy !== null,
+                    value: newAccount.account,
+                    onChange: (event) => setNewAccount((previous) => ({ ...previous, account: event.target.value })),
+                  }),
+                  h('input', {
+                    style: { ...S.input, width: 160 },
+                    placeholder: t('aliasPlaceholder'),
+                    'aria-label': t('alias'),
+                    disabled: busy !== null,
+                    value: newAccount.alias,
+                    onChange: (event) => setNewAccount((previous) => ({ ...previous, alias: event.target.value })),
+                  }),
+                  h(
+                    'select',
+                    {
+                      style: S.select,
+                      'aria-label': t('accountCurrency'),
+                      disabled: busy !== null,
+                      value: newAccount.currency,
+                      onChange: (event) => setNewAccount((previous) => ({ ...previous, currency: event.target.value })),
+                    },
+                    currencyOptions.map((currency) => h('option', { key: currency, value: currency }, currency)),
+                  ),
+                  h('input', {
+                    type: 'date',
+                    style: { ...S.input, width: 150 },
+                    'aria-label': t('accountOpenDate'),
+                    max: today,
+                    disabled: busy !== null,
+                    value: newAccount.date || today,
+                    onChange: (event) => setNewAccount((previous) => ({ ...previous, date: event.target.value })),
+                  }),
+                  h(
+                    'select',
+                    {
+                      style: S.select,
+                      'aria-label': t('period'),
+                      disabled: busy !== null,
+                      value: newAccount.reconcile,
+                      onChange: (event) => setNewAccount((previous) => ({ ...previous, reconcile: event.target.value })),
+                    },
+                    PERIODS.map((period) => h('option', { key: period, value: period }, periodLabel(t, period))),
+                  ),
+                  h(
+                    Button,
+                    { variant: 'primary', onClick: createAccount, busy: busy === 'account-open', disabled: busy !== null },
+                    busy === 'account-open' ? t('saving') : t('save'),
+                  ),
+                ),
+              )
+            : null,
           h(
             'div',
             { style: S.row },

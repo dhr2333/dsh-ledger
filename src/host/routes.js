@@ -128,6 +128,39 @@ async function dispatch(options, req, res) {
     sendEnvelope(res, await runCore(options, 'submit-draft', [], /** @type {object} */ (body.value)));
     return;
   }
+  if (route === '/draft/update' && method === 'POST') {
+    const body = await readJson(req);
+    if (!body.ok) {
+      sendJson(res, body.status, { ok: false, error: body.error });
+      return;
+    }
+    const value = /** @type {Record<string, unknown>} */ (body.value);
+    const payload = { id: requireString(value.id, 'id'), actor: 'panel' };
+    for (const key of ['date', 'flag', 'payee', 'narration', 'tags', 'links', 'postings', 'source', 'confidence']) {
+      if (Object.hasOwn(value, key)) payload[key] = value[key];
+    }
+    sendEnvelope(res, await runCore(options, 'update-draft', [], payload));
+    return;
+  }
+  if (route === '/account/open' && method === 'POST') {
+    const body = await readJson(req);
+    if (!body.ok) {
+      sendJson(res, body.status, { ok: false, error: body.error });
+      return;
+    }
+    const value = /** @type {Record<string, unknown>} */ (body.value);
+    const payload = {
+      account: requireString(value.account, 'account'),
+      actor: 'panel',
+    };
+    if (optionalString(value.date)) payload.date = optionalString(value.date);
+    if (Array.isArray(value.currencies)) payload.currencies = value.currencies;
+    if (optionalString(value.currency)) payload.currency = optionalString(value.currency);
+    if (optionalString(value.alias)) payload.alias = optionalString(value.alias);
+    if (optionalString(value.reconcile)) payload.reconcile = optionalString(value.reconcile);
+    sendEnvelope(res, await runCore(options, 'account-open', [], payload));
+    return;
+  }
   if (route === '/balance' && method === 'POST') {
     const body = await readJson(req);
     if (!body.ok) {
@@ -192,7 +225,7 @@ async function dispatch(options, req, res) {
     return;
   }
 
-  const known = new Set(['/engine', '/engine/install', '/health', '/setup', '/init', '/bootstrap', '/balance', '/metadata', '/draft/submit', '/draft/approve', '/draft/reject']);
+  const known = new Set(['/engine', '/engine/install', '/health', '/setup', '/init', '/bootstrap', '/balance', '/metadata', '/draft/submit', '/draft/update', '/draft/approve', '/draft/reject', '/account/open']);
   if (known.has(route)) {
     res.statusCode = 405;
     res.setHeader('allow', method === 'GET' ? 'POST' : 'GET');

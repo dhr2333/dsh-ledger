@@ -141,7 +141,7 @@ async function probeManaged(options, paths) {
     return { installed: existsSync(paths.venv), ready: false, stale: false, marker, issues: marker === null ? ['engine_not_installed'] : ['engine_incomplete'] };
   }
   const [imported, beanCheck, beanQuery] = await Promise.all([
-    runCommand(paths.python, ['-c', 'import beancount, ledger_domain; print(getattr(beancount, "__version__", "?"))'], { timeoutMs: 30_000 }),
+    runCommand(paths.python, ['-c', 'import beancount, beanquery, mcp, ledger_domain; print(getattr(beancount, "__version__", "?"))'], { timeoutMs: 30_000 }),
     runCommand(paths.beanCheck, ['--version'], { timeoutMs: 30_000 }),
     runCommand(paths.beanQuery, ['--version'], { timeoutMs: 30_000 }),
   ]);
@@ -337,7 +337,7 @@ export async function installEngine(options, request = {}) {
     await step(
       'install beancount',
       paths.python,
-      ['-m', 'pip', 'install', '--disable-pip-version-check', '--no-input', 'beancount', 'beanquery'],
+      ['-m', 'pip', 'install', '--disable-pip-version-check', '--no-input', 'beancount', 'beanquery', 'mcp'],
       900_000,
     );
     const site = await step(
@@ -357,7 +357,7 @@ export async function installEngine(options, request = {}) {
     const imported = await step(
       'verify imports',
       paths.python,
-      ['-c', 'import beancount, ledger_domain; print(getattr(beancount, "__version__", "?"))'],
+      ['-c', 'import beancount, beanquery, mcp, ledger_domain; print(getattr(beancount, "__version__", "?"))'],
       30_000,
     );
     const beanCheck = await step('verify bean-check', paths.beanCheck, ['--version'], 30_000);
