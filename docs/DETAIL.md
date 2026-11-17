@@ -75,10 +75,11 @@ AI 草稿由核心库入队（`submit-draft`），面板读 `bootstrap` 的待�
 见 `cordis.patch.yml`。最关键三项：
 
 ```yaml
+# profile 的 cordis.patch.yml，id 与 bundle 行相同
 config:
-  root: "/home/daihaorui/桌面/GitHub/Assets"
-  corePath: "/home/daihaorui/桌面/GitHub/ledger-domain-core"
-  pythonPath: "/home/daihaorui/桌面/GitHub/Assets/.venv/bin/python"
+  root: "/path/to/ledger"          # 默认 $DSH_HOME/ledger
+  corePath: "/path/to/ledger-domain-core"  # 托管引擎安装前必填
+  # pythonPath: "/path/to/ledger/.venv/bin/python"  # 只在用外部引擎时配置
 ```
 
 `beanCheck`/`beanQuery` 含 `/` 时相对 `root` 解析；留空优先用 `root/.venv/bin`。`stateDir` 指向账本根下的 `.ledger`，草稿、锁、审计都在那里。
@@ -94,7 +95,7 @@ config:
 ## 安装与刷新
 
 ```bash
-plugin_manager action=install_bundle target=/home/daihaorui/桌面/GitHub/dsh-ledger-domain
+plugin_manager action=install_bundle target=<本仓库的绝对路径>
 ```
 
 改动**核心库**不需要重装插件（每次请求重新执行 CLI）。改动**插件 Host/Client 代码**后：Host 桥接需要通过插件管理禁用/启用该行或重启 DSH；浏览器需要刷新页面。

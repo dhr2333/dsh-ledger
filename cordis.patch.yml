@@ -1,15 +1,15 @@
 # dsh-ledger-domain — 账本领域层的 DSH 展示页
 #
-# 三个独立项目：
-#   核心库  /home/daihaorui/桌面/GitHub/ledger-domain-core
-#   账本源  /home/daihaorui/桌面/GitHub/Assets
-#   本插件  /home/daihaorui/桌面/GitHub/dsh-ledger-domain
-#
 # 本插件不含领域逻辑：HTTP 路由只做浏览器会话校验、请求形状校验，
 # 然后执行 `python -m ledger_domain` 并回传 JSON。它不注册任何 Agent 工具。
 #
-# root        —— 账本根目录（含 main.bean）
-# corePath    —— Python 核心库项目根（托管引擎安装时复制它）
+# 这里只放可移植的默认值，不要写死某台机器的路径：本文件会随插件一起
+# 安装到每个 profile。个人路径写在 profile 的 cordis.patch.yml 覆盖项里，
+# 那里的 id 与本行相同，优先级更高。
+#
+# root        —— 账本根目录（含 main.bean）；默认 $DSH_HOME/ledger
+# corePath    —— Python 核心库项目根；托管引擎安装时要复制它，必须指向
+#                本机上的 ledger-domain-core（发行时应改为随包附带）
 # engineDir   —— 托管引擎目录；默认 $DSH_HOME/ledger-engine
 # systemPython—— 创建托管 venv 的解释器；默认 python3
 # pythonPath  —— 外部引擎解释器；留空则使用托管引擎一键安装
@@ -17,16 +17,3 @@
 - insert:
     - id: ledger-domain
       name: '@local/dsh-ledger-domain'
-      config:
-        root: "/home/daihaorui/桌面/GitHub/Assets"
-        corePath: "/home/daihaorui/桌面/GitHub/ledger-domain-core"
-        # 开发机当前使用外部引擎；普通用户可删掉 pythonPath，走托管引擎一键安装。
-        pythonPath: "/home/daihaorui/桌面/GitHub/Assets/.venv/bin/python"
-        pythonModule: "ledger_domain"
-        beanFile: "main.bean"
-        stateDir: ".ledger"
-        beanCheck: ".venv/bin/bean-check"
-        beanQuery: ".venv/bin/bean-query"
-        timeZone: "Asia/Shanghai"
-        graceDays: 3
-        timeoutMs: 120000

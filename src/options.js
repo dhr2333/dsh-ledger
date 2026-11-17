@@ -32,7 +32,8 @@ export function readOptions(config) {
   const value = config ?? {};
   const text = (key) => (typeof value[key] === 'string' && value[key].trim() !== '' ? value[key].trim() : undefined);
   const integer = (key, fallback) => (Number.isSafeInteger(value[key]) ? Number(value[key]) : fallback);
-  const root = path.resolve(text('root') ?? process.cwd());
+  const dshHome = process.env.DSH_HOME ?? path.join(os.homedir(), '.dsh');
+  const root = path.resolve(text('root') ?? path.join(dshHome, 'ledger'));
   const configuredPython = text('pythonPath');
   const ledgerPython = path.join(root, '.venv', 'bin', 'python');
   const pythonPath = configuredPython === undefined
@@ -41,7 +42,6 @@ export function readOptions(config) {
       ? configuredPython
       : path.resolve(configuredPython);
   const configuredCore = text('corePath');
-  const dshHome = process.env.DSH_HOME ?? path.join(os.homedir(), '.dsh');
   return {
     root,
     beanFile: text('beanFile') ?? 'main.bean',

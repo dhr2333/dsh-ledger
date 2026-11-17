@@ -31,6 +31,9 @@ for (const relative of [
 
 const patch = await readFile(path.join(root, 'cordis.patch.yml'), 'utf8');
 assert.ok(patch.includes("name: '@local/dsh-ledger-domain'"), 'patch must insert this bundle');
+// The patch ships with the plugin into every profile, so it must stay
+// machine-neutral: personal paths belong in the profile's own patch layer.
+assert.doesNotMatch(patch, /\/(?:home|Users|root)\//, 'bundle patch must not ship machine-specific paths');
 for (const source of ['index.js', 'client.js', 'src/host/routes.js', 'src/host/engine.js']) {
   const text = await readFile(path.join(root, source), 'utf8');
   assert.ok(!text.includes('tools.register'), `${source} must not register agent tools`);

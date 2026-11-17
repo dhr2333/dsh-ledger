@@ -8,11 +8,11 @@
 
 ## 三个独立项目
 
-| 项目 | 根目录 | 职责 |
+| 项目 | 目录 | 职责 |
 |---|---|---|
-| Python 核心库 | `/home/daihaorui/桌面/GitHub/ledger-domain-core` | 别名/周期治理、对账重建、草稿队列、校验后原子写入、查询投影 |
-| 账本源 | `/home/daihaorui/桌面/GitHub/Assets` | 只存 `.bean`、单据和账本资源 |
-| 本插件 | `/home/daihaorui/桌面/GitHub/dsh-ledger-domain` | 只做展示与 CLI 桥，不含领域逻辑 |
+| Python 核心库 | 独立仓库 `ledger-domain-core` | 别名/周期治理、对账重建、草稿队列、校验后原子写入、查询投影 |
+| 账本源 | 任意目录，含 `main.bean` | 只存 `.bean`、单据和账本资源 |
+| 本插件 | 本仓库 | 只做展示与 CLI 桥，不含领域逻辑 |
 
 插件通过 `corePath + pythonPath` 找核心库。核心库对账本根目录只认 `--root`，不依赖 DSH。
 
@@ -69,12 +69,12 @@
 
 ## 配置
 
-`cordis.patch.yml`：
+`cordis.patch.yml` 只随包携带默认行，不含任何机器路径；个人配置写在 profile 的 `cordis.patch.yml` 里，用相同的 `id: ledger-domain` 覆盖：
 
 | 键 | 含义 |
 |---|---|
-| `root` | 账本根目录（含 `main.bean`） |
-| `corePath` | Python 核心库项目根（写入 `PYTHONPATH`） |
+| `root` | 账本根目录（含 `main.bean`）；默认 `$DSH_HOME/ledger` |
+| `corePath` | Python 核心库项目根（写入 `PYTHONPATH`）。托管引擎安装前必须指向本机的 `ledger-domain-core`，否则面板报 `engine_source_missing` |
 | `engineDir` | 托管引擎目录，默认 `$DSH_HOME/ledger-engine` |
 | `systemPython` | 创建托管 venv 的解释器，默认 `python3` |
 | `pythonPath` | 外部引擎解释器；留空则使用托管引擎 |
@@ -89,7 +89,7 @@
 ## 安装
 
 ```bash
-plugin_manager action=install_bundle target=/home/daihaorui/桌面/GitHub/dsh-ledger-domain
+plugin_manager action=install_bundle target=<本仓库的绝对路径>
 ```
 
 更新核心库不需要重装插件；插件每次请求都重新执行核心 CLI。更新插件代码后刷新页面即可（Host 桥接代码需要重载插件行或重启）。
