@@ -21,7 +21,8 @@
    - 校验 `package.json`、bundle patch、locale meta/detail、icon；
    - 用最小 React/ModuleLoader shim 加载 `client.js`，确认 `main` / `sidebar.panellist` 注册；
    - 提取 client 中所有 `t('...')`，确认中英文字典没有缺键；
-   - 确认插件源码不注册 Agent 工具。
+   - 确认插件源码不注册 Agent 工具；
+   - 样式对比度：文字颜色不得与同一样式的背景来自同一色系别名（`--dsw-alias-brand-primary`、`--dsw-alias-brand-primary-invert`、`--dsw-alias-label-primary`、`--dsw-alias-brand-text` 在主题里同值，曾让主按钮文字与底色同色而不可见）。
 
 CI 不安装引擎、不访问账本、不写用户目录。
 

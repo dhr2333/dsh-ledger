@@ -107,6 +107,35 @@ assert.ok(registrations.some(({ options }) => options.name === 'sidebar.panellis
 
 const source = await readFile(path.join(root, 'client.js'), 'utf8');
 const keys = new Set([...source.matchAll(/\bt\(\s*'([A-Za-z0-9_.]+)'\s*\)/g)].map((match) => match[1]));
+
+// Contrast: a style object must not paint its text with an alias from the same
+// colour family as its fill. The shell theme resolves every alias below to the
+// same value (light: #0f1115, dark: #f9fafb), so `background: brand-primary`
+// with `color: brand-primary-invert` painted the primary button labels in their
+// own background colour. Text on a brand surface takes the inverted label alias.
+const SAME_COLOUR_FAMILIES = [
+  [
+    '--dsw-alias-label-primary',
+    '--dsw-alias-brand-primary',
+    '--dsw-alias-brand-primary-invert',
+    '--dsw-alias-brand-text',
+  ],
+];
+const familyOf = (token) => SAME_COLOUR_FAMILIES.find((family) => family.includes(token));
+const tokenOf = (block, property) => block.match(new RegExp(`\\b${property}:\\s*'var\\((--[\\w-]+)`))?.[1];
+const clashes = [...source.matchAll(/\{[^{}]*\}/g)]
+  .map((match) => match[0])
+  .flatMap((block) => {
+    const background = tokenOf(block, 'background');
+    const color = tokenOf(block, 'color');
+    if (background === undefined || color === undefined) return [];
+    const family = familyOf(background);
+    if (background !== color && (family === undefined || family !== familyOf(color))) return [];
+    return [`${background} on ${color} — ${block.replace(/\s+/g, ' ').slice(0, 90)}`];
+  });
+assert.deepEqual(clashes, [], `style objects painting text with their fill colour:\n${clashes.join('\n')}`);
+
+
 for (const locale of ['zh', 'en']) {
   const dictionary = dictionaries[locale];
   assert.ok(dictionary, `missing ${locale} dictionary`);

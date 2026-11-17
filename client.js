@@ -437,7 +437,9 @@ window.__ModuleLoader__.load({
       buttonPrimary: {
         border: '1px solid transparent',
         background: 'var(--dsw-alias-brand-primary)',
-        color: 'var(--dsw-alias-brand-primary-invert, #fff)',
+        // `brand-primary-invert` equals `brand-primary` in the shell theme, so a
+        // brand surface must take its text from the inverted label token.
+        color: 'var(--dsw-alias-label-primary-inverted, #fff)',
         fontWeight: 600,
       },
       buttonDanger: { borderColor: 'var(--dsw-alias-state-error-primary)', color: 'var(--dsw-alias-state-error-primary)' },
