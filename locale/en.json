@@ -1,0 +1,7 @@
+{
+  "meta": {
+    "title": "Ledger domain layer",
+    "description": "Display page for this Beancount ledger inside DSH. Aliases, reconciliation periods, the draft queue and validated atomic writes all live in the separate Python core library ledger-domain-core; this plugin only authenticates the browser session, forwards each request as `python -m ledger_domain`, and renders the JSON. No domain logic and no agent tools. First run provisions the local engine and creates the ledger in the panel, and the review tab can record a manual entry.",
+    "detail": "docs/DETAIL.md"
+  }
+}

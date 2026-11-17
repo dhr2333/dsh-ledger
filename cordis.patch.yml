@@ -1,0 +1,32 @@
+# dsh-ledger-domain — 账本领域层的 DSH 展示页
+#
+# 三个独立项目：
+#   核心库  /home/daihaorui/桌面/GitHub/ledger-domain-core
+#   账本源  /home/daihaorui/桌面/GitHub/Assets
+#   本插件  /home/daihaorui/桌面/GitHub/dsh-ledger-domain
+#
+# 本插件不含领域逻辑：HTTP 路由只做浏览器会话校验、请求形状校验，
+# 然后执行 `python -m ledger_domain` 并回传 JSON。它不注册任何 Agent 工具。
+#
+# root        —— 账本根目录（含 main.bean）
+# corePath    —— Python 核心库项目根（托管引擎安装时复制它）
+# engineDir   —— 托管引擎目录；默认 $DSH_HOME/ledger-engine
+# systemPython—— 创建托管 venv 的解释器；默认 python3
+# pythonPath  —— 外部引擎解释器；留空则使用托管引擎一键安装
+# beanCheck / beanQuery —— 含 / 时相对 root；缺失时核心自动回退到引擎 venv
+- insert:
+    - id: ledger-domain
+      name: '@local/dsh-ledger-domain'
+      config:
+        root: "/home/daihaorui/桌面/GitHub/Assets"
+        corePath: "/home/daihaorui/桌面/GitHub/ledger-domain-core"
+        # 开发机当前使用外部引擎；普通用户可删掉 pythonPath，走托管引擎一键安装。
+        pythonPath: "/home/daihaorui/桌面/GitHub/Assets/.venv/bin/python"
+        pythonModule: "ledger_domain"
+        beanFile: "main.bean"
+        stateDir: ".ledger"
+        beanCheck: ".venv/bin/bean-check"
+        beanQuery: ".venv/bin/bean-query"
+        timeZone: "Asia/Shanghai"
+        graceDays: 3
+        timeoutMs: 120000

@@ -1,0 +1,38 @@
+{
+  "name": "@local/dsh-ledger-domain",
+  "version": "0.2.0",
+  "private": true,
+  "type": "module",
+  "description": "Display-only DSH panel for the Python ledger-domain core: reconciliation reminders, draft review, and account metadata, with no domain logic in the plugin.",
+  "license": "MIT",
+  "exports": {
+    ".": "./index.js",
+    "./client": "./client.js",
+    "./locale/*.json": "./locale/*.json",
+    "./icon": "./icon.svg"
+  },
+  "files": [
+    "Jenkinsfile",
+    "README.md",
+    "client.js",
+    "cordis.patch.yml",
+    "docs",
+    "icon.svg",
+    "index.js",
+    "locale/*.json",
+    "scripts",
+    "src"
+  ],
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "immediately": true
+    }
+  },
+  "scripts": {
+    "check": "node scripts/check-bundle.mjs"
+  }
+}
