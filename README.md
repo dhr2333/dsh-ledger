@@ -29,9 +29,9 @@
 
 ## 首次启动
 
-MVP-0 **不在插件里创建账本**。`root` 必须先指向一份已有的 `ledger-domain-assets` 账本（或副本），面板才能工作；初始化后续由 DSH 实现，不在 MVP-0。
+MVP-0 **不验收插件创建账本**。`root` 必须先指向一份已有的 `ledger-domain-assets` 账本（或副本），面板才能工作；初始化后续由 DSH 实现，不在 MVP-0。
 
-如果 `root` 还没有 `main.bean`，面板会提示未初始化，但不会调用核心库 `init`。当前保留的 `POST /ledger-api/init` 只是旧的兼容路由，不在 MVP-0 验收范围。
+旧的创建向导和 `POST /ledger-api/init` 仍留在代码里作兼容，但不在 MVP-0 验收范围；当前 profile 的 root 已初始化为 `账本-mvp`，不会触发。
 
 ## 面板
 
