@@ -1,6 +1,6 @@
-# dsh-ledger-domain — 账本领域层的 DSH 展示页
+# dsh-ledger-domain — 账本的 DSH 展示页
 #
-# 本插件不含领域逻辑：HTTP 路由只做浏览器会话校验、请求形状校验，
+# 本插件不含账本规则：HTTP 路由只做浏览器会话校验、请求形状校验，
 # 然后执行 `python -m ledger_domain` 并回传 JSON。它不注册任何 Agent 工具。
 #
 # 这里只放可移植的默认值，不要写死某台机器的路径：本文件会随插件一起
@@ -8,8 +8,8 @@
 # 那里的 id 与本行相同，优先级更高。
 #
 # root        —— 账本根目录（含 main.bean）；默认 $DSH_HOME/ledger
-# corePath    —— Python 核心库项目根；托管引擎安装时要复制它，必须指向
-#                本机上的 ledger-domain-core（发行时应改为随包附带）
+# corePath    —— Python 核心库项目根；留空时自动发现插件同级或
+#                $DSH_HOME/ledger-domain-src 下的 ledger-domain-core
 # engineDir   —— 托管引擎目录；默认 $DSH_HOME/ledger-engine
 # systemPython—— 创建托管 venv 的解释器；默认 python3
 # pythonPath  —— 外部引擎解释器；留空则使用托管引擎一键安装

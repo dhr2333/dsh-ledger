@@ -3,7 +3,7 @@
   "version": "0.2.0",
   "private": true,
   "type": "module",
-  "description": "Display-only DSH panel for the Python ledger-domain core: reconciliation reminders, draft review, and account metadata, with no domain logic in the plugin.",
+  "description": "Display-only DSH panel for the Python ledger-domain core: reconciliation reminders, draft review, and account metadata, with no ledger rules in the plugin.",
   "license": "MIT",
   "exports": {
     ".": "./index.js",

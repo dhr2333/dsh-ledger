@@ -1,15 +1,15 @@
-# 账本领域层（dsh-ledger-domain）
+# 账本展示页（dsh-ledger-domain）
 
 ## 它是什么
 
-这本 Beancount 账本的 **DSH 展示页**。领域核心是独立的 Python 项目 `ledger-domain-core`；插件本身没有账本语义，只负责页面、会话校验和 `python -m ledger_domain` 调用。
+这本 Beancount 账本的 **DSH 展示页**。账本核心是独立的 Python 项目 `ledger-domain-core`；插件本身没有账本语义，只负责页面、会话校验和 `python -m ledger_domain` 调用。
 
 三个根目录互不包含：
 
 ```
-~/桌面/GitHub/ledger-domain-core    Python 核心库（唯一的领域实现）
-~/桌面/GitHub/Assets                账本源（只存 .bean 与单据）
-~/桌面/GitHub/dsh-ledger-domain     本插件（只做展示与 CLI 桥）
+~/ledger-domain/ledger-domain-core    Python 核心库（唯一的账本规则实现）
+~/ledger-domain/ledger                账本源（只存 .bean 与账本资源）
+~/ledger-domain/dsh-ledger-domain     本插件（只做展示与 CLI 桥）
 ```
 
 ## 一次写入怎么走
@@ -35,21 +35,21 @@
 
 没有引擎时，面板显示「准备账本引擎」，一次点击安装/修复；不需要终端。安装失败会显示有界日志，便于直接看到 pip 错误。
 
-当前托管安装要求系统 Python 3.11+、首次联网、`corePath` 指向核心库源码；发行版应把核心库打包为插件依赖。真正零安装还需要把 Python/Beancount 一并打包成独立引擎。
+当前托管安装要求系统 Python 3.11+、首次联网；`corePath` 留空时自动发现插件同级或 `$DSH_HOME/ledger-domain-src` 下的核心库。发行版应把核心库打包为插件依赖；真正零安装还需要把 Python/Beancount 一并打包成独立引擎。
 
 ## 首次启动（P0）
 
 如果 `root` 没有 `main.bean`，面板显示创建向导，而不是错误页。初始化在插件侧实现（`src/host/init.js`），不再调用核心库的 legacy `init`：
 
 1. 填账本名称，再用「选择目录…」通过宿主目录选择器决定账本位置（默认取配置的 `root`，位置只读展示，不能手填；宿主有原生选择器时弹系统对话框，否则打开面板内置目录浏览器，可逐级进入或新建文件夹）；
-2. 解析 `ledger-domain-assets` 模板：`templatePath` → 插件同级 → `corePath` 同级 → `$DSH_HOME/ledger-domain-assets`；
+2. 解析 `ledger-domain-assets` 模板：`templatePath` → 插件同级 → `corePath` 同级 → `$DSH_HOME/ledger-domain-src` → `$DSH_HOME/ledger-domain-assets`；
 3. 复制到所选位置同级的 staging 目录（跳过 `.git`、`.venv`、`.ledger`），写入 title / operating_currency（固定模板默认 CNY，向导不再询问主币种）；
 4. 在 staging 执行真实 `bean-check`；
 5. 通过后原子 rename 到 `root`，失败时目标零改动；随后登记 DSH 工作区。
 
 确认创建的位置会记到 `$DSH_HOME/ledger-domain/active-roots.json`，按配置的 `root` 做键；重启后仍打开所选账本，改 profile 里的 `root` 则回到新配置。`/init` 也接受绝对路径的 `root`，相对路径会被拒绝。
 
-模板使用新布局：`main.bean` + `account/*.bean` + `trans/collect.bean` + `trans/reconciliation.bean` + `trans/main.bean` + `document/` + `AGENTS.md`，55 个账户。创建只接受空目录（或不存在）；所选位置已有 `main.bean` 时直接打开该账本并记住，指向非空但没有账本的目录仍会拒绝。
+模板使用新布局：`main.bean` + `account/*.bean` + `trans/collect.bean` + `trans/reconciliation.bean` + `trans/main.bean` + `AGENTS.md`，55 个账户。创建只接受空目录（或不存在）；所选位置已有 `main.bean` 时直接打开该账本并记住，指向非空但没有账本的目录仍会拒绝。
 
 ## 工作区
 
@@ -65,7 +65,7 @@
 
 周期来自账户 `open` 指令的 `reconcile` metadata；模板默认只给「余额宝」「零钱通」按天对账，其他账户不预置。负债账户的余额正常为负数，表单会在实际余额输入区提示这一点。有 balance 时 `nextDue = add_period(balance.date) - 1 天`，没有 balance 时立即进入审核页的待处理列表并显示「未对账」。面板打开表单先调 `reconcile-preview` 取预期余额、create/update 模式和上次对账；人只填实际余额，差额随输入即时计算（纯减法，权威值仍由核心重算）。只有差额非 0 时才展示「差额分配」区块（未填实际余额或差额为 0 时整块隐藏）；区块内默认 0 行、没有分配时不显示占位文案，点「添加分配」才出现表格；账户用可搜索弹窗选择，避免 60+ 账户的原生 select 卡住。
 
-没有分配行、或分配后仍有剩余时，核心自动把差额 `pad` 到默认权益账户：首次对账为 `Equity:Opening-Balances`，之后为 `Equity:Adjustments`。表单不再展示兜底账户选择器和兜底差额字段；仅在无分配行且差额非 0 时提示「未分配差额自动计入 X」，在有分配行且未分完时提示「剩余 X 将由 X 自动吸收」。`actual`/分配行变化后 400ms debounce 后台重新预览；「确认对账」按钮内部先取最新预览再提交，用户不需要单独点预览。表单不展示截至日期、币种、指令原文和断言日期说明，日期由当前对账锚点决定。同一 `as_of` 再次提交走 update，替换最近一次 block，旧历史 `superseded`。
+没有分配行、或分配后仍有剩余时，核心自动把差额 `pad` 到默认权益账户：首次对账为 `Equity:Opening-Balances`，之后为 `Equity:Adjustments`。表单不再展示兜底账户选择器和兜底差额字段；仅在无分配行且差额非 0 时提示「未分配差额自动计入 X」，在有分配行且未分完时提示「剩余 X 将由 X 自动吸收」。`actual`/分配行变化后 400ms debounce 后台重新预览；「确认对账」按钮内部先取最新预览再提交，用户不需要单独点预览。表单不展示截至日期、币种、指令原文和断言日期说明；对账日期默认取面板的今天，由 Core 用 `asOf` 与最近一次 block 比较决定 create/update，因此下一期可以正常推进。同一 `as_of` 再次提交走 update，替换最近一次 block，旧历史 `superseded`；如需对某个历史日补对，只能用 CLI 显式传 `asOf`。
 
 对账后仍允许日期 ≤ `as_of` 的补记：有 pad 时 pad 吸收；没有 pad 时核心自动补 pad；自动补失败返回 `reconcile_update_required`，面板提示用「更新最近一次」处理。
 
@@ -87,7 +87,7 @@ AI 草稿由核心库入队（`submit-draft`），面板读 `bootstrap` 的待�
 
 ## HTTP 路由
 
-`engine` / `engine/install` / `health` / `setup` / `init` / `bootstrap` / `balance` / `reconcile/preview` / `reconcile/commit` / `reconcile/history` / `metadata` / `draft/submit` / `draft/approve` / `draft/reject`。`setup` 判断是否已有 `main.bean`；`init` 创建新账本；`draft/submit` 接收手动或外部草稿。未认证请求由 `connection.requestRejection` 返回 401。
+`engine` / `engine/install` / `health` / `setup` / `init` / `bootstrap` / `balance` / `reconcile/preview` / `reconcile/commit` / `reconcile/history` / `metadata` / `account/open` / `draft/submit` / `draft/approve` / `draft/approve-all` / `draft/reject` / `operation/approve` / `operation/approve-all` / `operation/reject` / `workspace`。`setup` 判断是否已有 `main.bean`；`init` 创建新账本；`draft/submit` 接收手动或外部草稿。未认证请求由 `connection.requestRejection` 返回 401。
 
 ## 配置
 
@@ -97,7 +97,7 @@ AI 草稿由核心库入队（`submit-draft`），面板读 `bootstrap` 的待�
 # profile 的 cordis.patch.yml，id 与 bundle 行相同
 config:
   root: "/path/to/ledger"          # 默认 $DSH_HOME/ledger
-  corePath: "/path/to/ledger-domain-core"  # 托管引擎安装前必填
+  corePath: "/path/to/ledger-domain-core"  # 留空则自动发现插件同级或标准安装目录
   # pythonPath: "/path/to/ledger/.venv/bin/python"  # 只在用外部引擎时配置
 ```
 
@@ -105,7 +105,7 @@ config:
 
 ## 边界
 
-- **插件不含领域逻辑**：不解析 `.bean`、不做别名解析、不做周期计算、不写文件。
+- **插件不含账本规则**：不解析 `.bean`、不做别名解析、不做周期计算、不写文件。
 - **不注册 Agent 工具**：AI 适配器直接调用核心库或 CLI，不经过面板。
 - **不引入服务**：没有常驻 Python 服务、没有 MCP、没有数据库；每次请求一个短生命周期进程。
 - **不缓存核心数据**：面板每次从核心库读；缓存只可能在核心库内部按文件 mtime 失效。
@@ -114,8 +114,10 @@ config:
 ## 安装与刷新
 
 ```bash
-plugin_manager action=install_bundle target=<本仓库的绝对路径>
+curl -fsSL https://raw.githubusercontent.com/dhr2333/dsh-ledger-domain/main/scripts/install.sh | bash
 ```
+
+安装脚本把三个 checkout 放进 `$DSH_HOME/ledger-domain-src`，执行 `dsh plugin --profile web add`，并把 bundle 选进 `dsh.profile.bundles`。插件按「插件同级 → `$DSH_HOME/ledger-domain-src` → `$DSH_HOME`」自动发现 `corePath` / `templatePath`，默认 `root` 是 `$DSH_HOME/ledger`。已有自定义布局仍可在 profile 覆盖路径。
 
 改动**核心库**不需要重装插件（每次请求重新执行 CLI）。改动**插件 Host/Client 代码**后：Host 桥接需要通过插件管理禁用/启用该行或重启 DSH；浏览器需要刷新页面。
 
