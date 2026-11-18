@@ -1,5 +1,5 @@
 window.__ModuleLoader__.load({
-  id: '@local/dsh-ledger-domain',
+  id: '@dhr2333/ledger',
   factory(require) {
     const React = require('react');
     const h = React.createElement;

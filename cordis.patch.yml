@@ -16,4 +16,4 @@
 # beanCheck / beanQuery —— 含 / 时相对 root；缺失时核心自动回退到引擎 venv
 - insert:
     - id: ledger-domain
-      name: '@local/dsh-ledger-domain'
+      name: '@dhr2333/ledger'

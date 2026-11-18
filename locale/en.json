@@ -1,7 +1,7 @@
 {
   "meta": {
     "title": "Ledger",
-    "description": "Review due accounts, drafts and pending ledger changes, and maintain account aliases and reconciliation periods.",
+    "description": "AI proposes, you approve and reconcile; the ledger stays local plain text.",
     "detail": "docs/DETAIL.md"
   }
 }

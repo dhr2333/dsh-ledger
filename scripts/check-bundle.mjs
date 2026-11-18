@@ -11,7 +11,7 @@ const root = process.cwd();
 const readJson = async (relative) => JSON.parse(await readFile(path.join(root, relative), 'utf8'));
 
 const pkg = await readJson('package.json');
-assert.equal(pkg.name, '@local/dsh-ledger-domain');
+assert.equal(pkg.name, '@dhr2333/ledger');
 assert.equal(pkg.type, 'module');
 assert.equal(pkg.dsh?.bundle?.patch, './cordis.patch.yml');
 assert.equal(pkg.dsh?.client?.platform, 'web');
@@ -30,7 +30,7 @@ for (const relative of [
 }
 
 const patch = await readFile(path.join(root, 'cordis.patch.yml'), 'utf8');
-assert.ok(patch.includes("name: '@local/dsh-ledger-domain'"), 'patch must insert this bundle');
+assert.ok(patch.includes("name: '@dhr2333/ledger'"), 'patch must insert this bundle');
 // The patch ships with the plugin into every profile, so it must stay
 // machine-neutral: personal paths belong in the profile's own patch layer.
 assert.doesNotMatch(patch, /\/(?:home|Users|root)\//, 'bundle patch must not ship machine-specific paths');

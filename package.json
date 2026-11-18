@@ -1,10 +1,31 @@
 {
-  "name": "@local/dsh-ledger-domain",
+  "name": "@dhr2333/ledger",
   "version": "0.2.0",
-  "private": true,
   "type": "module",
-  "description": "Display-only DSH panel for the Python ledger-domain core: reconciliation reminders, draft review, and account metadata, with no ledger rules in the plugin.",
+  "description": "Local-first Beancount ledger panel for DSH: AI proposes, you approve and reconcile.",
   "license": "MIT",
+  "author": "dhr2333",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dhr2333/dsh-ledger-domain.git"
+  },
+  "homepage": "https://github.com/dhr2333/dsh-ledger-domain#readme",
+  "bugs": {
+    "url": "https://github.com/dhr2333/dsh-ledger-domain/issues"
+  },
+  "keywords": [
+    "dsh",
+    "dsh-plugin",
+    "deepseek-harness",
+    "beancount",
+    "ledger",
+    "reconciliation",
+    "bookkeeping"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
   "exports": {
     ".": "./index.js",
     "./client": "./client.js",
@@ -12,15 +33,14 @@
     "./icon": "./icon.svg"
   },
   "files": [
-    "Jenkinsfile",
-    "README.md",
     "client.js",
     "cordis.patch.yml",
-    "docs",
+    "docs/DETAIL.md",
     "icon.svg",
     "index.js",
-    "locale/*.json",
-    "scripts",
+    "locale",
+    "README.md",
+    "scripts/check-bundle.mjs",
     "src"
   ],
   "dsh": {
