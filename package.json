@@ -1,6 +1,6 @@
 {
   "name": "@dhr2333/ledger",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "type": "module",
   "description": "Local-first Beancount ledger panel for DSH: AI proposes, you approve and reconcile.",
   "license": "MIT",
