@@ -1,7 +1,7 @@
 /**
  * New-ledger initialization for the `ledger-domain-assets` layout.
  *
- * The domain core still ships its legacy `init` (year/month files), which the
+ * The core library still ships its legacy `init` (year/month files), which the
  * current fixed append targets cannot write to. This module owns the panel's
  * initialization instead: copy the assets template, stamp the ledger title and
  * currency, validate with the real `bean-check` in a staging directory, and
@@ -58,6 +58,7 @@ export function resolveTemplate(options) {
     options.templatePath,
     path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..', '..', 'ledger-domain-assets'),
     options.corePath ? path.resolve(options.corePath, '..', 'ledger-domain-assets') : undefined,
+    path.join(dshHome, 'ledger-domain-src', 'ledger-domain-assets'),
     path.join(dshHome, 'ledger-domain-assets'),
   ].filter((candidate) => typeof candidate === 'string' && candidate !== '');
   return candidates.find((candidate) => existsSync(path.join(candidate, 'main.bean')));

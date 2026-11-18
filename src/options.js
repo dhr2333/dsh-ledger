@@ -1,18 +1,72 @@
 /**
  * Row-config normalization for the display-only bundle.
  *
- * The panel plugin holds no domain code; it only needs to know where the ledger
+ * The panel plugin holds no ledger rules; it only needs to know where the ledger
  * is, where the Python core lives, and which interpreter runs it.
  */
 
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 /** Subdirectory under `$DSH_HOME` that holds plugin-owned state. */
 const STATE_DIR = 'ledger-domain';
+/** Standard source checkout created by `scripts/install.sh` under `$DSH_HOME`. */
+const INSTALL_DIR = 'ledger-domain-src';
 /** File mapping each configured root to the ledger location chosen in the wizard. */
 const ACTIVE_ROOTS_FILE = 'active-roots.json';
+
+/** This package's own directory (`…/dsh-ledger-domain`), used for sibling checkouts. */
+const packageDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+
+/**
+ * First candidate containing a marker file.
+ * @param {(string | undefined)[]} candidates directories to test.
+ * @param {(dir: string) => string} marker relative marker file.
+ * @returns {string | undefined} first matching directory.
+ */
+function firstMatching(candidates, marker) {
+  return candidates.find(
+    (candidate) => typeof candidate === 'string' && candidate !== '' && existsSync(marker(candidate)),
+  );
+}
+
+/**
+ * Find the Python core when the profile carries no explicit `corePath`.
+ * The one-command installer puts the three checkouts next to each other under
+ * `$DSH_HOME/ledger-domain-src`, so a fresh install needs no profile config.
+ * @param {string} dshHome DSH home directory.
+ * @returns {string | undefined} core project root.
+ */
+function discoverCorePath(dshHome) {
+  return firstMatching(
+    [
+      process.env.DSH_LEDGER_CORE,
+      path.resolve(packageDir, '..', 'ledger-domain-core'),
+      path.join(dshHome, INSTALL_DIR, 'ledger-domain-core'),
+      path.join(dshHome, 'ledger-domain-core'),
+    ],
+    (candidate) => path.join(candidate, 'ledger_domain', '__init__.py'),
+  );
+}
+
+/**
+ * Find the ledger template when the profile carries no explicit `templatePath`.
+ * @param {string} dshHome DSH home directory.
+ * @returns {string | undefined} template root.
+ */
+function discoverTemplatePath(dshHome) {
+  return firstMatching(
+    [
+      process.env.DSH_LEDGER_TEMPLATE,
+      path.resolve(packageDir, '..', 'ledger-domain-assets'),
+      path.join(dshHome, INSTALL_DIR, 'ledger-domain-assets'),
+      path.join(dshHome, 'ledger-domain-assets'),
+    ],
+    (candidate) => path.join(candidate, 'main.bean'),
+  );
+}
 
 /**
  * Absolute path of the active-root state file.
@@ -116,14 +170,15 @@ export function readOptions(config) {
       ? configuredPython
       : path.resolve(configuredPython);
   const configuredCore = text('corePath');
+  const configuredTemplate = text('templatePath');
   return {
     root,
     defaultRoot,
     dshHome,
     beanFile: text('beanFile') ?? 'main.bean',
     stateDir: text('stateDir') ?? '.ledger',
-    corePath: configuredCore === undefined ? '' : path.resolve(configuredCore),
-    templatePath: text('templatePath') === undefined ? '' : path.resolve(text('templatePath')),
+    corePath: configuredCore === undefined ? (discoverCorePath(dshHome) ?? '') : path.resolve(configuredCore),
+    templatePath: configuredTemplate === undefined ? (discoverTemplatePath(dshHome) ?? '') : path.resolve(configuredTemplate),
     engineDir: path.resolve(text('engineDir') ?? path.join(dshHome, 'ledger-engine')),
     systemPython: text('systemPython') ?? 'python3',
     pythonPath,
