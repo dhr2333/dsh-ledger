@@ -26,12 +26,12 @@
 需要 DSH、Python 3.11+、git、pnpm 和网络：
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/dhr2333/dsh-ledger-domain/main/scripts/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/dhr2333/ledger/main/scripts/install.sh | bash
 ```
 
 它会：
 
-1. 把 `ledger-domain-core`、`ledger-domain-assets`、`dsh-ledger-domain` 放到 `$DSH_HOME/ledger-domain-src/`；
+1. 把 `ledger-domain-core`、`ledger-domain-assets`、`ledger` 放到 `$DSH_HOME/ledger-domain-src/`；
 2. 用 `dsh plugin --profile web add` 把面板装进 profile；
 3. 把 `@dhr2333/ledger` 选进 `dsh.profile.bundles`；
 4. 刷新页面（没有 HMR 就重启 DSH）。

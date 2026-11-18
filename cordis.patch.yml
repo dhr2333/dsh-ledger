@@ -1,4 +1,4 @@
-# dsh-ledger-domain — 账本的 DSH 展示页
+# ledger — 账本的 DSH 展示页
 #
 # 本插件不含账本规则：HTTP 路由只做浏览器会话校验、请求形状校验，
 # 然后执行 `python -m ledger_domain` 并回传 JSON。它不注册任何 Agent 工具。

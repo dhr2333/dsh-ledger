@@ -57,7 +57,7 @@
 推荐一条命令（需要 DSH、Python 3.11+、git、pnpm、网络）：
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/dhr2333/dsh-ledger-domain/main/scripts/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/dhr2333/ledger/main/scripts/install.sh | bash
 ```
 
 它把三个仓库放到 `$DSH_HOME/ledger-domain-src/`，用 `dsh plugin add` 安装面板，并把 `@dhr2333/ledger` 选进 profile 的 bundle 列表。
@@ -149,8 +149,8 @@ stdout 固定为 `{"ok": true, "value": ...}` 或 `{"ok": false, "error": {code,
 
 ## 链接
 
-- 仓库：<https://github.com/dhr2333/dsh-ledger-domain>
+- 仓库：<https://github.com/dhr2333/ledger>
 - 核心库：<https://github.com/dhr2333/ledger-domain-core>
 - 模板：<https://github.com/dhr2333/ledger-domain-assets>
-- 使用说明：<https://github.com/dhr2333/dsh-ledger-domain#readme>
+- 使用说明：<https://github.com/dhr2333/ledger#readme>
 - License：MIT

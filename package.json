@@ -7,11 +7,11 @@
   "author": "dhr2333",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/dhr2333/dsh-ledger-domain.git"
+    "url": "git+https://github.com/dhr2333/ledger.git"
   },
-  "homepage": "https://github.com/dhr2333/dsh-ledger-domain#readme",
+  "homepage": "https://github.com/dhr2333/ledger#readme",
   "bugs": {
-    "url": "https://github.com/dhr2333/dsh-ledger-domain/issues"
+    "url": "https://github.com/dhr2333/ledger/issues"
   },
   "keywords": [
     "dsh",

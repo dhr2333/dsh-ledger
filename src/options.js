@@ -17,7 +17,7 @@ const INSTALL_DIR = 'ledger-domain-src';
 /** File mapping each configured root to the ledger location chosen in the wizard. */
 const ACTIVE_ROOTS_FILE = 'active-roots.json';
 
-/** This package's own directory (`…/dsh-ledger-domain`), used for sibling checkouts. */
+/** This package's own directory (`…/ledger`), used for sibling checkouts. */
 const packageDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
 /**

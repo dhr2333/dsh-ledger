@@ -1,6 +1,6 @@
 #!/usr/bin/env groovy
 
-// dsh-ledger-domain CI — validates the display-only bundle in a throwaway Node
+// ledger CI — validates the display-only bundle in a throwaway Node
 // container. The Python core has its own repository and CI; this job never
 // provisions an engine or touches a ledger.
 
@@ -45,10 +45,10 @@ pipeline {
 
     post {
         success {
-            echo '✅ dsh-ledger-domain CI 通过'
+            echo '✅ ledger CI 通过'
         }
         failure {
-            echo '❌ dsh-ledger-domain CI 失败，请查看测试日志'
+            echo '❌ ledger CI 失败，请查看测试日志'
         }
         always {
             cleanWs()

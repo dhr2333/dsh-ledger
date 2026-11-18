@@ -6,7 +6,7 @@
 
 | 项 | 值 |
 |---|---|
-| Jenkins job | `dsh-ledger-domain` |
+| Jenkins job | `ledger` |
 | 触发 | GitHub `push` / `pull_request` |
 | Webhook | `https://jenkins.dhr2333.cn/github-webhook/` |
 | Script Path | `Jenkinsfile` |
