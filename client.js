@@ -1364,7 +1364,11 @@ window.__ModuleLoader__.load({
         const editor = {
           account: account.account,
           name: account.name,
-          asOf: account.coveredThrough || today,
+          // Default to today so a new period can advance: the core picks
+          // create/update by comparing asOf with the latest block. Using
+          // coveredThrough here would pin every reopen to the previous
+          // period and make the next reconciliation impossible from the panel.
+          asOf: today,
           actual: '',
           rows: [],
           // Internal only: the core's default (Opening-Balances on the first
@@ -2502,7 +2506,7 @@ window.__ModuleLoader__.load({
                       },
                       reconEditor !== null && reconEditor.account === account.account
                         ? t('reconEditing')
-                        : account.coveredThrough ? t('reconUpdate') : t('reconOpen'),
+                        : account.coveredThrough === today ? t('reconUpdate') : t('reconOpen'),
                     )
                   : null,
                 h(Badge, { tone: 'scheduled' }, typeLabel),
