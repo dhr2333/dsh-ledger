@@ -1,5 +1,5 @@
 window.__ModuleLoader__.load({
-  id: '@dhr2333/ledger',
+  id: '@dhr2333/dsh-ledger',
   factory(require) {
     const React = require('react');
     const h = React.createElement;

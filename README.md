@@ -1,4 +1,4 @@
-# ledger
+# dsh-ledger
 
 **把账单交给 AI，你只负责点批准和对账。**
 
@@ -26,14 +26,14 @@
 需要 DSH、Python 3.11+、git、pnpm 和网络：
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/dhr2333/ledger/main/scripts/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/dhr2333/dsh-ledger/main/scripts/install.sh | bash
 ```
 
 它会：
 
-1. 把 `ledger-domain-core`、`ledger-domain-assets`、`ledger` 放到 `$DSH_HOME/ledger-domain-src/`；
+1. 把 `ledger-domain-core`、`ledger-domain-assets`、`dsh-ledger` 放到 `$DSH_HOME/ledger-domain-src/`；
 2. 用 `dsh plugin --profile web add` 把面板装进 profile；
-3. 把 `@dhr2333/ledger` 选进 `dsh.profile.bundles`；
+3. 把 `@dhr2333/dsh-ledger` 选进 `dsh.profile.bundles`；
 4. 刷新页面（没有 HMR 就重启 DSH）。
 
 默认账本目录是 `$DSH_HOME/ledger`。插件会自动发现同目录的核心库和模板，不需要再写 `corePath` / `templatePath`。
@@ -52,7 +52,7 @@ curl -fsSL https://raw.githubusercontent.com/dhr2333/ledger/main/scripts/install
 面板已发布到 npm，但 **npm 包只包含面板，不包含 Python 核心库和账本模板**：
 
 ```bash
-dsh plugin --profile web add @dhr2333/ledger
+dsh plugin --profile web add @dhr2333/dsh-ledger
 ```
 
 使用前需要已有 `ledger-domain-core` / `ledger-domain-assets`，并让插件能找到它们（默认在 `$DSH_HOME/ledger-domain-src/`）。普通用户请用上面的一条命令。

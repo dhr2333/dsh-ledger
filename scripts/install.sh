@@ -2,7 +2,7 @@
 #
 # One-command installer for the ledger-domain DSH panel.
 #
-#   curl -fsSL https://raw.githubusercontent.com/dhr2333/ledger/main/scripts/install.sh | bash
+#   curl -fsSL https://raw.githubusercontent.com/dhr2333/dsh-ledger/main/scripts/install.sh | bash
 #
 # The installer puts the three checkouts next to each other under
 # `$DSH_HOME/ledger-domain-src`, installs the panel bundle into a DSH profile,
@@ -23,7 +23,7 @@ set -euo pipefail
 
 CORE_REPO="https://github.com/dhr2333/ledger-domain-core.git"
 ASSETS_REPO="https://github.com/dhr2333/ledger-domain-assets.git"
-PLUGIN_REPO="https://github.com/dhr2333/ledger.git"
+PLUGIN_REPO="https://github.com/dhr2333/dsh-ledger.git"
 
 PROFILE="${DSH_PROFILE:-web}"
 REF="${LEDGER_DOMAIN_REF:-main}"
@@ -40,7 +40,7 @@ usage() {
   cat <<'EOF'
 One-command installer for the ledger-domain DSH panel.
 
-  curl -fsSL https://raw.githubusercontent.com/dhr2333/ledger/main/scripts/install.sh | bash
+  curl -fsSL https://raw.githubusercontent.com/dhr2333/dsh-ledger/main/scripts/install.sh | bash
 
 Options:
   --profile <name>  DSH profile to install into (default: web)
@@ -89,7 +89,7 @@ if [[ "$DRY_RUN" -eq 0 ]]; then
   mkdir -p -- "$DIR"
 fi
 DIR="$(cd -- "$DIR" 2>/dev/null && pwd || printf '%s' "$DIR")"
-PLUGIN_DIR="$DIR/ledger"
+PLUGIN_DIR="$DIR/dsh-ledger"
 
 for tool in git node; do
   command -v "$tool" >/dev/null 2>&1 || die "缺少 $tool，请先安装并确保在 PATH 中"
@@ -128,7 +128,7 @@ clone_or_update() {
 
 clone_or_update "ledger-domain-core" "$CORE_REPO"
 clone_or_update "ledger-domain-assets" "$ASSETS_REPO"
-clone_or_update "ledger" "$PLUGIN_REPO"
+clone_or_update "dsh-ledger" "$PLUGIN_REPO"
 
 if [[ ! -f "$PLUGIN_DIR/package.json" ]]; then
   if [[ "$DRY_RUN" -eq 1 ]]; then

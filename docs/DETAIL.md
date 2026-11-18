@@ -1,8 +1,8 @@
-# 账本面板（ledger）
+# 账本面板（dsh-ledger）
 
 ## 它是什么
 
-`ledger` 是 DSH 的账本展示页，背后是独立的 Python 核心库 [`ledger-domain-core`](https://github.com/dhr2333/ledger-domain-core)。面板不含账本规则：它做三件事——注册「账本」入口、校验浏览器请求、执行 `python -m ledger_domain` 并把返回的 JSON 投影成页面。
+`dsh-ledger` 是 DSH 的账本展示页，背后是独立的 Python 核心库 [`ledger-domain-core`](https://github.com/dhr2333/ledger-domain-core)。面板不含账本规则：它做三件事——注册「账本」入口、校验浏览器请求、执行 `python -m ledger_domain` 并把返回的 JSON 投影成页面。
 
 账本本身是本地纯文本 Beancount：交易写 `trans/collect.bean`，对账写 `trans/reconciliation.bean`，`main.bean` / `account/*.bean` 是账户与结构配置。没有服务、数据库或账号。
 
@@ -57,15 +57,15 @@
 推荐一条命令（需要 DSH、Python 3.11+、git、pnpm、网络）：
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/dhr2333/ledger/main/scripts/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/dhr2333/dsh-ledger/main/scripts/install.sh | bash
 ```
 
-它把三个仓库放到 `$DSH_HOME/ledger-domain-src/`，用 `dsh plugin add` 安装面板，并把 `@dhr2333/ledger` 选进 profile 的 bundle 列表。
+它把三个仓库放到 `$DSH_HOME/ledger-domain-src/`，用 `dsh plugin add` 安装面板，并把 `@dhr2333/dsh-ledger` 选进 profile 的 bundle 列表。
 
 npm 包只包含面板，不含核心库与模板；已有源码 checkout 时可用：
 
 ```bash
-dsh plugin --profile web add @dhr2333/ledger
+dsh plugin --profile web add @dhr2333/dsh-ledger
 ```
 
 面板有两种引擎：
@@ -149,8 +149,8 @@ stdout 固定为 `{"ok": true, "value": ...}` 或 `{"ok": false, "error": {code,
 
 ## 链接
 
-- 仓库：<https://github.com/dhr2333/ledger>
+- 仓库：<https://github.com/dhr2333/dsh-ledger>
 - 核心库：<https://github.com/dhr2333/ledger-domain-core>
 - 模板：<https://github.com/dhr2333/ledger-domain-assets>
-- 使用说明：<https://github.com/dhr2333/ledger#readme>
+- 使用说明：<https://github.com/dhr2333/dsh-ledger#readme>
 - License：MIT
