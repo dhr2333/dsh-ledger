@@ -2,7 +2,7 @@
 
 **账本领域层的 DSH 展示页**。领域逻辑不在这里：它属于独立的 Python 核心库 [`ledger-domain-core`](../ledger-domain-core/README.md)。本插件只做三件事：
 
-1. 在侧栏注册「账本」入口，渲染「待办」（对账 + 审核）和「账户」两个视图；
+1. 在侧栏注册「账本」入口，渲染「审核」（对账 + 草稿审核）和「账户」两个视图；
 2. 对浏览器请求做 DSH 会话校验与形状校验；
 3. 执行 `python -m ledger_domain ...`，把核心库返回的 JSON 原样投影成面板数据。
 
@@ -29,20 +29,25 @@
 
 ## 首次启动
 
-MVP-0 **不验收插件创建账本**。`root` 必须先指向一份已有的 `ledger-domain-assets` 账本（或副本），面板才能工作；初始化后续由 DSH 实现，不在 MVP-0。
+`root` 还没有 `main.bean` 时，面板显示创建向导。向导只填名称，位置通过「选择目录…」由宿主目录选择器决定（默认取配置的 `root`，只读展示；无原生选择器时用面板内置目录浏览器）；创建成功后所选位置会记住，重启后仍打开它。初始化由本插件实现，不调用核心库的 legacy `init`：
 
-旧的创建向导和 `POST /ledger-api/init` 仍留在代码里作兼容，但不在 MVP-0 验收范围；当前 profile 的 root 已初始化为 `账本-mvp`，不会触发。
+1. 找 `ledger-domain-assets` 模板：`templatePath` → 插件同级目录 → `corePath` 同级目录 → `$DSH_HOME/ledger-domain-assets`；
+2. 复制模板到所选位置同级的临时 staging 目录，写入账本名称（运行币种沿用模板默认 CNY），跳过 `.git`、`.venv`、`.ledger`；
+3. 在 staging 里用真实 `bean-check` 校验；
+4. 通过后才原子 rename 到 `root`，失败时目标目录零改动。
+
+模板是 `ledger-domain-assets` 的新布局：`main.bean` + `account/*.bean` + `trans/collect.bean` + `trans/reconciliation.bean` + `trans/main.bean` + `document/` + `AGENTS.md`，共 55 个账户。创建位置必须是空目录（或不存在）；选到已有 `main.bean` 的目录会直接打开该账本并记住，已有账本不会被覆盖。
 
 ## 面板
 
-- **待办**：
-  - 对账：按 `open` 指令的 `reconcile` metadata 列出逾期/待办账户；提交申报余额，核心库做 `bean-check` 后原子写入。
-  - 审核：草稿由核心库入队；可改商户/备注（`update-draft`）、选择未分类账户、可选把商户写成别名，批准或驳回。
-- **账户**：搜索账户，编辑别名与周期；新增账户走 `account-open`；隐式账户（`auto_accounts` 创建）只读。
+- **审核**：
+  - 对账：按 `open` 指令的 `reconcile` metadata 列出逾期/待对账/未对账账户；面板预览预期余额与分配，提交后核心库做 `bean-check` 并原子写入；同一 `as_of` 可更新最近一次。
+  - 审核：草稿由核心库入队；DSH 中草稿只读，只能批准或驳回。需要调整请驳回，让 Agent 修正后重新提案。
+- **账户**：五类树形展示，父分组用内置中文路径表只读展示，叶子账户在右侧详情里编辑别名/周期；资产/负债叶子账户可在详情内直接发起或更新对账；默认隐藏已关闭/隐式账户，新增账户走弹窗（只填账户与别名）；有子账户的账户禁用周期编辑。
 
 ## HTTP 契约
 
-面板只注册 `/ledger-api/*` 十三条路由：
+面板只注册 `/ledger-api/*` 十四条路由：
 
 | 路由 | 核心命令 |
 |---|---|
@@ -50,15 +55,24 @@ MVP-0 **不验收插件创建账本**。`root` 必须先指向一份已有的 `l
 | `POST /ledger-api/engine/install` | 安装/修复托管引擎 |
 | `GET /ledger-api/health` | `health` |
 | `GET /ledger-api/setup` | `setup`（是否已初始化） |
-| `POST /ledger-api/init` | `init`（创建账本） |
+| `POST /ledger-api/init` | 插件初始化：复制模板 + `bean-check` + 原子落盘（新布局） |
 | `GET /ledger-api/bootstrap` | `bootstrap` |
 | `POST /ledger-api/balance` | `balance`（JSON stdin） |
+| `POST /ledger-api/reconcile/preview` | `reconcile-preview`（JSON stdin） |
+| `POST /ledger-api/reconcile/commit` | `reconcile-commit`（JSON stdin） |
+| `GET /ledger-api/reconcile/history` | `reconcile-history` |
 | `POST /ledger-api/metadata` | `metadata`（JSON stdin） |
 | `POST /ledger-api/account/open` | `account-open`（JSON stdin） |
 | `POST /ledger-api/draft/submit` | `submit-draft`（JSON stdin） |
-| `POST /ledger-api/draft/update` | `update-draft`（JSON stdin） |
 | `POST /ledger-api/draft/approve` | `approve-draft`（JSON stdin） |
+| `POST /ledger-api/operation/approve` | `op-approve`（Agent 提议的结构变更） |
+| `POST /ledger-api/operation/reject` | `op-reject` |
+| `POST /ledger-api/operation/approve-all` | `op-approve-all`（区块一键批准） |
+| `POST /ledger-api/draft/approve-all` | `approve-all-drafts`（区块一键批准） |
 | `POST /ledger-api/draft/reject` | `reject-draft`（JSON stdin） |
+| `POST /ledger-api/workspace` | 把 `root` 登记为 DSH 工作区（幂等，按规范路径） |
+
+创建账本（`init`）成功后，插件会顺手把账本根目录登记为 DSH 工作区，标题取账本名称；面板头部不再展示「新建工作区」入口。工作区只记录目录，不含账本数据；未安装 workspace 子系统的 profile 会返回 `workspace_unavailable`，不影响账本读写。
 
 核心库 stdout 固定为 `{"ok": true, "value": ...}` 或 `{"ok": false, "error": {...}}`；路由把 `value` 展开为面板响应。未认证请求由 DSH 的 `connection.requestRejection` 返回 401。
 
@@ -75,12 +89,13 @@ MVP-0 **不验收插件创建账本**。`root` 必须先指向一份已有的 `l
 | `engineDir` | 托管引擎目录，默认 `$DSH_HOME/ledger-engine` |
 | `systemPython` | 创建托管 venv 的解释器，默认 `python3` |
 | `pythonPath` | 外部引擎解释器；留空则使用托管引擎 |
+| `templatePath` | `ledger-domain-assets` 模板目录；留空时按插件同级、`corePath` 同级、`$DSH_HOME` 依次查找 |
 | `pythonModule` | 模块名，默认 `ledger_domain` |
 | `beanFile` | 根账本文件，默认 `main.bean` |
 | `stateDir` | 草稿/锁/审计目录，默认 `.ledger`（在账本根下） |
 | `beanCheck` / `beanQuery` | 含 `/` 时相对 `root`；缺失时依次尝试 `root/.venv/bin`、解释器同目录、PATH |
 | `timeZone` | 「今天」的时区，默认 `Asia/Shanghai` |
-| `graceDays` | 到期后仍算「待办」的天数，默认 3 |
+| `graceDays` | 到期后仍算待处理的天数，默认 3 |
 | `timeoutMs` | 单次核心调用超时，默认 120000 |
 
 ## 安装
@@ -94,8 +109,8 @@ plugin_manager action=install_bundle target=<本仓库的绝对路径>
 ## 已知限制
 
 - 托管引擎首次安装需要网络（从包索引安装 `beancount`、`beanquery`、`mcp`）；装好后可离线使用。
-- MVP-0 不创建账本；需要先把 `root` 指向 `ledger-domain-assets` 的副本。
-- 导入已有账本（目录选择、校验、接管）尚未实现；当前通过配置 `root` 指向已有账本。
+- 创建向导只在空目录初始化模板；选到已有 `main.bean` 的目录时直接接管并记住，不做结构校验或迁移。
+- 更复杂的已有账本导入（布局转换、路径映射）尚未实现。
 - 本插件不缓存核心数据；每次请求起一个 Python 进程，账本很大时是秒级。
 - 面板只做展示；所有业务错误都来自核心库的 `code/message/details`，插件不补充规则。
 - 无 Agent 工具是刻意边界：模型要写账本，应直接调用核心库，并按核心库的草稿/审批契约走。

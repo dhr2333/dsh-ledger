@@ -16,64 +16,96 @@ window.__ModuleLoader__.load({
       init: '/ledger-api/init',
       bootstrap: '/ledger-api/bootstrap',
       balance: '/ledger-api/balance',
+      reconPreview: '/ledger-api/reconcile/preview',
+      reconCommit: '/ledger-api/reconcile/commit',
+      reconHistory: '/ledger-api/reconcile/history',
       metadata: '/ledger-api/metadata',
       draftSubmit: '/ledger-api/draft/submit',
-      draftUpdate: '/ledger-api/draft/update',
       accountOpen: '/ledger-api/account/open',
+      operationApprove: '/ledger-api/operation/approve',
+      operationApproveAll: '/ledger-api/operation/approve-all',
+      draftApproveAll: '/ledger-api/draft/approve-all',
+      operationReject: '/ledger-api/operation/reject',
       approve: '/ledger-api/draft/approve',
       reject: '/ledger-api/draft/reject',
     };
-    const PERIODS = ['none', 'weekly', 'monthly', 'quarterly', 'yearly'];
+    const PERIODS = ['none', 'daily', 'weekly', 'monthly', 'quarterly', 'yearly'];
 
     const ZH = {
       title: '账本',
-      subtitle: 'Python 核心 · 只做展示',
-      intro: '账本逻辑在独立的 Python 核心库 ledger_domain 里：别名、对账周期、草稿队列和校验后原子写入都由它完成。这个面板只负责展示，以及把操作转成核心库的 CLI 调用。',
       refresh: '刷新',
       refreshing: '刷新中…',
       loading: '正在读取账本…',
       loadFailed: '读取账本失败',
       retry: '重试',
-      path: '根目录',
-      today: '今天',
-      tabTodo: '待办',
-      tabReconcile: '对账',
-      tabReview: '审核',
+      tabTodo: '审核',
       tabAccounts: '账户',
       reconcileTitle: '待对账',
-      reconcileHint: '周期来自账户 open 指令的 reconcile 元数据；到期日从最近一次 Balance 断言重建，不使用本地状态。',
-      due: '待办',
+      reconUnreconciled: '未对账',
+      reconOpen: '对账',
+      reconUpdate: '更新对账',
+      reconEditing: '对账中…',
+      reconActual: '实际余额',
+      reconExpected: '预期余额',
+      reconDifference: '差额',
+      reconRemainingHint: '剩余 {amount} 将由 {account} 自动吸收',
+      reconAutoPadHint: '未分配差额自动计入 {account}',
+      reconAllocations: '差额分配（可选）',
+      reconAmount: '金额',
+      reconDate: '日期',
+      reconNote: '备注',
+      reconChooseAccount: '选择账户',
+      reconAddAllocation: '+ 添加分配',
+      reconCommit: '确认对账',
+      reconCommitting: '写入中…',
+      reconCommitted: '对账已写入',
+      reconModeCreate: '新建对账',
+      reconModeUpdate: '更新最近一次',
+      reconClose: '关闭',
+      due: '待对账',
+      statusDue: '待对账',
+      statusOverdue: '逾期',
+      statusScheduled: '未到期',
       overdue: '逾期',
-      scheduled: '未到期',
       allClear: '当前没有到期的账户。',
       noPeriod: '还没有配置对账周期。到「账户」页给资产/负债账户设置周期。',
-      lastBalance: '最近断言',
-      nextDue: '下次到期',
       period: '周期',
-      declareBalance: '申报余额',
-      submit: '提交',
-      submitting: '提交中…',
       recorded: '已记录 {name} 的余额 {amount} {currency}',
       noAmount: '请填写金额',
       invalidAmount: '金额必须是十进制数字，例如 -32.50',
       mismatch: '余额不一致：账本累计 {accumulated} {currency}，你申报 {expected} {currency}（差异 {difference} {currency}）。未写入任何内容。',
       balanceExists: '该账户当天已经有一条同币种断言。',
       closedAccount: '账户已关闭，无法对账。',
-      scheduledTitle: '未到期账户',
-      scheduledCount: '{count} 个',
       reviewTitle: '待审核草稿',
-      reviewHint: 'AI 草稿由核心库入队，面板只负责审核和调用批准/驳回；校验、锁和写入都在核心库里。',
       pendingEmpty: '审核队列为空。',
+      operationsTitle: '待你批准的账本变更',
+      operationAccountOpen: '开户',
+      operationAccountRedate: '修改开立日',
+      operationAccountMetadata: '修改元数据',
+      operationBalance: '余额申报',
+      operationOpenSummary: '开户：{account}',
+      operationOpenAliasSummary: '开户：{account}（别名 {alias}）',
+      operationRedateAllSummary: '全部账户开立日前移到 {date}',
+      operationRedateSummary: '{count} 个账户开立日前移到 {date}',
+      operationMetadataBoth: '修改 {account} 的别名与周期',
+      operationMetadataAlias: '修改 {account} 的别名',
+      operationMetadataPeriod: '修改 {account} 的对账周期',
+      operationBalanceSummary: '对账：{account} = {amount} {currency}',
+      operationApprove: '批准',
+      operationReject: '驳回',
+      operationRejected: '已驳回该变更',
+      operationApproved: '已应用该变更',
+      approveAllOps: '一键批准全部（{count}）',
+      approveAllDrafts: '一键批准全部（{count}）',
+      approvedAllOps: '已批准 {count} 条账本变更',
+      approvedAllDrafts: '已入账 {count} 笔，跳过 {skipped} 笔',
+      approveAllFailed: '有 {count} 条未能批准，已保留在审核中',
       approve: '批准',
       addAccount: '新增账户',
       accountAdded: '已新增账户 {name}',
       accountCanonical: '账户名',
-      accountCurrency: '币种',
       accountOpenDate: '开立日期',
-      draftPayee: '商户',
-      draftNarration: '备注',
-      saveDraft: '保存修改',
-      draftSaved: '草稿已更新',
+      draftReadonlyHint: '待审核草稿在 DSH 中为只读；需要调整请驳回，让 Agent 重新提案。',
       approving: '写入中…',
       reject: '驳回',
       rejecting: '驳回中…',
@@ -81,41 +113,42 @@ window.__ModuleLoader__.load({
       rejectReasonPlaceholder: '例如：不是我的消费',
       issues: '校验问题',
       unresolved: '未分类',
-      bindAlias: '把「{name}」记为别名',
-      bindAliasLabel: '审核即绑定',
-      bindTarget: '绑定到账户',
-      bindTargetRequired: '请选择要绑定别名的账户。',
-      chooseAccount: '选择账户…',
-      postings: '分录',
       confidence: '置信度',
       source: '来源',
-      draftId: '草稿',
-      approvedAt: '已写入 {file}',
-      recentTitle: '最近处理',
-      recentEmpty: '还没有处理过的草稿。',
+      sourceAi: 'AI',
+      sourceQuickpath: '别名匹配',
+      sourceManual: '手动',
+      sourceImport: '导入',
+      sourceExternal: '外部',
       statusPending: '待审核',
-      statusApproved: '已批准',
-      statusRejected: '已驳回',
       accountsTitle: '账户与元数据',
-      accountsHint: '别名只用于展示和解析，写入 posting 永远使用规范名。周期保存到 open 指令的元数据，修改前会用 bean-check 校验整本账。',
       searchAccounts: '搜索账户或别名',
       accountName: '名称',
-      canonical: '规范名',
       alias: '别名',
       aliasPlaceholder: '给这个账户起一个别名',
       save: '保存',
       saving: '保存中…',
       saved: '已保存 {name}',
-      clearAlias: '清空别名',
+      accountShowHidden: '显示已隐藏（{count}）',
+      accountHideHidden: '收起已隐藏',
+      accountSelectHint: '选择左侧账户查看详情',
+      accountEditAlias: '点击编辑别名',
+      accountHasChildren: '有子账户，只有叶子账户可对账，周期已禁用',
+      accountReadonly: '该账户只读',
+      accountHiddenBadge: '已隐藏',
+      accountDiscard: '当前修改尚未保存，切换账户会丢失修改。继续？',
+      accountClearConfirm: '保存后将清除别名，树中改用账户路径显示。确认清除？',
+      accountClearTitle: '清空别名',
+      accountClear: '确认清除',
+      accountUnsavedTitle: '有未保存修改',
+      accountDiscardConfirm: '放弃修改',
       noAccounts: '没有匹配的账户。',
       notConfigured: '未配置周期',
       implicit: '隐式',
-      implicitHint: '该账户由交易自动创建，还没有 open 指令；先在账户文件里补 open，才能维护别名与周期。',
       metadataIssues: '元数据问题',
-      metadataIssuesCount: '{count} 项',
-      noIssues: '元数据正常',
       quota: '共 {count} 个账户',
       none: '不提醒',
+      daily: '每天',
       weekly: '每周',
       monthly: '每月',
       quarterly: '每季度',
@@ -123,35 +156,44 @@ window.__ModuleLoader__.load({
       dismiss: '关闭',
       errorAuth: '登录会话已过期，请刷新页面后重试。',
       errorGeneric: '操作失败',
-      errorBeanCheck: 'bean-check 拒绝了这个变更：',
+      errorBeanCheck: '账本校验未通过：',
       errorAliasConflict: '别名冲突：',
-      errorUnavailable: '无法执行 Python 核心库。检查插件配置里的 corePath / pythonPath。',
-      errorCore: '核心库调用失败：',
+      errorUnavailable: '账本引擎不可用，请重试或重新安装引擎。',
+      errorCore: '账本引擎出错：',
       engineTitle: '准备账本引擎',
-      engineIntro: '这笔账本需要一个本地账本引擎。若系统已有 Python 3.11+，点一次安装即可；之后不再需要终端或手动装依赖。',
       enginePath: '引擎位置',
       engineInstall: '安装 / 修复账本引擎',
       engineInstalling: '正在准备引擎，首次可能需要几分钟…',
       engineLog: '安装日志',
-      engineMissing: '账本引擎尚未安装',
-      engineStaleHint: '核心库有更新或引擎不完整；点一次修复即可。',
       engineError: '引擎操作失败：',
       errorEngine: '引擎操作失败：',
       setupTitle: '创建你的第一个账本',
-      setupIntro: '账本是一组纯文本文件，放在你选择的文件夹里。创建后会自动生成账户模板、当前年度账本和备份说明。',
       setupPath: '账本位置',
       setupName: '账本名称',
-      setupCurrency: '主币种',
+      setupBrowse: '选择目录…',
+      setupPickFailed: '目录选择器不可用。',
+      dirPickerTitle: '选择账本目录',
+      dirPickerHome: '主目录',
+      dirPickerCancel: '取消',
+      dirPickerHere: '选择此目录',
+      dirPickerLoading: '正在读取目录…',
+      dirPickerEmpty: '这个目录下没有子目录。',
+      dirPickerFailed: '读取目录失败：{message}',
+      dirPickerCreate: '新建文件夹',
+      dirPickerCreateAction: '新建',
+      dirPickerCreateFailed: '新建文件夹失败：{message}',
+      dirPickerTruncated: '目录过多，仅显示前一部分。',
       setupCreate: '创建账本',
       setupCreating: '正在创建…',
       setupCreated: '账本已创建：{title}',
-      setupNotEmpty: '这个文件夹不是空的。为了不覆盖已有文件，初始化只会写入空文件夹；请把插件配置的 root 指向一个空目录。',
-      setupHint: '创建后可在「审核」页手动记第一笔，或接入 AI 账单提案。',
+      setupOpened: '已打开已有账本：{title}',
+      setupNotEmpty: '这个文件夹不是空的，请换一个空文件夹。',
       setupNameRequired: '请填写账本名称。',
       setupExists: '这个位置已经有账本了，刷新即可打开。',
-      manualEntry: '记一笔',
-      entryTitle: '手动记一笔',
-      entryHint: '保存后进入审核队列；只有点击批准才会写入账本。',
+      manualEntry: '补记',
+      entryTitle: '补记一笔',
+      entryHint: '最佳实践：上传账单文件让 Agent 提案；其次：每天对账；最后才是按次补记。也可以直接在工作区对话里描述，Agent 会把草稿放进审核页。',
+      liabilityNegativeHint: '负债账户的余额正常为负数，例如 -1234.56。',
       entryType: '类型',
       entryExpense: '支出',
       entryIncome: '收入',
@@ -173,79 +215,116 @@ window.__ModuleLoader__.load({
       entryChooseSource: '选择账户…',
       errorDraftNotPending: '该草稿已经处理过了。',
       errorUnresolved: '还有未分类的分录，请先选择账户。',
-      emptyDraft: '没有可显示的分录。',
-      total: '合计',
-      bindFailed: '绑定别名失败：',
-      bindWrittenApproveFailed: '别名已写入，但批准失败：{error}',
       approvedWritten: '已批准并写入 {file}',
       approvedExisting: '该草稿已在账本中，无需重复写入。',
       rejectedNotice: '已驳回 {id}',
       closed: '已关闭',
       currency: '币种',
-      issueUnresolved: '未分类分录',
-      issueUnbalanced: '分录不平衡',
-      issueBeforeOpen: '账户在交易日期之后才开立',
-      issueClosed: '账户在交易日期已关闭',
+      issueUnresolved: '第 {number} 条分录的账户未分类',
+      issueUnbalanced: '分录不平衡，差额：{differences}',
+      issueBeforeOpen: '第 {number} 条分录：{account} 在交易日期之后才开立',
+      issueClosed: '第 {number} 条分录：{account} 在交易日期已关闭',
       issueFuture: '交易日期在未来',
-      errorInvalidCurrency: '币种 {currency} 不在该账户的 open 声明中（允许：{allowed}）',
-      errorAccountNotOpened: '该账户由交易隐式创建，先补 open 指令才能维护别名或周期。',
+      issueAccountExists: '{account} 已存在',
+      issueAliasConflict: '别名 {alias} 已被占用',
+      issueAccountNotFound: '{account} 不是已知账户',
+      issueAccountNotOpened: '{account} 尚未开户',
+      issueNotReconcilable: '只有资产或负债账户可以对账',
+      issueMissingFile: '账本文件不存在：{file}',
+      issueUnreadableFile: '无法读取账本文件：{file}',
+      issueDuplicateOpen: '账户重复开户：{account}',
+      issueDuplicateAlias: '别名重复：{alias}',
+      issueInvalidPeriod: '{account} 的对账周期不合法：{period}',
+      issueInvalidMetadata: '{account} 的元数据不合法',
+      issueAliasShadows: '别名 {alias} 与账户名 {account} 重复',
+      issueInvalidAccount: '账户名不合法：{account}',
+      issueInvalidReconcile: '{account} 不是资产或负债账户，不能设置对账周期',
+      issueInvalidCurrency: '{account} 声明了不合法币种 {currency}',
+      errorInvalidCurrency: '币种 {currency} 不在该账户的开户声明中（允许：{allowed}）',
+      errorAccountNotOpened: '该账户尚未开户，暂不能设置别名或周期。',
       errorInvalidAlias: '别名不合法：{message}',
       errorInvalidAccount: '账户名不合法。',
       errorFutureDate: '日期不能在未来。',
       errorInvalidPeriod: '对账周期不合法。',
       errorUnbalanced: '分录不平衡。',
-      unknown: '未知',
     };
 
     const EN = {
       title: 'Ledger',
-      subtitle: 'Python core · display only',
-      intro: 'The ledger logic lives in the separate Python core library ledger_domain: aliases, reconciliation periods, the draft queue, and validated atomic writes. This panel only displays the state and turns actions into CLI calls to the core.',
       refresh: 'Refresh',
       refreshing: 'Refreshing…',
       loading: 'Reading the ledger…',
       loadFailed: 'Could not read the ledger',
       retry: 'Retry',
-      path: 'Root',
-      today: 'Today',
-      tabTodo: 'To do',
-      tabReconcile: 'Reconcile',
-      tabReview: 'Review',
+      tabTodo: 'Review',
       tabAccounts: 'Accounts',
       reconcileTitle: 'Due for reconciliation',
-      reconcileHint: 'The period comes from the account open directive; the due date rebuilds from the latest balance assertion, with no local state.',
+      reconUnreconciled: 'Not reconciled',
+      reconOpen: 'Reconcile',
+      reconUpdate: 'Update reconciliation',
+      reconEditing: 'Reconciling…',
+      reconActual: 'Actual balance',
+      reconExpected: 'Expected',
+      reconDifference: 'Difference',
+      reconRemainingHint: 'The remaining {amount} will be absorbed by {account}',
+      reconAutoPadHint: 'Unallocated difference goes to {account}',
+      reconAllocations: 'Difference allocations (optional)',
+      reconAmount: 'Amount',
+      reconDate: 'Date',
+      reconNote: 'Note',
+      reconChooseAccount: 'Choose account',
+      reconAddAllocation: '+ Add allocation',
+      reconCommit: 'Commit',
+      reconCommitting: 'Committing…',
+      reconCommitted: 'Reconciliation committed',
+      reconModeCreate: 'New reconciliation',
+      reconModeUpdate: 'Update latest',
+      reconClose: 'Close',
+
       due: 'Due',
+      statusDue: 'Due',
+      statusOverdue: 'Overdue',
+      statusScheduled: 'Scheduled',
       overdue: 'Overdue',
-      scheduled: 'Scheduled',
       allClear: 'No account is due right now.',
       noPeriod: 'No reconciliation period is configured yet. Set one for asset and liability accounts on the Accounts tab.',
-      lastBalance: 'Last assertion',
-      nextDue: 'Next due',
       period: 'Period',
-      declareBalance: 'Declared balance',
-      submit: 'Submit',
-      submitting: 'Submitting…',
       recorded: 'Recorded {amount} {currency} for {name}',
       noAmount: 'Enter an amount',
       invalidAmount: 'Use a decimal amount, for example -32.50',
       mismatch: 'Balance mismatch: the ledger accumulates {accumulated} {currency}, you declared {expected} {currency} (difference {difference} {currency}). Nothing was written.',
       balanceExists: 'This account already has an assertion for that date and currency.',
       closedAccount: 'The account is closed and cannot be reconciled.',
-      scheduledTitle: 'Scheduled accounts',
-      scheduledCount: '{count}',
       reviewTitle: 'Pending drafts',
-      reviewHint: 'The core queues AI drafts. The panel only reviews them and calls approve or reject; validation, locking and writes all happen in the core.',
       pendingEmpty: 'The review queue is empty.',
+      operationsTitle: 'Ledger changes awaiting approval',
+      operationAccountOpen: 'Open account',
+      operationAccountRedate: 'Change open date',
+      operationAccountMetadata: 'Edit metadata',
+      operationBalance: 'Balance assertion',
+      operationOpenSummary: 'Open account: {account}',
+      operationOpenAliasSummary: 'Open account: {account} (alias {alias})',
+      operationRedateAllSummary: 'Move all open dates to {date}',
+      operationRedateSummary: 'Move {count} accounts to open on {date}',
+      operationMetadataBoth: 'Edit the alias and period for {account}',
+      operationMetadataAlias: 'Edit the alias for {account}',
+      operationMetadataPeriod: 'Edit the reconciliation period for {account}',
+      operationBalanceSummary: 'Reconcile: {account} = {amount} {currency}',
+      operationApprove: 'Approve',
+      operationReject: 'Reject',
+      operationRejected: 'Change rejected',
+      operationApproved: 'Change applied',
+      approveAllOps: 'Approve all ({count})',
+      approveAllDrafts: 'Approve all ({count})',
+      approvedAllOps: 'Approved {count} ledger changes',
+      approvedAllDrafts: 'Posted {count}, skipped {skipped}',
+      approveAllFailed: '{count} could not be approved and stayed pending',
       approve: 'Approve',
       addAccount: 'Add account',
       accountAdded: 'Account {name} added',
       accountCanonical: 'Account name',
-      accountCurrency: 'Currency',
       accountOpenDate: 'Open date',
-      draftPayee: 'Payee',
-      draftNarration: 'Narration',
-      saveDraft: 'Save changes',
-      draftSaved: 'Draft updated',
+      draftReadonlyHint: 'Pending drafts are read-only in DSH. Reject one if it needs changes, then let the agent propose again.',
       approving: 'Writing…',
       reject: 'Reject',
       rejecting: 'Rejecting…',
@@ -253,41 +332,42 @@ window.__ModuleLoader__.load({
       rejectReasonPlaceholder: 'For example: not my purchase',
       issues: 'Issues',
       unresolved: 'Unclassified',
-      bindAlias: 'Bind "{name}" as an alias',
-      bindAliasLabel: 'Bind on review',
-      bindTarget: 'Bind to account',
-      bindTargetRequired: 'Choose the account that should receive the alias.',
-      chooseAccount: 'Choose an account…',
-      postings: 'Postings',
       confidence: 'Confidence',
       source: 'Source',
-      draftId: 'Draft',
-      approvedAt: 'Written to {file}',
-      recentTitle: 'Recently handled',
-      recentEmpty: 'No draft has been handled yet.',
+      sourceAi: 'AI',
+      sourceQuickpath: 'Alias match',
+      sourceManual: 'Manual',
+      sourceImport: 'Import',
+      sourceExternal: 'External',
       statusPending: 'Pending',
-      statusApproved: 'Approved',
-      statusRejected: 'Rejected',
       accountsTitle: 'Accounts and metadata',
-      accountsHint: 'Aliases are used for display and resolution only; postings always use canonical names. Periods are stored as open-directive metadata and every change is bean-checked before writing.',
       searchAccounts: 'Search account or alias',
       accountName: 'Name',
-      canonical: 'Canonical',
       alias: 'Alias',
       aliasPlaceholder: 'Give this account an alias',
       save: 'Save',
       saving: 'Saving…',
       saved: 'Saved {name}',
-      clearAlias: 'Clear alias',
+      accountShowHidden: 'Show hidden ({count})',
+      accountHideHidden: 'Hide hidden',
+      accountSelectHint: 'Select an account on the left',
+      accountEditAlias: 'Click to edit the alias',
+      accountHasChildren: 'This account has children; only leaf accounts can be reconciled, so the period is disabled',
+      accountReadonly: 'This account is read-only',
+      accountHiddenBadge: 'Hidden',
+      accountDiscard: 'You have unsaved changes. Switching accounts will discard them. Continue?',
+      accountClearConfirm: 'Saving will clear the alias and show the account path in the tree. Clear it?',
+      accountClearTitle: 'Clear alias',
+      accountClear: 'Clear alias',
+      accountUnsavedTitle: 'Unsaved changes',
+      accountDiscardConfirm: 'Discard changes',
       noAccounts: 'No account matches.',
       notConfigured: 'No period',
       implicit: 'Implicit',
-      implicitHint: 'Created by transactions without an open directive; add one to the account file before governing its alias or period.',
       metadataIssues: 'Metadata issues',
-      metadataIssuesCount: '{count}',
-      noIssues: 'Metadata is clean',
       quota: '{count} accounts',
       none: 'Off',
+      daily: 'Daily',
       weekly: 'Weekly',
       monthly: 'Monthly',
       quarterly: 'Quarterly',
@@ -295,35 +375,44 @@ window.__ModuleLoader__.load({
       dismiss: 'Dismiss',
       errorAuth: 'The session expired. Refresh the page and try again.',
       errorGeneric: 'The operation failed',
-      errorBeanCheck: 'bean-check rejected this change: ',
+      errorBeanCheck: 'Ledger validation failed: ',
       errorAliasConflict: 'Alias conflict: ',
-      errorUnavailable: 'Cannot run the Python core. Check corePath / pythonPath in the plugin config.',
-      errorCore: 'The core call failed: ',
+      errorUnavailable: 'The ledger engine is unavailable. Retry or reinstall it.',
+      errorCore: 'Ledger engine error: ',
       engineTitle: 'Prepare the ledger engine',
-      engineIntro: 'This ledger needs a local engine. With Python 3.11+ already on the system, install it once; no terminal or manual dependency setup afterwards.',
       enginePath: 'Engine location',
       engineInstall: 'Install / repair engine',
       engineInstalling: 'Preparing the engine; the first run can take a few minutes…',
       engineLog: 'Install log',
-      engineMissing: 'The ledger engine is not installed yet',
-      engineStaleHint: 'The core changed or the engine is incomplete; run one repair.',
       engineError: 'Engine operation failed: ',
       errorEngine: 'Engine operation failed: ',
       setupTitle: 'Create your first ledger',
-      setupIntro: 'A ledger is a folder of plain-text files. Creating one generates a starter account tree, the current year and a backup note.',
       setupPath: 'Ledger location',
       setupName: 'Ledger name',
-      setupCurrency: 'Main currency',
+      setupBrowse: 'Choose folder…',
+      setupPickFailed: 'The directory picker is unavailable.',
+      dirPickerTitle: 'Choose ledger folder',
+      dirPickerHome: 'Home',
+      dirPickerCancel: 'Cancel',
+      dirPickerHere: 'Use this folder',
+      dirPickerLoading: 'Reading folder…',
+      dirPickerEmpty: 'No subfolders here.',
+      dirPickerFailed: 'Could not read the folder: {message}',
+      dirPickerCreate: 'New folder',
+      dirPickerCreateAction: 'Create',
+      dirPickerCreateFailed: 'Could not create the folder: {message}',
+      dirPickerTruncated: 'Too many folders; showing only the first part.',
       setupCreate: 'Create ledger',
       setupCreating: 'Creating…',
       setupCreated: 'Ledger created: {title}',
-      setupNotEmpty: 'This folder is not empty. To avoid overwriting anything, initialization only writes into an empty folder; point the plugin root at an empty directory.',
-      setupHint: 'Then record your first entry on the Review tab, or connect an AI bill proposer.',
+      setupOpened: 'Opened existing ledger: {title}',
+      setupNotEmpty: 'This folder is not empty. Choose an empty folder.',
       setupNameRequired: 'Enter a ledger name.',
       setupExists: 'A ledger already exists here; refresh to open it.',
-      manualEntry: 'Record entry',
-      entryTitle: 'Record an entry',
-      entryHint: 'Saving adds a draft to the review queue; nothing is written to the ledger until you approve it.',
+      manualEntry: 'Fallback entry',
+      entryTitle: 'Add a fallback entry',
+      entryHint: 'Best: upload a statement file and let the agent propose entries; next: reconcile daily; use a fallback entry only for one-off gaps. You can also describe it in the workspace conversation and review the draft here.',
+      liabilityNegativeHint: 'Liability balances are normally negative, e.g. -1234.56.',
       entryType: 'Type',
       entryExpense: 'Expense',
       entryIncome: 'Income',
@@ -345,28 +434,38 @@ window.__ModuleLoader__.load({
       entryChooseSource: 'Choose an account…',
       errorDraftNotPending: 'This draft was already handled.',
       errorUnresolved: 'Some postings are still unclassified. Choose an account first.',
-      emptyDraft: 'No posting to show.',
-      total: 'Total',
-      bindFailed: 'Binding the alias failed: ',
-      bindWrittenApproveFailed: 'The alias was written, but approval failed: {error}',
       approvedWritten: 'Approved and written to {file}',
       approvedExisting: 'This draft is already in the ledger; nothing was written again.',
       rejectedNotice: 'Rejected {id}',
       closed: 'Closed',
       currency: 'Currency',
-      issueUnresolved: 'Unclassified posting',
-      issueUnbalanced: 'Unbalanced postings',
-      issueBeforeOpen: 'Account opens after the transaction date',
-      issueClosed: 'Account is closed on the transaction date',
-      issueFuture: 'Transaction date is in the future',
-      errorInvalidCurrency: 'Currency {currency} is not declared by this account\'s open directive (allowed: {allowed})',
-      errorAccountNotOpened: 'This account exists only through transactions; add an open directive before governing its alias or period.',
+      issueUnresolved: 'Posting {number} has no account',
+      issueUnbalanced: 'Postings are unbalanced by {differences}',
+      issueBeforeOpen: 'Posting {number}: {account} opens after the transaction date',
+      issueClosed: 'Posting {number}: {account} is closed on the transaction date',
+      issueFuture: 'The transaction date is in the future',
+      issueAccountExists: '{account} already exists',
+      issueAliasConflict: 'Alias {alias} is already in use',
+      issueAccountNotFound: '{account} is not a known account',
+      issueAccountNotOpened: '{account} has not been opened',
+      issueNotReconcilable: 'Only asset and liability accounts can be reconciled',
+      issueMissingFile: 'Ledger file not found: {file}',
+      issueUnreadableFile: 'Cannot read the ledger file: {file}',
+      issueDuplicateOpen: 'Account opened more than once: {account}',
+      issueDuplicateAlias: 'Duplicate alias: {alias}',
+      issueInvalidPeriod: 'Unsupported reconciliation period for {account}: {period}',
+      issueInvalidMetadata: 'Invalid metadata for {account}',
+      issueAliasShadows: 'Alias {alias} duplicates account name {account}',
+      issueInvalidAccount: 'Invalid account name: {account}',
+      issueInvalidReconcile: '{account} is not an asset or liability account and cannot have a reconciliation period',
+      issueInvalidCurrency: '{account} declares an invalid currency: {currency}',
+      errorInvalidCurrency: 'Currency {currency} is not declared for this account (allowed: {allowed})',
+      errorAccountNotOpened: 'This account has not been opened; its alias and period cannot be edited.',
       errorInvalidAlias: 'Invalid alias: {message}',
       errorInvalidAccount: 'Invalid account name.',
       errorFutureDate: 'The date cannot be in the future.',
       errorInvalidPeriod: 'Invalid reconciliation period.',
       errorUnbalanced: 'The postings are not balanced.',
-      unknown: 'unknown',
     };
 
     const STATUS_STYLE = {
@@ -392,10 +491,8 @@ window.__ModuleLoader__.load({
       mark: { display: 'inline-flex', color: 'var(--dsw-alias-brand-primary)' },
       headText: { display: 'grid', gap: 2, minWidth: 0 },
       title: { margin: 0, fontSize: 20, fontWeight: 600, color: 'var(--dsw-alias-label-primary)', lineHeight: 1.3 },
-      subtitle: { margin: 0, fontSize: 12, color: 'var(--dsw-alias-label-secondary)' },
       headMeta: { marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' },
       meta: { fontSize: 12, color: 'var(--dsw-alias-label-secondary)', maxWidth: 360, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
-      intro: { margin: 0, fontSize: 13, lineHeight: 1.65, color: 'var(--dsw-alias-label-secondary)' },
       tabs: { display: 'flex', gap: 4, borderBottom: '1px solid var(--dsw-alias-border-l1)', alignItems: 'flex-end' },
       tab: {
         appearance: 'none',
@@ -523,16 +620,139 @@ window.__ModuleLoader__.load({
       issueBlocking: { color: 'var(--dsw-alias-state-error-primary)' },
       details: { borderTop: '1px solid var(--dsw-alias-border-l1)', paddingTop: 8 },
       summary: { cursor: 'pointer', fontSize: 12, color: 'var(--dsw-alias-label-secondary)', display: 'flex', gap: 8, alignItems: 'center' },
-      binding: { display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', padding: '8px 10px', borderRadius: 8, background: 'var(--dsw-alias-bg-layer-2)' },
-      checkbox: { width: 14, height: 14, accentColor: 'var(--dsw-alias-brand-primary)' },
       mono: { fontFamily: 'var(--ds-font-family-code, ui-monospace, monospace)', fontSize: 11 },
       spacer: { height: 2 },
+      accountLayout: { display: 'flex', gap: 14, alignItems: 'flex-start', flexWrap: 'wrap' },
+      accountTreePanel: {
+        flex: '1 1 240px',
+        maxWidth: 340,
+        maxHeight: '62vh',
+        overflow: 'auto',
+        border: '1px solid var(--dsw-alias-border-l1)',
+        borderRadius: 10,
+        background: 'var(--dsw-alias-bg-layer-1)',
+        padding: 8,
+        boxSizing: 'border-box',
+      },
+      accountDetailPanel: {
+        flex: '2 1 360px',
+        minWidth: 280,
+        border: '1px solid var(--dsw-alias-border-l1)',
+        borderRadius: 10,
+        background: 'var(--dsw-alias-bg-layer-1)',
+        padding: '14px 16px',
+        boxSizing: 'border-box',
+      },
+      treeRow: { display: 'flex', alignItems: 'center', gap: 4, minHeight: 26, borderRadius: 6 },
+      treeRowSelected: { background: 'var(--dsw-alias-bg-layer-2)' },
+      treeToggle: {
+        appearance: 'none',
+        border: 'none',
+        background: 'transparent',
+        color: 'var(--dsw-alias-label-secondary)',
+        width: 16,
+        minWidth: 16,
+        padding: 0,
+        font: 'inherit',
+        fontSize: 11,
+        cursor: 'pointer',
+      },
+      treeLabel: {
+        appearance: 'none',
+        border: 'none',
+        background: 'transparent',
+        color: 'var(--dsw-alias-label-primary)',
+        padding: '2px 4px',
+        font: 'inherit',
+        fontSize: 12,
+        textAlign: 'left',
+        cursor: 'pointer',
+        display: 'flex',
+        alignItems: 'center',
+        gap: 6,
+        flex: '1 1 auto',
+        minWidth: 0,
+        overflow: 'hidden',
+      },
+      treeDot: { width: 7, height: 7, borderRadius: '50%', display: 'inline-block', flex: 'none' },
+      treeCount: { fontSize: 10, color: 'var(--dsw-alias-label-secondary)', flex: 'none' },
+      modalBackdrop: {
+        position: 'fixed',
+        inset: 0,
+        background: 'rgba(15, 17, 21, 0.45)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: 16,
+        zIndex: 1000,
+      },
+      modalCard: {
+        width: 'min(560px, 100%)',
+        maxHeight: '90vh',
+        overflow: 'auto',
+        border: '1px solid var(--dsw-alias-border-l1)',
+        borderRadius: 12,
+        background: 'var(--dsw-alias-bg-layer-1)',
+        boxShadow: '0 18px 48px rgba(0, 0, 0, 0.24)',
+        padding: 16,
+        display: 'grid',
+        gap: 12,
+      },
+      modalHead: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
+      modalBody: { display: 'grid', gap: 10 },
+      modalFoot: { display: 'flex', justifyContent: 'flex-end', gap: 8, flexWrap: 'wrap' },
+      dirCrumbs: { display: 'flex', gap: 2, flexWrap: 'wrap', alignItems: 'center', minWidth: 0 },
+      dirCrumb: {
+        appearance: 'none',
+        border: 'none',
+        background: 'transparent',
+        color: 'var(--dsw-alias-brand-primary)',
+        padding: '2px 4px',
+        borderRadius: 4,
+        font: 'inherit',
+        fontSize: 12,
+        cursor: 'pointer',
+        maxWidth: '100%',
+        overflow: 'hidden',
+        textOverflow: 'ellipsis',
+        whiteSpace: 'nowrap',
+      },
+      dirList: {
+        display: 'grid',
+        gap: 2,
+        alignContent: 'start',
+        maxHeight: 280,
+        overflow: 'auto',
+        border: '1px solid var(--dsw-alias-border-l1)',
+        borderRadius: 8,
+        padding: 6,
+        minHeight: 96,
+      },
+      dirRow: {
+        appearance: 'none',
+        border: 'none',
+        background: 'transparent',
+        color: 'var(--dsw-alias-label-primary)',
+        textAlign: 'left',
+        padding: '6px 8px',
+        borderRadius: 6,
+        font: 'inherit',
+        fontSize: 12,
+        cursor: 'pointer',
+        display: 'flex',
+        gap: 6,
+        alignItems: 'center',
+        minWidth: 0,
+      },
     };
 
     /** Replace `{name}` tokens in a dictionary string. */
     function fill(template, values) {
       return String(template).replace(/\{(\w+)\}/g, (match, key) => (values && Object.hasOwn(values, key) ? String(values[key]) : match));
     }
+
+    /** Client root context, used to resolve the host directory picker lazily. */
+    let clientContext = null;
 
     /** Locale service captured by `apply`; components read it through `useT`. */
     let localeService = {
@@ -590,16 +810,70 @@ window.__ModuleLoader__.load({
     }
 
     function Field({ label, children }) {
+      // A <label> wrapping a <select> makes Firefox re-activate the control when
+      // an option is chosen, which reopens the native menu and can lock the page.
+      // Keep the visual label, but do not let it act as a form label.
       return h(
-        'label',
-        { style: { display: 'grid', gap: 4, minWidth: 0 } },
+        'div',
+        { style: { display: 'grid', gap: 4, minWidth: 0 }, role: 'group', 'aria-label': label },
         h('span', { style: S.label }, label),
         children,
       );
     }
 
+    function Modal({ title, children, footer, onClose }) {
+      return h(
+        'div',
+        {
+          style: S.modalBackdrop,
+          role: 'presentation',
+          onMouseDown: (event) => {
+            if (event.target === event.currentTarget && onClose) onClose();
+          },
+        },
+        h(
+          'div',
+          { style: S.modalCard, role: 'dialog', 'aria-modal': 'true', 'aria-label': title },
+          h(
+            'div',
+            { style: S.modalHead },
+            h('h3', { style: S.sectionTitle }, title),
+            h(Button, { onClick: onClose, title: 'Close' }, '×'),
+          ),
+          h('div', { style: S.modalBody }, children),
+          footer ? h('div', { style: S.modalFoot }, footer) : null,
+        ),
+      );
+    }
+
     function formatMoney(amount, currency) {
       return `${amount} ${currency}`;
+    }
+
+    /**
+     * Parse a decimal amount to millionths, matching the core's 6-digit
+     * precision. Returns null for anything the input cannot represent, so the
+     * difference field shows a dash instead of a wrong number. This is display
+     * arithmetic only: the core recomputes every authoritative value.
+     */
+    function parseScaledAmount(text) {
+      const match = /^([+-]?)(\d+)(?:\.(\d{1,6}))?$/.exec(String(text ?? '').trim());
+      if (match === null) return null;
+      const sign = match[1] === '-' ? -1 : 1;
+      const fraction = (match[3] ?? '').padEnd(6, '0');
+      return sign * (Number(match[2]) * 1000000 + Number(fraction));
+    }
+
+    function formatScaledAmount(value) {
+      const negative = value < 0;
+      const absolute = Math.abs(value);
+      let whole = Math.floor(absolute / 1000000);
+      let cents = Math.round((absolute % 1000000) / 10000);
+      if (cents === 100) {
+        whole += 1;
+        cents = 0;
+      }
+      return `${negative ? '-' : ''}${whole}.${String(cents).padStart(2, '0')}`;
     }
 
     function statusLabel(t, status) {
@@ -610,7 +884,108 @@ window.__ModuleLoader__.load({
       return period && PERIODS.includes(period) ? t(period) : t('notConfigured');
     }
 
-    /** Localized label for one domain issue, with the detail appended. */
+    const ACCOUNT_ROOTS = ['Assets', 'Liabilities', 'Equity', 'Income', 'Expenses'];
+
+    // Parent groups have no open directive, so their display names are a
+    // presentation-only fallback. A leaf alias always wins. Keys are full
+    // paths, not bare segments, so Income:Transfer and Assets:Transfer can
+    // never collide.
+    const PARENT_LABELS = {
+      Assets: '资产',
+      'Assets:Savings': '储蓄',
+      'Assets:Savings:Bank': '银行',
+      'Assets:Savings:Web': '电子钱包',
+      'Assets:Savings:Cash': '现金',
+      Liabilities: '负债',
+      'Liabilities:CreditCard': '信用卡',
+      'Liabilities:CreditCard:Bank': '银行',
+      Equity: '权益',
+      Income: '收入',
+      'Income:Active': '主动收入',
+      'Income:Active:Salary': '工资',
+      'Income:Active:Salary:Subsidy': '补贴',
+      'Income:Investment': '投资收入',
+      'Income:Transfer': '转移收入',
+      Expenses: '支出',
+      'Expenses:Culture': '文化休闲',
+      'Expenses:Finance': '财务金融',
+      'Expenses:Food': '餐饮',
+      'Expenses:Health': '健康',
+      'Expenses:Home': '居家',
+      'Expenses:Shopping': '购物',
+      'Expenses:TransPort': '交通',
+      'Expenses:TransPort:Private': '私家车',
+    };
+
+    /**
+     * Group the flat bootstrap account list into a display tree.
+     *
+     * Beancount has no explicit parent directive, so every intermediate path is
+     * synthesised as a virtual group. Leaves keep the original account object,
+     * which is what the detail form edits; virtual nodes are never editable.
+     */
+    function buildAccountTree(accounts) {
+      const roots = [];
+      const rootMap = new Map();
+      const ensureRoot = (name) => {
+        if (rootMap.has(name)) return rootMap.get(name);
+        const node = { key: name, path: name, label: PARENT_LABELS[name] ?? name, virtual: true, children: [], account: null, hidden: false };
+        rootMap.set(name, node);
+        roots.push(node);
+        return node;
+      };
+      for (const name of ACCOUNT_ROOTS) ensureRoot(name);
+      const sorted = accounts.slice().sort((left, right) => left.account.localeCompare(right.account));
+      for (const account of sorted) {
+        const parts = account.account.split(':');
+        if (parts.length < 2) continue;
+        let parent = ensureRoot(parts[0]);
+        for (let index = 1; index < parts.length - 1; index += 1) {
+          const path = parts.slice(0, index + 1).join(':');
+          let child = parent.children.find((item) => item.virtual && item.path === path);
+          if (child === undefined) {
+            child = { key: path, path, label: PARENT_LABELS[path] ?? parts[index], virtual: true, children: [], account: null, hidden: false };
+            parent.children.push(child);
+          }
+          parent = child;
+        }
+        if (parent.children.some((item) => item.path === account.account)) continue;
+        parent.children.push({
+          key: account.account,
+          path: account.account,
+          label: account.name || account.account,
+          virtual: false,
+          children: [],
+          account,
+          hidden: account.implicit === true || account.closed === true,
+        });
+      }
+      const sort = (nodes) => {
+        nodes.sort((left, right) => {
+          if (left.virtual !== right.virtual) return left.virtual ? -1 : 1;
+          return left.path.localeCompare(right.path);
+        });
+        for (const node of nodes) sort(node.children);
+      };
+      for (const root of roots) sort(root.children);
+      return roots;
+    }
+
+    function countTreeLeaves(node) {
+      if (!node.virtual) return 1;
+      return node.children.reduce((total, child) => total + countTreeLeaves(child), 0);
+    }
+
+    function countTreeDue(node) {
+      if (!node.virtual) return node.account && (node.account.status === 'due' || node.account.status === 'overdue') ? 1 : 0;
+      return node.children.reduce((total, child) => total + countTreeDue(child), 0);
+    }
+
+    function treeHasChildren(accounts, path) {
+      return accounts.some((account) => account.account !== path && account.account.startsWith(`${path}:`));
+    }
+
+    /** Localized sentence for one domain issue; core messages stay a fallback. */
     function issueText(t, issue) {
       const keys = {
         unresolved_account: 'issueUnresolved',
@@ -618,9 +993,99 @@ window.__ModuleLoader__.load({
         before_account_open: 'issueBeforeOpen',
         closed_account: 'issueClosed',
         future_dated: 'issueFuture',
+        account_exists: 'issueAccountExists',
+        alias_conflict: 'issueAliasConflict',
+        account_not_found: 'issueAccountNotFound',
+        account_not_opened: 'issueAccountNotOpened',
+        not_reconcilable: 'issueNotReconcilable',
+        missing_file: 'issueMissingFile',
+        unreadable_file: 'issueUnreadableFile',
+        duplicate_open: 'issueDuplicateOpen',
+        duplicate_alias: 'issueDuplicateAlias',
+        invalid_period: 'issueInvalidPeriod',
+        invalid_metadata: 'issueInvalidMetadata',
+        alias_shadows_account: 'issueAliasShadows',
+        invalid_account: 'issueInvalidAccount',
+        invalid_reconcile_account: 'issueInvalidReconcile',
+        invalid_currency: 'issueInvalidCurrency',
       };
       const key = keys[issue.code];
-      return `${key ? t(key) : issue.code}: ${issue.message}`;
+      if (key === undefined) return issue.message ?? '';
+      const differences = Array.isArray(issue.differences)
+        ? issue.differences.map((entry) => `${entry.difference} ${entry.currency}`).join(', ')
+        : '—';
+      return fill(t(key), {
+        number: typeof issue.postingIndex === 'number' ? issue.postingIndex + 1 : '—',
+        account: issue.account ?? issue.suggested ?? '—',
+        alias: issue.alias ?? '—',
+        currency: issue.currency ?? '—',
+        period: issue.period ?? '—',
+        file: issue.file ?? '—',
+        differences,
+      });
+    }
+
+    /** Readable name for one pending ledger change, empty when unknown. */
+    function operationKindName(t, kind) {
+      const keys = {
+        'account-open': 'operationAccountOpen',
+        'account-redate': 'operationAccountRedate',
+        'account-metadata': 'operationAccountMetadata',
+        balance: 'operationBalance',
+      };
+      return keys[kind] ? t(keys[kind]) : '';
+    }
+
+    /** Localized one-line summary for a pending ledger change. */
+    function operationSummary(t, operation) {
+      const payload = operation.payload ?? {};
+      const account = payload.account ?? '—';
+      if (operation.kind === 'account-open') {
+        return payload.alias
+          ? fill(t('operationOpenAliasSummary'), { account, alias: payload.alias })
+          : fill(t('operationOpenSummary'), { account });
+      }
+      if (operation.kind === 'account-redate') {
+        return payload.all
+          ? fill(t('operationRedateAllSummary'), { date: payload.date ?? '—' })
+          : fill(t('operationRedateSummary'), { count: Array.isArray(payload.accounts) ? payload.accounts.length : 0, date: payload.date ?? '—' });
+      }
+      if (operation.kind === 'account-metadata') {
+        const hasAlias = Object.hasOwn(payload, 'alias');
+        const hasPeriod = Object.hasOwn(payload, 'reconcile');
+        const key = hasAlias && hasPeriod
+          ? 'operationMetadataBoth'
+          : hasAlias ? 'operationMetadataAlias' : 'operationMetadataPeriod';
+        return fill(t(key), { account });
+      }
+      if (operation.kind === 'balance') {
+        return fill(t('operationBalanceSummary'), {
+          account,
+          amount: payload.amount ?? '—',
+          currency: payload.currency ?? '',
+        });
+      }
+      return operation.summary ?? '';
+    }
+
+    /** Readable name for one draft source, empty when unknown. */
+    function sourceName(t, kind) {
+      const keys = {
+        ai: 'sourceAi',
+        quickpath: 'sourceQuickpath',
+        manual: 'sourceManual',
+        import: 'sourceImport',
+        external: 'sourceExternal',
+      };
+      return keys[kind] ? t(keys[kind]) : '';
+    }
+
+    /** Source and confidence line for a draft card, empty when neither exists. */
+    function draftMetaLine(t, draft) {
+      return [
+        sourceName(t, draft.source?.kind) ? `${t('source')}: ${sourceName(t, draft.source?.kind)}` : '',
+        typeof draft.confidence === 'number' ? `${t('confidence')}: ${Math.round(draft.confidence * 100)}%` : '',
+      ].filter(Boolean).join(' · ');
     }
 
     async function fetchJson(path, init) {
@@ -669,7 +1134,8 @@ window.__ModuleLoader__.load({
       const [engineLog, setEngineLog] = React.useState('');
       const [engineError, setEngineError] = React.useState(null);
       const [setup, setSetup] = React.useState(null);
-      const [setupForm, setSetupForm] = React.useState({ title: '我的账本', currency: 'CNY' });
+      const [setupForm, setSetupForm] = React.useState({ title: '我的账本', root: '' });
+      const [dirPicker, setDirPicker] = React.useState(null);
       const [data, setData] = React.useState(null);
       const [loading, setLoading] = React.useState(true);
       const [loadError, setLoadError] = React.useState(null);
@@ -678,16 +1144,23 @@ window.__ModuleLoader__.load({
       const [tab, setTab] = React.useState('todo');
       const [busy, setBusy] = React.useState(null);
       const [balanceInputs, setBalanceInputs] = React.useState({});
-      const [draftEdits, setDraftEdits] = React.useState({});
-      const [bindChecks, setBindChecks] = React.useState({});
-      const [bindTargets, setBindTargets] = React.useState({});
+      const [reconEditor, setReconEditor] = React.useState(null);
+      const [reconAccountPicker, setReconAccountPicker] = React.useState(null);
       const [rejectReasons, setRejectReasons] = React.useState({});
       const [accountQuery, setAccountQuery] = React.useState('');
-      const [accountEdits, setAccountEdits] = React.useState({});
-      const [draftMeta, setDraftMeta] = React.useState({});
+      const [accountSelected, setAccountSelected] = React.useState(null);
+      const [accountExpanded, setAccountExpanded] = React.useState({});
+      const [accountShowHidden, setAccountShowHidden] = React.useState(false);
+      const [accountDraft, setAccountDraft] = React.useState(null);
+      // The account path of the detail whose alias is currently being edited.
+      // Keyed by account so switching accounts leaves edit mode.
+      const [aliasEditing, setAliasEditing] = React.useState(null);
+      const [accountClearOpen, setAccountClearOpen] = React.useState(false);
+      const [accountPendingSelect, setAccountPendingSelect] = React.useState(null);
       const [newAccountOpen, setNewAccountOpen] = React.useState(false);
-      const [newAccount, setNewAccount] = React.useState({ account: 'Assets:Savings:Bank:', currency: 'CNY', alias: '', date: '', reconcile: 'none' });
+      const [newAccount, setNewAccount] = React.useState({ account: 'Assets:Savings:Bank:', alias: '' });
       const [entryOpen, setEntryOpen] = React.useState(false);
+      const [entryPicker, setEntryPicker] = React.useState(null);
       const [entry, setEntry] = React.useState({
         kind: 'expense',
         date: '',
@@ -737,6 +1210,14 @@ window.__ModuleLoader__.load({
           generation.current += 1;
         };
       }, [load]);
+
+      // Seed the location field from the configured/active root once it is known,
+      // then leave it editable (clearing it falls back to that root on submit).
+      React.useEffect(() => {
+        if (typeof setup?.root === 'string' && setup.root !== '') {
+          setSetupForm((previous) => (previous.root === '' ? { ...previous, root: setup.root } : previous));
+        }
+      }, [setup?.root]);
 
       React.useEffect(() => {
         if (actionError !== null) alertRef.current?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
@@ -807,27 +1288,42 @@ window.__ModuleLoader__.load({
       const dueAccounts = reconciliationAccounts
         .filter((account) => account.status === 'due' || account.status === 'overdue')
         .sort((left, right) => (left.status === right.status ? left.nextDue.localeCompare(right.nextDue) : left.status === 'overdue' ? -1 : 1));
-      const scheduledAccounts = reconciliationAccounts.filter((account) => account.status === 'scheduled');
       const pendingDrafts = data?.pendingDrafts ?? [];
-      const recentDrafts = data?.recentDrafts ?? [];
-      const filteredAccounts = React.useMemo(() => {
+      const pendingOperations = data?.pendingOperations ?? [];
+      const hiddenAccounts = React.useMemo(
+        () => accounts.filter((account) => account.implicit === true || account.closed === true),
+        [accounts],
+      );
+      const hiddenCount = hiddenAccounts.length;
+      const visibleAccounts = React.useMemo(() => {
         const query = accountQuery.trim().toLowerCase();
-        const list = query === ''
-          ? accounts
-          : accounts.filter((account) => `${account.name} ${account.account}`.toLowerCase().includes(query));
-        return list.slice(0, 200);
-      }, [accounts, accountQuery]);
-
-      const currencyOptions = React.useMemo(() => {
-        const values = new Set();
-        for (const account of accounts) for (const currency of account.currencies) values.add(currency);
-        if (data?.operatingCurrency) values.add(data.operatingCurrency);
-        for (const currency of ['CNY', 'USD', 'COIN']) values.add(currency);
-        return [...values].sort();
-      }, [accounts, data]);
+        return accounts.filter((account) => {
+          const hidden = account.implicit === true || account.closed === true;
+          if (!accountShowHidden && query === '' && hidden) return false;
+          if (query === '') return true;
+          return `${account.account} ${account.name ?? ''} ${account.alias ?? ''}`.toLowerCase().includes(query);
+        });
+      }, [accounts, accountQuery, accountShowHidden]);
+      const accountTree = React.useMemo(() => buildAccountTree(visibleAccounts), [visibleAccounts]);
+      const selectedAccount = React.useMemo(
+        () => accounts.find((account) => account.account === accountSelected) ?? null,
+        [accounts, accountSelected],
+      );
+      const selectedHasChildren = React.useMemo(
+        () => (selectedAccount === null ? false : treeHasChildren(accounts, selectedAccount.account)),
+        [accounts, selectedAccount],
+      );
+      const selectedDraft = selectedAccount === null
+        ? null
+        : (accountDraft ?? { alias: selectedAccount.alias ?? '', period: selectedAccount.period ?? 'none' });
+      const accountDirty = selectedAccount !== null
+        && selectedDraft !== null
+        && (selectedDraft.alias.trim() !== (selectedAccount.alias ?? '') || selectedDraft.period !== (selectedAccount.period ?? 'none'));
+      const selectedReadonly = selectedAccount !== null && (selectedAccount.implicit === true || selectedAccount.closed === true);
+      const periodDisabled = selectedReadonly || selectedHasChildren;
 
       const tabRows = [
-        { id: 'todo', label: t('tabTodo'), count: dueAccounts.length + pendingDrafts.length },
+        { id: 'todo', label: t('tabTodo'), count: dueAccounts.length + pendingDrafts.length + pendingOperations.length },
         { id: 'accounts', label: t('tabAccounts'), count: null },
       ];
 
@@ -835,18 +1331,6 @@ window.__ModuleLoader__.load({
       const entrySourceOptions = entry.kind === 'expense'
         ? [...assetSources, ...liabilitySources].sort((left, right) => left.name.localeCompare(right.name))
         : assetSources;
-
-      const aliasesByDraft = React.useMemo(() => {
-        const map = {};
-        for (const draft of pendingDrafts) {
-          const unresolved = draft.postings.filter((posting) => posting.account === null);
-          if (unresolved.length > 0) {
-            const candidate = draft.payee !== '' ? draft.payee : draft.narration;
-            map[draft.id] = candidate;
-          }
-        }
-        return map;
-      }, [pendingDrafts]);
 
       function inputFor(account) {
         return balanceInputs[account.account] ?? {
@@ -872,45 +1356,150 @@ window.__ModuleLoader__.load({
         }, '');
       }
 
-      function editPosting(draft, index, accountName) {
-        setDraftEdits((previous) => {
-          const current = previous[draft.id] ?? draft.postings.map((posting) => ({ ...posting }));
-          const next = current.slice();
-          next[index] = { ...next[index], account: accountName === '' ? null : accountName };
-          return { ...previous, [draft.id]: next };
-        });
-        if (accountName !== '') {
-          // The bind target follows the posting's account on every change: a
-          // stale target would write the merchant alias to a different account
-          // than the one the transaction posts to.
-          setBindTargets((previous) => ({ ...previous, [draft.id]: accountName }));
-        }
+      function newAllocationRow(asOf) {
+        return { account: '', amount: '', date: asOf, note: '' };
       }
 
-      function postingsFor(draft) {
-        return draftEdits[draft.id] ?? draft.postings;
+      function openRecon(account) {
+        const editor = {
+          account: account.account,
+          name: account.name,
+          asOf: account.coveredThrough || today,
+          actual: '',
+          rows: [],
+          // Internal only: the core's default (Opening-Balances on the first
+          // reconciliation, Adjustments afterwards). Hidden from the form, but
+          // still sent so a partial allocation leaves a remainder row.
+          padAccount: '',
+          expected: null,
+          mode: null,
+          preview: null,
+          previewFor: null,
+          busy: null,
+          error: null,
+        };
+        setReconAccountPicker(null);
+        setReconEditor(editor);
+        void previewRecon(editor);
       }
 
-      function metaFor(draft) {
-        return draftMeta[draft.id] ?? { payee: draft.payee ?? '', narration: draft.narration ?? '' };
+      function reconPayload(editor) {
+        const allocations = editor.rows
+          .filter((row) => row.account && row.amount.trim() !== '')
+          .map((row) => ({
+            account: row.account,
+            amount: row.amount.trim(),
+            date: row.date || editor.asOf,
+            note: row.note || '',
+          }));
+        const payload = {
+          account: editor.account,
+          asOf: editor.asOf,
+          allocations,
+        };
+        if (editor.actual.trim() !== '') payload.actual = editor.actual.trim();
+        if (editor.currency) payload.currency = editor.currency;
+        if (editor.padAccount) payload.padAccount = editor.padAccount;
+        return payload;
       }
 
-      function saveDraftMeta(draft) {
-        const meta = metaFor(draft);
-        const postings = postingsFor(draft);
-        if (postings.some((posting) => posting.account === null)) {
-          reportError(t('errorUnresolved'));
-          return;
-        }
-        void runAction(`draft-meta:${draft.id}`, async () => {
-          await postJson(API.draftUpdate, {
-            id: draft.id,
-            payee: meta.payee,
-            narration: meta.narration,
-            postings,
+      function reconKey(editor) {
+        return JSON.stringify(reconPayload(editor));
+      }
+
+      /**
+       * Ask the core for the authoritative expected/difference/remaining and
+       * the preview hashes. The pad account is resolved by the core; the client
+       * only remembers it so later previews and the commit carry the same one.
+       */
+      async function previewRecon(editor) {
+        const key = reconKey(editor);
+        try {
+          const preview = await postJson(API.reconPreview, reconPayload(editor));
+          setReconEditor((previous) => {
+            if (previous === null || reconKey(previous) !== key) return previous;
+            const next = {
+              ...previous,
+              preview,
+              expected: preview.expected,
+              mode: preview.mode,
+              padAccount: previous.padAccount || preview.defaultPadAccount || '',
+              error: null,
+            };
+            // Keep the fingerprint aligned with the state that now carries the
+            // resolved pad account, so the debounce effect does not fire again.
+            return { ...next, previewFor: reconKey(next) };
           });
-          return t('draftSaved');
-        }, '');
+        } catch (failure) {
+          setReconEditor((previous) => {
+            if (previous === null || reconKey(previous) !== key) return previous;
+            return { ...previous, preview: null, previewFor: key, error: describeFailure(t, failure) };
+          });
+        }
+      }
+
+      async function commitRecon(editor) {
+        const payload = reconPayload(editor);
+        setReconEditor({ ...editor, busy: 'commit', error: null });
+        try {
+          // The preview is an input to commit, not a step the user must press.
+          // If the form changed since the last debounce, get a fresh one first.
+          const preview = editor.preview !== null && editor.previewFor === reconKey(editor)
+            ? editor.preview
+            : await postJson(API.reconPreview, payload);
+          if (!payload.padAccount && preview.defaultPadAccount) payload.padAccount = preview.defaultPadAccount;
+          await postJson(API.reconCommit, {
+            ...payload,
+            mode: preview.mode,
+            previewId: preview.previewId,
+            ledgerRevision: preview.ledgerRevision,
+            inputsHash: preview.inputsHash,
+            directivesHash: preview.directivesHash,
+            replaces: preview.replaces,
+          });
+          setReconEditor(null);
+          setNotice(t('reconCommitted'));
+          await load();
+        } catch (failure) {
+          setReconEditor((previous) => (previous === null ? previous : { ...previous, busy: null, error: describeFailure(t, failure) }));
+        }
+      }
+
+      // Typing should not require a button: debounce one preview once the
+      // inputs settle. A response for older inputs is ignored (key check).
+      React.useEffect(() => {
+        if (reconEditor === null || reconEditor.busy !== null || reconEditor.actual.trim() === '') return undefined;
+        if (reconEditor.previewFor === reconKey(reconEditor)) return undefined;
+        const timer = setTimeout(() => {
+          void previewRecon(reconEditor);
+        }, 400);
+        return () => clearTimeout(timer);
+      }, [reconEditor]);
+
+      function updateRecon(patch) {
+        setReconEditor((previous) => (previous === null ? previous : { ...previous, ...patch }));
+      }
+
+      function updateReconRow(index, patch) {
+        setReconEditor((previous) => {
+          if (previous === null) return previous;
+          const rows = previous.rows.slice();
+          rows[index] = { ...rows[index], ...patch };
+          return { ...previous, rows };
+        });
+      }
+
+      function addReconRow() {
+        setReconEditor((previous) => (previous === null ? previous : { ...previous, rows: [...previous.rows, newAllocationRow(previous.asOf)] }));
+      }
+
+      function removeReconRow(index) {
+        setReconEditor((previous) => (previous === null ? previous : { ...previous, rows: previous.rows.filter((_, at) => at !== index) }));
+      }
+
+      function openNewAccount() {
+        setNewAccount({ account: 'Assets:Savings:Bank:', alias: '' });
+        setNewAccountOpen(true);
       }
 
       function createAccount() {
@@ -919,59 +1508,27 @@ window.__ModuleLoader__.load({
           reportError(t('accountCanonical'));
           return;
         }
-        const payload = {
-          account,
-          currency: newAccount.currency || ledgerCurrency,
-          date: newAccount.date || today,
-        };
+        const payload = { account, currency: ledgerCurrency };
         if (newAccount.alias.trim() !== '') payload.alias = newAccount.alias.trim();
-        if (newAccount.reconcile !== 'none') payload.reconcile = newAccount.reconcile;
         void runAction('account-open', async () => {
           await postJson(API.accountOpen, payload);
           setNewAccountOpen(false);
+          setAccountSelected(account);
+          setAccountDraft(null);
           return fill(t('accountAdded'), { name: account });
         }, '');
       }
 
       function approveDraft(draft) {
-        const postings = postingsFor(draft);
-        if (postings.some((posting) => posting.account === null)) {
+        if (draft.postings.some((posting) => posting.account === null)) {
           reportError(t('errorUnresolved'));
           return;
         }
-        const bind = bindChecks[draft.id] === true;
-        const target = bindTargets[draft.id] ?? '';
-        const alias = aliasesByDraft[draft.id] ?? '';
-        if (bind && (target === '' || alias.trim() === '')) {
-          reportError(t('bindTargetRequired'));
-          return;
-        }
         void runAction(`approve:${draft.id}`, async () => {
-          let aliasWritten = false;
-          if (bind) {
-            try {
-              await postJson(API.metadata, { account: target, alias: alias.trim() });
-              aliasWritten = true;
-            } catch (failure) {
-              const described = describeFailure(t, failure);
-              failure.handled = true;
-              failure.message = `${t('bindFailed')}${described}`;
-              throw failure;
-            }
-          }
-          try {
-            const response = await postJson(API.approve, { id: draft.id, postings });
-            return response.committed
-              ? fill(t('approvedWritten'), { file: response.draft?.approved?.file ?? '' })
-              : t('approvedExisting');
-          } catch (failure) {
-            if (aliasWritten) {
-              const described = describeFailure(t, failure);
-              failure.handled = true;
-              failure.message = fill(t('bindWrittenApproveFailed'), { error: described });
-            }
-            throw failure;
-          }
+          const response = await postJson(API.approve, { id: draft.id });
+          return response.committed
+            ? fill(t('approvedWritten'), { file: response.draft?.approved?.file ?? '' })
+            : t('approvedExisting');
         }, '');
       }
 
@@ -982,37 +1539,112 @@ window.__ModuleLoader__.load({
         }, '');
       }
 
-      function saveAccount(account) {
-        const edit = accountEdits[account.account] ?? { alias: account.alias ?? '', period: account.period ?? 'none' };
-        const body = { account: account.account };
+      function approveOperation(operation) {
+        void runAction(`op-approve:${operation.id}`, async () => {
+          await postJson(API.operationApprove, { id: operation.id, actor: 'panel' });
+          return t('operationApproved');
+        }, '');
+      }
+
+      function rejectOperation(operation) {
+        void runAction(`op-reject:${operation.id}`, async () => {
+          await postJson(API.operationReject, { id: operation.id, actor: 'panel' });
+          return t('operationRejected');
+        }, '');
+      }
+
+      function approveAllOperations() {
+        void runAction('op-approve-all', async () => {
+          const response = await postJson(API.operationApproveAll, {});
+          const approved = response?.approved ?? 0;
+          const failed = (response?.failed ?? []).length;
+          const done = fill(t('approvedAllOps'), { count: approved });
+          return failed > 0 ? `${done}；${fill(t('approveAllFailed'), { count: failed })}` : done;
+        }, '');
+      }
+
+      function approveAllDrafts() {
+        void runAction('draft-approve-all', async () => {
+          const response = await postJson(API.draftApproveAll, {});
+          const approved = response?.approved ?? 0;
+          const skipped = (response?.skipped ?? []).length;
+          return fill(t('approvedAllDrafts'), { count: approved, skipped });
+        }, '');
+      }
+
+      function expandAccountAncestors(path) {
+        const parts = path.split(':');
+        setAccountExpanded((previous) => {
+          const next = { ...previous };
+          for (let index = 1; index < parts.length; index += 1) next[parts.slice(0, index).join(':')] = true;
+          return next;
+        });
+      }
+
+      function selectAccountNow(path) {
+        setAccountSelected(path);
+        setAccountDraft(null);
+        setAccountPendingSelect(null);
+        expandAccountAncestors(path);
+      }
+
+      function requestAccountSelect(account) {
+        if (account.account === accountSelected) return;
+        if (accountDirty) {
+          setAccountPendingSelect(account.account);
+          return;
+        }
+        selectAccountNow(account.account);
+      }
+
+      function toggleAccountExpanded(path, expanded) {
+        setAccountExpanded((previous) => ({ ...previous, [path]: !expanded }));
+      }
+
+      function toggleAccountHidden() {
+        const next = !accountShowHidden;
+        setAccountShowHidden(next);
+        if (!next && accountQuery.trim() === '' && selectedAccount !== null && (selectedAccount.implicit === true || selectedAccount.closed === true)) {
+          setAccountSelected(null);
+          setAccountDraft(null);
+        }
+      }
+
+      function updateSelectedDraft(patch) {
+        if (selectedDraft === null) return;
+        setAccountDraft({ ...selectedDraft, ...patch });
+      }
+
+      function saveSelectedAccount(forceClear = false) {
+        if (selectedAccount === null || selectedDraft === null || selectedReadonly) return;
+        const alias = selectedDraft.alias.trim();
+        if (alias === '' && (selectedAccount.alias ?? '') !== '' && !forceClear) {
+          setAccountClearOpen(true);
+          return;
+        }
+        if (selectedHasChildren && selectedDraft.period !== (selectedAccount.period ?? 'none')) return;
+        const body = { account: selectedAccount.account };
         let changed = false;
-        // Only write what the user actually edited: an alias-only save must not
-        // add a `reconcile: "none"` line to an account that had no period.
-        if (edit.period !== (account.period ?? 'none')) {
-          body.reconcile = edit.period;
+        if (selectedDraft.period !== (selectedAccount.period ?? 'none')) {
+          body.reconcile = selectedDraft.period;
           changed = true;
         }
-        const alias = edit.alias.trim();
-        if (alias !== (account.alias ?? '')) {
+        if (alias !== (selectedAccount.alias ?? '')) {
           if (alias === '') body.clear_alias = true;
           else body.alias = alias;
           changed = true;
         }
         if (!changed) {
           setActionError(null);
-          setNotice(fill(t('saved'), { name: account.name }));
+          setNotice(fill(t('saved'), { name: selectedAccount.name }));
+          setAccountDraft(null);
           return;
         }
-        void runAction(`account:${account.account}`, async () => {
+        void runAction(`account:${selectedAccount.account}`, async () => {
           await postJson(API.metadata, body);
-          return fill(t('saved'), { name: account.name });
-        }, '');
-      }
-
-      function clearAlias(account) {
-        void runAction(`account:${account.account}`, async () => {
-          await postJson(API.metadata, { account: account.account, clear_alias: true });
-          return fill(t('saved'), { name: account.name });
+          setAccountDraft(null);
+          setAccountClearOpen(false);
+          return fill(t('saved'), { name: selectedAccount.name });
         }, '');
       }
 
@@ -1034,26 +1666,131 @@ window.__ModuleLoader__.load({
         }
       }
 
+      /** Resolve the host directory-picker Remote namespace on demand. */
+      function resolveDirectoryPicker() {
+        try {
+          const picker = clientContext?.get('remote.directoryPicker');
+          return typeof picker?.pick === 'function' ? picker : null;
+        } catch {
+          return null;
+        }
+      }
+
+      /**
+       * Read one directory level into the in-app browser.
+       *
+       * The browse capability is the fallback for hosts whose directory picker
+       * resolves to `browse` (for example a headless Linux box without zenity);
+       * `pick` then refuses and the panel lists directories itself.
+       * @param {object} picker directory-picker Remote namespace.
+       * @param {string | undefined} target absolute directory, or undefined for home.
+       * @param {boolean} [fallbackHome] retry at home when `target` cannot be listed.
+       * @returns {Promise<void>}
+       */
+      async function refreshDirectory(picker, target, fallbackHome = false) {
+        setDirPicker((previous) => (previous === null ? previous : { ...previous, loading: true, error: null }));
+        try {
+          if (typeof picker.list !== 'function') throw new Error('directory listing is unavailable');
+          const result = await picker.list(typeof target === 'string' && target !== '' ? target : undefined);
+          if (result?.ok !== true) throw new Error(result?.error?.message ?? 'directory listing failed');
+          const listing = result.value;
+          if (listing === null || typeof listing !== 'object' || typeof listing.path !== 'string') {
+            throw new Error('directory listing was malformed');
+          }
+          setDirPicker((previous) => (
+            previous === null ? previous : { ...previous, listing, loading: false, error: null }
+          ));
+        } catch (failure) {
+          if (fallbackHome && typeof target === 'string' && target !== '') {
+            await refreshDirectory(picker, undefined);
+            return;
+          }
+          setDirPicker((previous) => (
+            previous === null
+              ? previous
+              : { ...previous, loading: false, error: fill(t('dirPickerFailed'), { message: failure?.message ?? '' }) }
+          ));
+        }
+      }
+
+      async function chooseSetupDirectory() {
+        const picker = resolveDirectoryPicker();
+        if (picker === null) {
+          reportError(t('setupPickFailed'));
+          return;
+        }
+        try {
+          const result = await picker.pick();
+          if (result?.ok === true) {
+            if (typeof result.value === 'string' && result.value.trim() !== '') {
+              setSetupForm((previous) => ({ ...previous, root: result.value }));
+            }
+            return;
+          }
+        } catch {
+          // No native chooser: fall through to the in-app browser below.
+        }
+        setDirPicker({ picker, listing: null, loading: true, error: null, newName: '', busy: null });
+        await refreshDirectory(picker, setupForm.root || setup?.root || undefined, true);
+      }
+
+      async function createDirectoryInPicker() {
+        if (dirPicker === null || dirPicker.listing === null || dirPicker.busy !== null) return;
+        const name = dirPicker.newName.trim();
+        if (name === '' || typeof dirPicker.picker.createDirectory !== 'function') return;
+        const parent = dirPicker.listing.path;
+        setDirPicker((previous) => (previous === null ? previous : { ...previous, busy: 'create', error: null }));
+        try {
+          const result = await dirPicker.picker.createDirectory(parent, name);
+          if (result?.ok !== true) throw new Error(result?.error?.message ?? 'create directory failed');
+          const created = typeof result.value === 'string' && result.value !== '' ? result.value : parent;
+          setDirPicker((previous) => (previous === null ? previous : { ...previous, busy: null, newName: '' }));
+          await refreshDirectory(dirPicker.picker, created);
+        } catch (failure) {
+          setDirPicker((previous) => (
+            previous === null
+              ? previous
+              : { ...previous, busy: null, error: fill(t('dirPickerCreateFailed'), { message: failure?.message ?? '' }) }
+          ));
+        }
+      }
+
+      function confirmDirectorySelection() {
+        if (dirPicker === null || dirPicker.listing === null) return;
+        const chosen = dirPicker.listing.path;
+        setSetupForm((previous) => ({ ...previous, root: chosen }));
+        setDirPicker(null);
+      }
+
       function createLedger() {
         const title = setupForm.title.trim();
         if (title === '') {
           reportError(t('setupNameRequired'));
           return;
         }
+        const root = setupForm.root.trim() || setup?.root || '';
         void runAction('init', async () => {
-          await postJson(API.init, { title, currency: setupForm.currency });
-          return fill(t('setupCreated'), { title });
+          const response = await postJson(API.init, { title, root });
+          const created = response?.value ?? {};
+          const opened = created.existing === true;
+          return fill(t(opened ? 'setupOpened' : 'setupCreated'), { title: created.title ?? title });
         }, '');
       }
 
       function openEntry() {
+        setEntryPicker(null);
         setEntry({ kind: 'expense', date: today, payee: '', amount: '', category: '', source: '', narration: '' });
         setEntryOpen(true);
         setTab('review');
       }
 
       function updateEntry(patch) {
-        setEntry((previous) => ({ ...previous, ...patch }));
+        setEntry((previous) => {
+          // A native <select> can echo the same change again while its menu is
+          // closing; returning the same state stops that from re-rendering in a loop.
+          const changed = Object.keys(patch).some((key) => previous[key] !== patch[key]);
+          return changed ? { ...previous, ...patch } : previous;
+        });
       }
 
       function saveEntry() {
@@ -1095,11 +1832,6 @@ window.__ModuleLoader__.load({
         }, '');
       }
 
-      function updateAccountEdit(account, patch) {
-        const current = accountEdits[account.account] ?? { alias: account.alias ?? '', period: account.period ?? 'none' };
-        setAccountEdits((previous) => ({ ...previous, [account.account]: { ...current, ...patch } }));
-      }
-
       const header = h(
         'header',
         { style: S.head },
@@ -1108,14 +1840,10 @@ window.__ModuleLoader__.load({
           'div',
           { style: S.headText },
           h('h1', { style: S.title }, t('title')),
-          h('p', { style: S.subtitle }, t('subtitle')),
         ),
         h(
           'div',
           { style: S.headMeta },
-          (data?.root ?? setup?.root) ? h('span', { style: S.meta, title: data?.root ?? setup?.root }, `${t('path')}: ${data?.root ?? setup?.root}`) : null,
-          (data?.today ?? setup?.today) ? h('span', { style: S.meta }, `${t('today')}: ${data?.today ?? setup?.today}`) : null,
-          data ? h(Button, { variant: 'primary', onClick: openEntry, disabled: busy !== null }, t('manualEntry')) : null,
           h(Button, { onClick: () => { void load(); }, busy: loading, disabled: busy !== null, variant: 'outline' }, loading ? t('refreshing') : t('refresh')),
         ),
       );
@@ -1148,7 +1876,6 @@ window.__ModuleLoader__.load({
           'div',
           { style: S.inner },
           header,
-          h('p', { style: S.intro }, t('intro')),
           loadError !== null && (data !== null || setup?.initialized === false || (engine !== null && engine.ready !== true))
             ? h(
                 'div',
@@ -1194,14 +1921,165 @@ window.__ModuleLoader__.load({
               )
             : null,
           body,
+          renderDirectoryPicker(),
         ),
       );
+
+      function renderReconEditor() {
+        const editor = reconEditor;
+        if (editor === null) return null;
+        const preview = editor.preview;
+        const stale = preview !== null && editor.previewFor !== reconKey(editor);
+        const allocationAccounts = metadataAccounts.slice().sort((left, right) => left.name.localeCompare(right.name));
+        const pickerQuery = reconAccountPicker?.query?.trim().toLowerCase() ?? '';
+        const pickerAccounts = pickerQuery === ''
+          ? allocationAccounts
+          : allocationAccounts.filter((account) => `${account.name} ${account.account}`.toLowerCase().includes(pickerQuery));
+        const mode = preview?.mode ?? editor.mode;
+        const modeLabel = mode === 'update' ? t('reconModeUpdate') : t('reconModeCreate');
+        // Difference is pure subtraction on the previewed expected balance, so
+        // it updates while typing. The core still recomputes it on commit.
+        const expectedText = preview?.expected ?? editor.expected ?? null;
+        const actualScaled = editor.actual.trim() === '' ? null : parseScaledAmount(editor.actual);
+        const expectedScaled = expectedText === null ? null : parseScaledAmount(expectedText);
+        const differenceScaled = actualScaled === null || expectedScaled === null ? null : actualScaled - expectedScaled;
+        const differenceText = differenceScaled === null ? '—' : formatScaledAmount(differenceScaled);
+        const padAccount = preview?.defaultPadAccount ?? editor.padAccount ?? null;
+        const padLabel = padAccount === null
+          ? null
+          : (metadataAccounts.find((account) => account.account === padAccount)?.name ?? padAccount);
+        const remainingScaled = preview === null || preview.remaining == null ? null : parseScaledAmount(preview.remaining);
+        const liabilityAccount = editor.account.startsWith('Liabilities:');
+        // Allocation is only meaningful with a difference: a zero balance either
+        // matches exactly or has no actual yet, so the whole allocation block
+        // stays hidden until the difference is known and non-zero.
+        const hasDifference = differenceScaled !== null && differenceScaled !== 0;
+        const showPadHint = hasDifference && editor.rows.length === 0 && padLabel !== null;
+        const showRemainingHint = editor.rows.length > 0 && !stale && remainingScaled !== null && remainingScaled !== 0 && padLabel !== null;
+        return h(
+          'div',
+          { style: { ...S.card, marginBottom: 12 } },
+          h(
+            'div',
+            { style: S.spread },
+            h(
+              'div',
+              { style: S.grow },
+              h('div', { style: S.name }, `${t('reconOpen')}: ${editor.name}`),
+              h('div', { style: S.canonical }, editor.account),
+            ),
+            h('span', { style: S.row }, h(Badge, { tone: mode === 'update' ? 'due' : 'pending' }, modeLabel), h(Button, { onClick: () => setReconEditor(null), disabled: editor.busy !== null }, t('reconClose'))),
+          ),
+          h(
+            'div',
+            { style: { ...S.row, marginTop: 10, flexWrap: 'wrap' } },
+            h(Field, { label: t('reconActual') }, h('input', { style: { ...S.input, ...S.amountInput }, inputMode: 'decimal', placeholder: '0.00', disabled: editor.busy !== null, value: editor.actual, onChange: (event) => updateRecon({ actual: event.target.value }) })),
+            h(Field, { label: t('reconExpected') }, h('span', { style: S.mono }, expectedText ?? '—')),
+            h(Field, { label: t('reconDifference') }, h('span', { style: S.mono }, differenceText)),
+          ),
+          liabilityAccount ? h('p', { style: S.hint }, t('liabilityNegativeHint')) : null,
+          hasDifference
+            ? h(
+                'div',
+                { style: { marginTop: 12 } },
+                h('h3', { style: { ...S.sectionTitle, fontSize: 13 } }, t('reconAllocations')),
+                showPadHint ? h('p', { style: S.hint }, fill(t('reconAutoPadHint'), { account: padLabel })) : null,
+                editor.rows.length === 0
+                  ? null
+                  : h(
+                      'div',
+                      { style: S.tableScroll },
+                      h(
+                        'table',
+                        { style: S.table },
+                        h('thead', null, h('tr', null, h('th', { style: S.th }, t('accountName')), h('th', { style: S.th }, t('reconAmount')), h('th', { style: S.th }, t('reconDate')), h('th', { style: S.th }, t('reconNote')), h('th', { style: S.th }, ''))),
+                        h(
+                          'tbody',
+                          null,
+                          editor.rows.map((row, index) =>
+                            h(
+                              'tr',
+                              { key: `recon-row-${index}` },
+                              h('td', { style: S.td }, h(
+                                'button',
+                                {
+                                  type: 'button',
+                                  style: { ...S.input, width: '100%', textAlign: 'left', cursor: 'pointer', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
+                                  disabled: editor.busy !== null,
+                                  onClick: () => setReconAccountPicker({ index, query: '' }),
+                                },
+                                row.account
+                                  ? (allocationAccounts.find((account) => account.account === row.account)?.name ?? row.account)
+                                  : t('reconChooseAccount'),
+                              )),
+                              h('td', { style: S.td }, h('input', { style: { ...S.input, ...S.amountInput }, inputMode: 'decimal', placeholder: '0.00', disabled: editor.busy !== null, value: row.amount, onChange: (event) => updateReconRow(index, { amount: event.target.value }) })),
+                              h('td', { style: S.td }, h('input', { type: 'date', style: S.input, max: editor.asOf, disabled: editor.busy !== null, value: row.date ?? editor.asOf, onChange: (event) => updateReconRow(index, { date: event.target.value }) })),
+                              h('td', { style: S.td }, h('input', { style: S.input, disabled: editor.busy !== null, value: row.note, onChange: (event) => updateReconRow(index, { note: event.target.value }) })),
+                              h('td', { style: S.td }, h(Button, { variant: 'danger', onClick: () => removeReconRow(index), disabled: editor.busy !== null }, '×')),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                h('div', { style: { ...S.row, marginTop: 8 } }, h(Button, { onClick: addReconRow, disabled: editor.busy !== null }, t('reconAddAllocation'))),
+                showRemainingHint ? h('p', { style: S.hint }, fill(t('reconRemainingHint'), { amount: preview.remaining, account: padLabel })) : null,
+              )
+            : null,
+          h(
+            'div',
+            { style: { ...S.row, marginTop: 10 } },
+            h(Button, { variant: 'primary', onClick: () => commitRecon(editor), busy: editor.busy === 'commit', disabled: editor.busy !== null || editor.actual.trim() === '' }, editor.busy === 'commit' ? t('reconCommitting') : t('reconCommit')),
+          ),
+          editor.error ? h('div', { style: { ...S.alert, ...S.alertError }, role: 'alert' }, editor.error) : null,
+          reconAccountPicker !== null
+            ? h(
+                Modal,
+                {
+                  title: t('reconChooseAccount'),
+                  onClose: () => setReconAccountPicker(null),
+                  footer: [h(Button, { key: 'cancel', onClick: () => setReconAccountPicker(null) }, t('entryCancel'))],
+                },
+                h(
+                  'div',
+                  { style: { display: 'grid', gap: 8 } },
+                  h('input', {
+                    autoFocus: true,
+                    style: S.input,
+                    placeholder: t('searchAccounts'),
+                    value: reconAccountPicker.query,
+                    onChange: (event) => setReconAccountPicker((previous) => (previous === null ? previous : { ...previous, query: event.target.value })),
+                  }),
+                  h(
+                    'div',
+                    { style: { display: 'grid', gap: 4, maxHeight: '52vh', overflow: 'auto' } },
+                    pickerAccounts.length === 0
+                      ? h('div', { style: S.empty }, t('noAccounts'))
+                      : pickerAccounts.map((account) =>
+                          h(
+                            'button',
+                            {
+                              key: account.account,
+                              type: 'button',
+                              style: { ...S.input, display: 'grid', gap: 2, textAlign: 'left', cursor: 'pointer' },
+                              onClick: () => {
+                                updateReconRow(reconAccountPicker.index, { account: account.account });
+                                setReconAccountPicker(null);
+                              },
+                            },
+                            h('span', { style: S.name }, account.name),
+                            h('span', { style: S.canonical }, account.account),
+                          ),
+                        ),
+                  ),
+                ),
+              )
+            : null,
+        );
+      }
 
       function renderReconcile() {
         const rows = [];
         for (const account of dueAccounts) {
-          const input = inputFor(account);
-          const key = `balance:${account.account}`;
           rows.push(
             h(
               'div',
@@ -1213,46 +2091,9 @@ window.__ModuleLoader__.load({
                   'div',
                   { style: S.grow },
                   h('div', { style: S.name }, account.name),
-                  account.alias ? h('div', { style: S.canonical }, account.account) : null,
-                  h(
-                    'div',
-                    { style: { ...S.row, marginTop: 4 } },
-                    h(Badge, { tone: account.status }, account.status === 'overdue' ? t('overdue') : t('due')),
-                    h('span', { style: S.label }, `${t('period')}: ${periodLabel(t, account.period)}`),
-                    h('span', { style: S.label }, `${t('lastBalance')}: ${account.lastBalance ? formatMoney(account.lastBalance.amount, account.lastBalance.currency) : '—'}`),
-                    h('span', { style: S.label }, `${t('nextDue')}: ${account.nextDue ?? '—'}`),
-                  ),
+                  h('div', { style: S.canonical }, account.account),
                 ),
-                h(
-                  'div',
-                  { style: S.row },
-                  h(
-                    'input',
-                    {
-                      style: { ...S.input, ...S.amountInput },
-                      inputMode: 'decimal',
-                      placeholder: '0.00',
-                      disabled: busy !== null,
-                      'aria-label': `${t('declareBalance')} ${account.name}`,
-                      value: input.amount,
-                      onChange: (event) => updateInput(account, { amount: event.target.value }),
-                    },
-                  ),
-                  h(
-                    'select',
-                    {
-                      style: { ...S.select, ...S.currencySelect },
-                      disabled: busy !== null,
-                      'aria-label': `${account.name} ${t('currency')}`,
-                      value: input.currency,
-                      onChange: (event) => updateInput(account, { currency: event.target.value }),
-                    },
-                    (account.currencies.length > 0 ? account.currencies : currencyOptions).map((currency) =>
-                      h('option', { key: currency, value: currency }, currency),
-                    ),
-                  ),
-                  h(Button, { variant: 'primary', onClick: () => submitBalance(account), busy: busy === key, disabled: busy !== null }, busy === key ? t('submitting') : t('submit')),
-                ),
+                h(Button, { variant: 'primary', onClick: () => openRecon(account), disabled: busy !== null }, t('reconOpen')),
               ),
             ),
           );
@@ -1267,63 +2108,101 @@ window.__ModuleLoader__.load({
               'div',
               null,
               h('h2', { style: S.sectionTitle }, t('reconcileTitle')),
-              h('p', { style: S.hint }, t('reconcileHint')),
             ),
-            h('span', { style: S.label }, `${dueAccounts.length} ${t('due')} · ${dueAccounts.filter((account) => account.status === 'overdue').length} ${t('overdue')}`),
           ),
+          renderReconEditor(),
           dueAccounts.length === 0
             ? h('div', { style: S.empty }, reconciliationAccounts.length === 0 ? t('noPeriod') : t('allClear'))
             : h('div', { style: { display: 'grid', gap: 10 } }, rows),
-          scheduledAccounts.length > 0
-            ? h(
-                'details',
-                { style: S.details },
-                h('summary', { style: S.summary }, `${t('scheduledTitle')} (${scheduledAccounts.length})`),
-                h(
-                  'div',
-                  { style: { ...S.tableScroll, marginTop: 8 } },
-                  h(
-                    'table',
-                    { style: S.table },
-                    h(
-                      'thead',
-                      null,
-                      h(
-                        'tr',
-                        null,
-                        h('th', { style: S.th }, t('accountName')),
-                        h('th', { style: S.th }, t('period')),
-                        h('th', { style: S.th }, t('lastBalance')),
-                        h('th', { style: S.th }, t('nextDue')),
-                      ),
-                    ),
-                    h(
-                      'tbody',
-                      null,
-                      scheduledAccounts.map((account) =>
-                        h(
-                          'tr',
-                          { key: account.account },
-                          h('td', { style: S.td }, account.name),
-                          h('td', { style: S.td }, periodLabel(t, account.period)),
-                          h('td', { style: S.td }, account.lastBalance ? formatMoney(account.lastBalance.amount, account.lastBalance.currency) : '—'),
-                          h('td', { style: S.td }, account.nextDue ?? '—'),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              )
-            : null,
           data.issues.length > 0 ? renderIssues() : null,
+        );
+      }
+
+      function renderOperations() {
+        if (pendingOperations.length === 0) return null;
+        const cards = pendingOperations.map((operation) => {
+          const blocked = operation.issues.length > 0;
+          const kindName = operationKindName(t, operation.kind);
+          return h(
+            'div',
+            { key: operation.id, style: S.card },
+            h(
+              'div',
+              { style: S.spread },
+              h(
+                'div',
+                { style: S.grow },
+                h('div', { style: S.name }, operationSummary(t, operation)),
+                kindName ? h('div', { style: S.canonical }, kindName) : null,
+              ),
+              h(Badge, { tone: 'pending' }, t('statusPending')),
+            ),
+            operation.reason
+              ? h('div', { style: S.label }, `${t('rejectReason')}: ${operation.reason}`)
+              : null,
+            blocked
+              ? h(
+                  'div',
+                  { style: { ...S.label, color: 'var(--dsw-alias-state-error-primary)' } },
+                  operation.issues.map((issue) => issueText(t, issue)).join('；'),
+                )
+              : null,
+            h(
+              'div',
+              { style: { ...S.row, gap: 8, marginTop: 8 } },
+              h(
+                Button,
+                {
+                  variant: 'primary',
+                  onClick: () => approveOperation(operation),
+                  busy: busy === `op-approve:${operation.id}`,
+                  disabled: busy !== null || blocked || operation.proposable === false,
+                },
+                t('operationApprove'),
+              ),
+              h(
+                Button,
+                {
+                  variant: 'outline',
+                  onClick: () => rejectOperation(operation),
+                  busy: busy === `op-reject:${operation.id}`,
+                  disabled: busy !== null,
+                },
+                t('operationReject'),
+              ),
+            ),
+          );
+        });
+        return h(
+          'div',
+          { style: { display: 'grid', gap: 10, marginBottom: 16 } },
+          h(
+            'div',
+            { style: S.spread },
+            h(
+              'div',
+              { style: S.grow },
+              h('h3', { style: S.sectionTitle }, `${t('operationsTitle')} (${pendingOperations.length})`),
+            ),
+            h(
+              Button,
+              {
+                variant: 'primary',
+                onClick: approveAllOperations,
+                busy: busy === 'op-approve-all',
+                disabled: busy !== null || pendingOperations.some((operation) => operation.issues.length > 0),
+              },
+              fill(t('approveAllOps'), { count: pendingOperations.length }),
+            ),
+          ),
+          h('div', { style: { display: 'grid', gap: 10 } }, cards),
         );
       }
 
       function renderReview() {
         const cards = pendingDrafts.map((draft) => {
-          const postings = postingsFor(draft);
+          const postings = draft.postings;
           const hasUnresolved = postings.some((posting) => posting.account === null);
-          const originallyUnresolved = draft.postings.some((posting) => posting.account === null);
           const blocking = draft.issues.filter((issue) => {
             if (issue.code === 'unresolved_account') return hasUnresolved;
             return ['unbalanced', 'before_account_open', 'closed_account'].includes(issue.code);
@@ -1338,39 +2217,12 @@ window.__ModuleLoader__.load({
                 'div',
                 { style: S.grow },
                 h('div', { style: S.name }, `${draft.date} · ${draft.payee || draft.narration}`),
-                h('div', { style: S.canonical }, `${t('draftId')}: ${draft.id}${draft.source?.kind ? ` · ${t('source')}: ${draft.source.kind}` : ''}${typeof draft.confidence === 'number' ? ` · ${t('confidence')}: ${Math.round(draft.confidence * 100)}%` : ''}`),
+                draftMetaLine(t, draft) ? h('div', { style: S.canonical }, draftMetaLine(t, draft)) : null,
+                draft.narration && draft.narration !== draft.payee
+                  ? h('div', { style: { ...S.canonical, overflowWrap: 'anywhere' } }, draft.narration)
+                  : null,
               ),
               h(Badge, { tone: 'pending' }, t('statusPending')),
-            ),
-            h(
-              'div',
-              { style: { ...S.row, gap: 6, flexWrap: 'wrap' } },
-              h('input', {
-                style: { ...S.input, width: 220 },
-                placeholder: t('draftPayee'),
-                'aria-label': `${t('draftPayee')} ${draft.id}`,
-                disabled: busy !== null,
-                value: metaFor(draft).payee,
-                onChange: (event) => setDraftMeta((previous) => ({ ...previous, [draft.id]: { ...metaFor(draft), payee: event.target.value } })),
-              }),
-              h('input', {
-                style: { ...S.input, width: 260 },
-                placeholder: t('draftNarration'),
-                'aria-label': `${t('draftNarration')} ${draft.id}`,
-                disabled: busy !== null,
-                value: metaFor(draft).narration,
-                onChange: (event) => setDraftMeta((previous) => ({ ...previous, [draft.id]: { ...metaFor(draft), narration: event.target.value } })),
-              }),
-              h(
-                Button,
-                {
-                  variant: 'outline',
-                  onClick: () => saveDraftMeta(draft),
-                  busy: busy === `draft-meta:${draft.id}`,
-                  disabled: busy !== null || hasUnresolved,
-                },
-                busy === `draft-meta:${draft.id}` ? t('saving') : t('saveDraft'),
-              ),
             ),
             h(
               'ul',
@@ -1382,20 +2234,11 @@ window.__ModuleLoader__.load({
                   h(
                     'span',
                     { style: { ...S.value, display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' } },
-                    draft.postings[index]?.account === null
-                      ? h(
-                          'select',
-                          {
-                            style: S.select,
-                            disabled: busy !== null,
-                            value: posting.account ?? '',
-                            'aria-label': `${t('chooseAccount')} ${index + 1}`,
-                            onChange: (event) => editPosting(draft, index, event.target.value),
-                          },
-                          h('option', { value: '' }, `${t('unresolved')}: ${posting.suggested || '—'}`),
-                          openAccounts.map((account) => h('option', { key: account.account, value: account.name }, account.name)),
-                        )
-                      : h('span', null, posting.account),
+                    h(
+                      'span',
+                      null,
+                      posting.account ?? `${t('unresolved')}: ${posting.suggested || '—'}`,
+                    ),
                   ),
                   h('span', { style: S.mono }, formatMoney(posting.amount, posting.currency)),
                 ),
@@ -1407,37 +2250,6 @@ window.__ModuleLoader__.load({
                   { style: { display: 'grid', gap: 2 } },
                   h('span', { style: S.label }, t('issues')),
                   blocking.map((issue, index) => h('span', { key: index, style: { ...S.issue, ...S.issueBlocking } }, issueText(t, issue))),
-                )
-              : null,
-            originallyUnresolved
-              ? h(
-                  'div',
-                  { style: S.binding },
-                  h(
-                    'label',
-                    { style: { ...S.row, gap: 6, fontSize: 12 } },
-                    h('input', {
-                      type: 'checkbox',
-                      style: S.checkbox,
-                      disabled: busy !== null,
-                      checked: bindChecks[draft.id] === true,
-                      onChange: (event) => setBindChecks((previous) => ({ ...previous, [draft.id]: event.target.checked })),
-                    }),
-                    t('bindAliasLabel'),
-                    h('span', { style: S.label }, fill(t('bindAlias'), { name: aliasesByDraft[draft.id] || t('unknown') })),
-                  ),
-                  h(
-                    'select',
-                    {
-                      style: S.select,
-                      disabled: busy !== null,
-                      value: bindTargets[draft.id] ?? '',
-                      'aria-label': t('bindTarget'),
-                      onChange: (event) => setBindTargets((previous) => ({ ...previous, [draft.id]: event.target.value })),
-                    },
-                    h('option', { value: '' }, t('bindTarget')),
-                    metadataAccounts.map((account) => h('option', { key: account.account, value: account.name }, account.name)),
-                  ),
                 )
               : null,
             h(
@@ -1477,40 +2289,280 @@ window.__ModuleLoader__.load({
           { style: S.panel },
           h(
             'div',
-            null,
-            h('h2', { style: S.sectionTitle }, t('reviewTitle')),
-            h('p', { style: S.hint }, t('reviewHint')),
+            { style: S.spread },
+            h(
+              'div',
+              { style: S.grow },
+              h('h2', { style: S.sectionTitle }, `${t('reviewTitle')} (${pendingDrafts.length})`),
+            ),
+            h(
+              'div',
+              { style: S.row },
+              h(Button, { variant: 'outline', onClick: openEntry, disabled: busy !== null }, t('manualEntry')),
+              pendingDrafts.length > 0
+                ? h(
+                    Button,
+                    {
+                      variant: 'primary',
+                      onClick: approveAllDrafts,
+                      busy: busy === 'draft-approve-all',
+                      disabled: busy !== null,
+                    },
+                    fill(t('approveAllDrafts'), { count: pendingDrafts.length }),
+                  )
+                : null,
+            ),
           ),
+          pendingDrafts.length > 0 ? h('p', { style: S.hint }, t('draftReadonlyHint')) : null,
           entryOpen ? renderEntryForm() : null,
+          renderOperations(),
           pendingDrafts.length === 0 ? h('div', { style: S.empty }, t('pendingEmpty')) : h('div', { style: { display: 'grid', gap: 10 } }, cards),
-          recentDrafts.length > 0
-            ? h(
-                'details',
-                { style: S.details },
-                h('summary', { style: S.summary }, `${t('recentTitle')} (${recentDrafts.length})`),
-                h(
-                  'div',
-                  { style: { display: 'grid', gap: 6, marginTop: 8 } },
-                  recentDrafts.map((draft) =>
-                    h(
-                      'div',
-                      { key: draft.id, style: { ...S.row, justifyContent: 'space-between', fontSize: 12 } },
-                      h('span', { style: S.value }, `${draft.date} · ${draft.payee || draft.narration}`),
-                      h(
-                        'span',
-                        { style: { ...S.row, gap: 8 } },
-                        draft.approved?.file ? h('span', { style: S.label }, fill(t('approvedAt'), { file: draft.approved.file })) : null,
-                        h(Badge, { tone: draft.status }, statusLabel(t, draft.status)),
-                      ),
-                    ),
-                  ),
-                ),
-              )
-            : null,
         );
       }
 
       function renderAccounts() {
+        const query = accountQuery.trim();
+        const displayTree = accountTree.filter((node) => countTreeLeaves(node) > 0);
+        const isExpanded = (node, depth) => {
+          if (Object.hasOwn(accountExpanded, node.path)) return accountExpanded[node.path] === true;
+          if (query !== '') return node.virtual;
+          return depth === 0 && countTreeDue(node) > 0;
+        };
+        const renderNode = (node, depth) => {
+          const expanded = isExpanded(node, depth);
+          const selected = node.account !== null && node.account.account === accountSelected;
+          const dueCount = node.virtual ? countTreeDue(node) : 0;
+          return h(
+            'div',
+            { key: node.key, role: 'treeitem', 'aria-expanded': node.virtual ? expanded : undefined },
+            h(
+              'div',
+              { style: { ...S.treeRow, ...(selected ? S.treeRowSelected : null), paddingLeft: depth * 12 } },
+              node.virtual
+                ? h(
+                    'button',
+                    {
+                      type: 'button',
+                      style: S.treeToggle,
+                      'aria-label': expanded ? 'collapse' : 'expand',
+                      onClick: () => toggleAccountExpanded(node.path, expanded),
+                    },
+                    expanded ? '▾' : '▸',
+                  )
+                : h('span', { style: { width: 16, minWidth: 16 } }),
+              h(
+                'button',
+                {
+                  type: 'button',
+                  style: S.treeLabel,
+                  title: node.account ? node.account.account : node.path,
+                  onClick: () => (node.account ? requestAccountSelect(node.account) : toggleAccountExpanded(node.path, expanded)),
+                },
+                h('span', { style: { ...S.name, fontSize: 12, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' } }, node.label),
+                node.account && node.account.implicit ? h(Badge, { tone: 'scheduled' }, t('implicit')) : null,
+                node.account && node.account.closed ? h(Badge, { tone: 'rejected' }, t('closed')) : null,
+                node.account && node.hidden && (accountShowHidden || query !== '') ? h(Badge, { tone: 'scheduled' }, t('accountHiddenBadge')) : null,
+                node.account && node.account.unreconciled
+                  ? h('span', { style: { ...S.treeDot, background: 'var(--dsw-alias-state-warn-primary)' }, title: t('reconUnreconciled') })
+                  : null,
+                node.account && !node.account.unreconciled && (node.account.status === 'due' || node.account.status === 'overdue')
+                  ? h('span', {
+                      style: {
+                        ...S.treeDot,
+                        background: node.account.status === 'overdue' ? 'var(--dsw-alias-state-error-primary)' : 'var(--dsw-alias-state-warn-primary)',
+                      },
+                      title: statusLabel(t, node.account.status),
+                    })
+                  : null,
+              ),
+              node.virtual
+                ? h('span', { style: S.treeCount }, `${countTreeLeaves(node)}${dueCount > 0 ? ` · ${dueCount} ${t('due')}` : ''}`)
+                : null,
+            ),
+            node.virtual && expanded ? h('div', { role: 'group' }, node.children.map((child) => renderNode(child, depth + 1))) : null,
+          );
+        };
+
+        const renderDetail = () => {
+          if (selectedAccount === null || selectedDraft === null) {
+            return h('div', { style: S.empty }, t('accountSelectHint'));
+          }
+          const account = selectedAccount;
+          const root = account.account.split(':')[0];
+          const reconcileable = root === 'Assets' || root === 'Liabilities';
+          // The alias is edited inline in the title, so the edit block only
+          // remains when there is something else to edit or a pending change.
+          const showEditSection = !selectedReadonly && (reconcileable || accountDirty);
+          const currencies = account.currencies ?? [];
+          // A single-currency ledger does not need a currency field on every
+          // account; surface it only when it differs from the operating one.
+          const showCurrency = currencies.length > 1 || (currencies.length === 1 && currencies[0] !== ledgerCurrency);
+          const typeLabel = PARENT_LABELS[root] ?? root;
+          // Audit details stay reachable on hover instead of occupying a row.
+          const detailTitle = [
+            account.file ? `${account.file}:${account.line}` : null,
+            account.openDate && !account.implicit ? `${t('accountOpenDate')} ${account.openDate}` : null,
+          ].filter(Boolean).join(' · ');
+          return h(
+            'div',
+            { style: { display: 'grid', gap: 12 } },
+            h(
+              'div',
+              { style: S.spread },
+              h(
+                'div',
+                { style: S.grow },
+                selectedReadonly
+                  ? h('div', { style: { ...S.name, fontSize: 16, fontWeight: 700 } }, account.name)
+                  : aliasEditing === account.account
+                    ? h('input', {
+                        // The resting state is a title; only the active editor
+                        // gets the underline, so no box appears in normal view.
+                        style: {
+                          ...S.name,
+                          fontFamily: 'inherit',
+                          fontSize: 16,
+                          fontWeight: 700,
+                          lineHeight: 1.4,
+                          width: '100%',
+                          maxWidth: 380,
+                          padding: '0 2px',
+                          border: 0,
+                          borderBottom: '1px solid var(--dsw-alias-brand-primary)',
+                          borderRadius: 0,
+                          background: 'transparent',
+                          outline: 'none',
+                          boxSizing: 'border-box',
+                        },
+                        autoFocus: true,
+                        maxLength: 40,
+                        placeholder: account.account,
+                        'aria-label': t('alias'),
+                        disabled: busy !== null,
+                        value: selectedDraft.alias,
+                        onFocus: (event) => event.target.select(),
+                        onBlur: () => setAliasEditing(null),
+                        onChange: (event) => updateSelectedDraft({ alias: event.target.value }),
+                        onKeyDown: (event) => {
+                          if (event.key === 'Enter') {
+                            event.preventDefault();
+                            setAliasEditing(null);
+                          }
+                          if (event.key === 'Escape') {
+                            event.preventDefault();
+                            updateSelectedDraft({ alias: account.alias ?? '' });
+                            setAliasEditing(null);
+                          }
+                        },
+                      })
+                    : h(
+                        'button',
+                        {
+                          type: 'button',
+                          style: {
+                            ...S.name,
+                            fontFamily: 'inherit',
+                            fontSize: 16,
+                            fontWeight: 700,
+                            lineHeight: 1.4,
+                            appearance: 'none',
+                            background: 'transparent',
+                            border: 0,
+                            borderRadius: 0,
+                            padding: '0 2px',
+                            textAlign: 'left',
+                            cursor: 'text',
+                            maxWidth: '100%',
+                            whiteSpace: 'nowrap',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                          },
+                          title: t('accountEditAlias'),
+                          disabled: busy !== null,
+                          onClick: () => setAliasEditing(account.account),
+                        },
+                        selectedDraft.alias.trim() !== '' ? selectedDraft.alias : account.account,
+                      ),
+                h(
+                  'div',
+                  { style: S.canonical, title: detailTitle || undefined },
+                  showCurrency ? `${account.account} · ${currencies.join(', ')}` : account.account,
+                ),
+              ),
+              h(
+                'div',
+                { style: S.row },
+                !selectedReadonly && !selectedHasChildren && reconcileable
+                  ? h(
+                      Button,
+                      {
+                        variant: 'primary',
+                        onClick: () => openRecon(account),
+                        disabled: busy !== null || (reconEditor !== null && reconEditor.account === account.account),
+                      },
+                      reconEditor !== null && reconEditor.account === account.account
+                        ? t('reconEditing')
+                        : account.coveredThrough ? t('reconUpdate') : t('reconOpen'),
+                    )
+                  : null,
+                h(Badge, { tone: 'scheduled' }, typeLabel),
+                account.closed ? h(Badge, { tone: 'rejected' }, t('closed')) : null,
+                account.implicit ? h(Badge, { tone: 'scheduled' }, t('implicit')) : null,
+              ),
+            ),
+            selectedReadonly ? h('div', { style: { ...S.alert, ...S.alertInfo } }, t('accountReadonly')) : null,
+            showEditSection
+              ? h(
+                  'div',
+                  { style: { display: 'grid', gap: 10 } },
+                  reconcileable
+                    ? h(
+                        Field,
+                        { label: t('period') },
+                        h(
+                          'div',
+                          { style: S.row },
+                          PERIODS.map((period) =>
+                            h(
+                              Button,
+                              {
+                                key: period,
+                                variant: selectedDraft.period === period ? 'primary' : 'outline',
+                                disabled: periodDisabled || busy !== null,
+                                onClick: () => updateSelectedDraft({ period }),
+                              },
+                              periodLabel(t, period),
+                            ),
+                          ),
+                        ),
+                      )
+                    : null,
+                  reconcileable && selectedHasChildren ? h('p', { style: S.hint }, t('accountHasChildren')) : null,
+                  h(
+                    'div',
+                    { style: S.row },
+                    h(
+                      Button,
+                      {
+                        variant: 'primary',
+                        onClick: () => saveSelectedAccount(false),
+                        busy: busy === `account:${account.account}`,
+                        disabled: !accountDirty || busy !== null,
+                      },
+                      busy === `account:${account.account}` ? t('saving') : t('save'),
+                    ),
+                    h(
+                      Button,
+                      { onClick: () => setAccountDraft(null), disabled: busy !== null || !accountDirty },
+                      t('entryCancel'),
+                    ),
+                  ),
+                )
+              : null,
+            reconEditor !== null && reconEditor.account === account.account ? renderReconEditor() : null,
+          );
+        };
+
         return h(
           'section',
           { style: S.panel },
@@ -1521,92 +2573,34 @@ window.__ModuleLoader__.load({
               'div',
               null,
               h('h2', { style: S.sectionTitle }, t('accountsTitle')),
-              h('p', { style: S.hint }, t('accountsHint')),
             ),
             h('span', { style: S.label }, fill(t('quota'), { count: accounts.length })),
           ),
           h(
             'div',
-            { style: S.row },
+            { style: S.spread },
             h(
-              Button,
-              { variant: 'outline', onClick: () => setNewAccountOpen((value) => !value), disabled: busy !== null },
-              t('addAccount'),
-            ),
-          ),
-          newAccountOpen
-            ? h(
-                'div',
-                { style: { ...S.card, display: 'grid', gap: 8 } },
-                h(
-                  'div',
-                  { style: { ...S.row, gap: 6, flexWrap: 'wrap' } },
-                  h('input', {
-                    style: { ...S.input, width: 320 },
-                    placeholder: 'Assets:Savings:Bank:Ningbo',
-                    'aria-label': t('accountCanonical'),
-                    disabled: busy !== null,
-                    value: newAccount.account,
-                    onChange: (event) => setNewAccount((previous) => ({ ...previous, account: event.target.value })),
-                  }),
-                  h('input', {
-                    style: { ...S.input, width: 160 },
-                    placeholder: t('aliasPlaceholder'),
-                    'aria-label': t('alias'),
-                    disabled: busy !== null,
-                    value: newAccount.alias,
-                    onChange: (event) => setNewAccount((previous) => ({ ...previous, alias: event.target.value })),
-                  }),
-                  h(
-                    'select',
-                    {
-                      style: S.select,
-                      'aria-label': t('accountCurrency'),
-                      disabled: busy !== null,
-                      value: newAccount.currency,
-                      onChange: (event) => setNewAccount((previous) => ({ ...previous, currency: event.target.value })),
-                    },
-                    currencyOptions.map((currency) => h('option', { key: currency, value: currency }, currency)),
-                  ),
-                  h('input', {
-                    type: 'date',
-                    style: { ...S.input, width: 150 },
-                    'aria-label': t('accountOpenDate'),
-                    max: today,
-                    disabled: busy !== null,
-                    value: newAccount.date || today,
-                    onChange: (event) => setNewAccount((previous) => ({ ...previous, date: event.target.value })),
-                  }),
-                  h(
-                    'select',
-                    {
-                      style: S.select,
-                      'aria-label': t('period'),
-                      disabled: busy !== null,
-                      value: newAccount.reconcile,
-                      onChange: (event) => setNewAccount((previous) => ({ ...previous, reconcile: event.target.value })),
-                    },
-                    PERIODS.map((period) => h('option', { key: period, value: period }, periodLabel(t, period))),
-                  ),
-                  h(
+              'div',
+              { style: S.row },
+              h('input', {
+                style: { ...S.input, width: 280 },
+                placeholder: t('searchAccounts'),
+                'aria-label': t('searchAccounts'),
+                value: accountQuery,
+                onChange: (event) => {
+                  setAccountQuery(event.target.value);
+                  setAccountExpanded({});
+                },
+              }),
+              hiddenCount > 0
+                ? h(
                     Button,
-                    { variant: 'primary', onClick: createAccount, busy: busy === 'account-open', disabled: busy !== null },
-                    busy === 'account-open' ? t('saving') : t('save'),
-                  ),
-                ),
-              )
-            : null,
-          h(
-            'div',
-            { style: S.row },
-            h('input', {
-              style: { ...S.input, width: 260 },
-              placeholder: t('searchAccounts'),
-              'aria-label': t('searchAccounts'),
-              value: accountQuery,
-              onChange: (event) => setAccountQuery(event.target.value),
-            }),
-            data.issues.length > 0 ? h(Badge, { tone: 'due' }, `${t('metadataIssues')} ${fill(t('metadataIssuesCount'), { count: data.issues.length })}`) : h(Badge, { tone: 'approved' }, t('noIssues')),
+                    { variant: 'outline', onClick: toggleAccountHidden, disabled: busy !== null },
+                    accountShowHidden ? t('accountHideHidden') : fill(t('accountShowHidden'), { count: hiddenCount }),
+                  )
+                : null,
+            ),
+            h(Button, { variant: 'primary', onClick: openNewAccount, disabled: busy !== null }, t('addAccount')),
           ),
           data.issues.length > 0
             ? h(
@@ -1615,120 +2609,116 @@ window.__ModuleLoader__.load({
                 data.issues.slice(0, 8).map((issue, index) => h('div', { key: index, style: { ...S.issue, fontSize: 12 } }, issueText(t, issue))),
               )
             : null,
-          filteredAccounts.length === 0
+          displayTree.length === 0
             ? h('div', { style: S.empty }, t('noAccounts'))
             : h(
                 'div',
-                { style: S.tableScroll },
+                { style: S.accountLayout },
                 h(
-                  'table',
-                  { style: S.table },
-                  h(
-                    'thead',
-                    null,
-                    h(
-                      'tr',
-                      null,
-                      h('th', { style: S.th }, t('accountName')),
-                      h('th', { style: S.th }, t('period')),
-                      h('th', { style: S.th }, t('alias')),
-                      h('th', { style: S.th }, t('nextDue')),
-                      h('th', { style: S.th }, ''),
-                    ),
-                  ),
-                  h(
-                    'tbody',
-                    null,
-                    filteredAccounts.map((account) => {
-                      const edit = accountEdits[account.account] ?? { alias: account.alias ?? '', period: account.period ?? 'none' };
-                      const implicit = account.implicit === true;
-                      return h(
-                        'tr',
-                        { key: account.account },
-                        h(
-                          'td',
-                          { style: S.td },
-                          h(
-                            'div',
-                            { style: { ...S.row, gap: 6 } },
-                            h('span', { style: S.name }, account.name),
-                            implicit ? h(Badge, { tone: 'scheduled' }, t('implicit')) : null,
-                            account.closed ? h(Badge, { tone: 'rejected' }, t('closed')) : null,
-                          ),
-                          account.alias ? h('div', { style: S.canonical }, account.account) : null,
-                          implicit ? h('div', { style: { ...S.label, marginTop: 2 } }, t('implicitHint')) : null,
-                        ),
-                        h(
-                          'td',
-                          { style: S.td },
-                          h(
-                            'select',
-                            {
-                              style: { ...S.select, opacity: implicit ? 0.55 : 1 },
-                              value: edit.period,
-                              disabled: implicit || busy !== null,
-                              'aria-label': `${t('period')} ${account.name}`,
-                              onChange: (event) => updateAccountEdit(account, { period: event.target.value }),
-                            },
-                            PERIODS.map((period) => h('option', { key: period, value: period }, periodLabel(t, period))),
-                          ),
-                        ),
-                        h(
-                          'td',
-                          { style: S.td },
-                          h('input', {
-                            style: { ...S.input, width: 170, opacity: implicit ? 0.55 : 1 },
-                            placeholder: t('aliasPlaceholder'),
-                            maxLength: 40,
-                            disabled: implicit || busy !== null,
-                            'aria-label': `${t('alias')} ${account.name}`,
-                            value: edit.alias,
-                            onChange: (event) => updateAccountEdit(account, { alias: event.target.value }),
-                          }),
-                        ),
-                        h(
-                          'td',
-                          { style: S.td },
-                          account.nextDue === null
-                            ? h('span', { style: S.label }, '—')
-                            : h(
-                                'span',
-                                { style: { ...S.row, gap: 6 } },
-                                h('span', { style: S.value }, account.nextDue),
-                                account.status ? h(Badge, { tone: account.status }, statusLabel(t, account.status)) : null,
-                              ),
-                        ),
-                        h(
-                          'td',
-                          { style: S.td },
-                          h(
-                            'div',
-                            { style: { ...S.row, gap: 6 } },
-                            account.alias && !implicit
-                              ? h(Button, { onClick: () => clearAlias(account), disabled: busy !== null }, t('clearAlias'))
-                              : null,
-                            h(
-                              Button,
-                              {
-                                variant: 'primary',
-                                onClick: () => saveAccount(account),
-                                busy: busy === `account:${account.account}`,
-                                disabled: implicit || busy !== null,
-                              },
-                              busy === `account:${account.account}` ? t('saving') : t('save'),
-                            ),
-                          ),
-                        ),
-                      );
-                    }),
-                  ),
+                  'div',
+                  { style: S.accountTreePanel, role: 'tree' },
+                  displayTree.map((node) => renderNode(node, 0)),
                 ),
+                h('div', { style: S.accountDetailPanel }, renderDetail()),
               ),
+          accountClearOpen
+            ? h(
+                Modal,
+                {
+                  title: t('accountClearTitle'),
+                  onClose: () => setAccountClearOpen(false),
+                  footer: [
+                    h(Button, { key: 'cancel', onClick: () => setAccountClearOpen(false), disabled: busy !== null }, t('entryCancel')),
+                    h(
+                      Button,
+                      {
+                        key: 'confirm',
+                        variant: 'danger',
+                        onClick: () => saveSelectedAccount(true),
+                        busy: busy !== null,
+                        disabled: busy !== null,
+                      },
+                      t('accountClear'),
+                    ),
+                  ],
+                },
+                h(
+                  'div',
+                  { style: { display: 'grid', gap: 8 } },
+                  h('p', { style: S.hint }, t('accountClearConfirm')),
+                  actionError ? h('div', { style: { ...S.alert, ...S.alertError }, role: 'alert' }, actionError) : null,
+                ),
+              )
+            : null,
+          accountPendingSelect !== null
+            ? h(
+                Modal,
+                {
+                  title: t('accountUnsavedTitle'),
+                  onClose: () => setAccountPendingSelect(null),
+                  footer: [
+                    h(Button, { key: 'cancel', onClick: () => setAccountPendingSelect(null), disabled: busy !== null }, t('entryCancel')),
+                    h(
+                      Button,
+                      {
+                        key: 'confirm',
+                        variant: 'danger',
+                        onClick: () => selectAccountNow(accountPendingSelect),
+                        disabled: busy !== null,
+                      },
+                      t('accountDiscardConfirm'),
+                    ),
+                  ],
+                },
+                h('p', { style: S.hint }, t('accountDiscard')),
+              )
+            : null,
+          newAccountOpen
+            ? h(
+                Modal,
+                {
+                  title: t('addAccount'),
+                  onClose: () => setNewAccountOpen(false),
+                  footer: [
+                    h(Button, { key: 'cancel', onClick: () => setNewAccountOpen(false), disabled: busy !== null }, t('entryCancel')),
+                    h(
+                      Button,
+                      {
+                        key: 'save',
+                        variant: 'primary',
+                        onClick: createAccount,
+                        busy: busy === 'account-open',
+                        disabled: busy !== null,
+                      },
+                      busy === 'account-open' ? t('saving') : t('save'),
+                    ),
+                  ],
+                },
+                h(
+                  'div',
+                  { style: { display: 'grid', gap: 10 } },
+                  h(Field, { label: t('accountCanonical') }, h('input', {
+                    style: S.input,
+                    placeholder: 'Assets:Savings:Bank:BOC0814',
+                    disabled: busy !== null,
+                    value: newAccount.account,
+                    onChange: (event) => setNewAccount((previous) => ({ ...previous, account: event.target.value })),
+                  })),
+                  h(Field, { label: t('alias') }, h('input', {
+                    style: S.input,
+                    placeholder: t('aliasPlaceholder'),
+                    disabled: busy !== null,
+                    value: newAccount.alias,
+                    onChange: (event) => setNewAccount((previous) => ({ ...previous, alias: event.target.value })),
+                  })),
+                  actionError ? h('div', { style: { ...S.alert, ...S.alertError }, role: 'alert' }, actionError) : null,
+                ),
+              )
+            : null,
         );
       }
 
       function renderEngineSetup() {
-        const stale = engine?.kind === 'stale' || engine?.kind === 'broken';
         return h(
           'section',
           { style: S.panel },
@@ -1736,8 +2726,6 @@ window.__ModuleLoader__.load({
             'div',
             { style: S.card },
             h('h2', { style: S.sectionTitle }, t('engineTitle')),
-            h('p', { style: S.hint }, t('engineIntro')),
-            stale ? h('p', { style: S.hint }, t('engineStaleHint')) : null,
             h(
               'div',
               { style: { display: 'grid', gap: 4 } },
@@ -1784,7 +2772,6 @@ window.__ModuleLoader__.load({
             'div',
             { style: S.card },
             h('h2', { style: S.sectionTitle }, t('setupTitle')),
-            h('p', { style: S.hint }, t('setupIntro')),
             setup?.hasEntries
               ? h(
                   'div',
@@ -1806,26 +2793,25 @@ window.__ModuleLoader__.load({
                   onChange: (event) => setSetupForm((previous) => ({ ...previous, title: event.target.value })),
                 }),
               ),
-              h(
-                Field,
-                { label: t('setupCurrency') },
-                h(
-                  'select',
-                  {
-                    style: { ...S.select, width: 120 },
-                    disabled: busy !== null,
-                    value: setupForm.currency,
-                    onChange: (event) => setSetupForm((previous) => ({ ...previous, currency: event.target.value })),
-                  },
-                  ['CNY', 'USD', 'EUR', 'HKD', 'JPY'].map((currency) => h('option', { key: currency, value: currency }, currency)),
-                ),
-              ),
             ),
             h(
               'div',
-              { style: { display: 'grid', gap: 4 } },
+              { style: { display: 'grid', gap: 4, minWidth: 0 } },
               h('span', { style: S.label }, t('setupPath')),
-              h('span', { style: { ...S.canonical, fontSize: 12, overflowWrap: 'anywhere' } }, setup?.root ?? ''),
+              h(
+                'div',
+                { style: { display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' } },
+                h(
+                  'span',
+                  { style: { ...S.canonical, fontSize: 12, overflowWrap: 'anywhere', flex: '1 1 240px', minWidth: 0 } },
+                  setupForm.root,
+                ),
+                h(
+                  Button,
+                  { onClick: chooseSetupDirectory, disabled: busy !== null },
+                  t('setupBrowse'),
+                ),
+              ),
             ),
             h(
               'div',
@@ -1836,7 +2822,110 @@ window.__ModuleLoader__.load({
                 busy === 'init' ? t('setupCreating') : t('setupCreate'),
               ),
             ),
-            h('p', { style: S.hint }, t('setupHint')),
+          ),
+        );
+      }
+
+      function renderDirectoryPicker() {
+        if (dirPicker === null) return null;
+        const listing = dirPicker.listing;
+        const busy = dirPicker.busy !== null;
+        const entries = (listing?.entries ?? []).filter((entry) => entry.hidden !== true);
+        const allCrumbs = listing?.crumbs ?? [];
+        const homeIndex = listing === null ? -1 : allCrumbs.findIndex((crumb) => crumb.path === listing.home);
+        const crumbs = homeIndex === -1
+          ? allCrumbs
+          : [{ name: t('dirPickerHome'), path: listing.home, hidden: false }, ...allCrumbs.slice(homeIndex + 1)];
+        return h(
+          Modal,
+          {
+            title: t('dirPickerTitle'),
+            onClose: () => setDirPicker(null),
+            footer: [
+              h(Button, { key: 'cancel', onClick: () => setDirPicker(null) }, t('dirPickerCancel')),
+              h(
+                Button,
+                {
+                  key: 'choose',
+                  variant: 'primary',
+                  onClick: confirmDirectorySelection,
+                  disabled: listing === null || busy,
+                },
+                t('dirPickerHere'),
+              ),
+            ],
+          },
+          dirPicker.error !== null
+            ? h(
+                'div',
+                { style: { ...S.alert, ...S.alertError }, role: 'alert' },
+                h('span', null, dirPicker.error),
+              )
+            : null,
+          crumbs.length > 0
+            ? h(
+                'div',
+                { style: S.dirCrumbs },
+                crumbs.map((crumb) => h(
+                  'button',
+                  {
+                    key: crumb.path,
+                    type: 'button',
+                    style: S.dirCrumb,
+                    title: crumb.path,
+                    onClick: () => { void refreshDirectory(dirPicker.picker, crumb.path); },
+                  },
+                  crumb.name,
+                )),
+              )
+            : null,
+          dirPicker.loading
+            ? h('div', { style: { ...S.empty, minHeight: 96 } }, t('dirPickerLoading'))
+            : h(
+                'div',
+                { style: S.dirList },
+                entries.length === 0
+                  ? h('div', { style: S.hint }, t('dirPickerEmpty'))
+                  : entries.map((entry) => h(
+                      'button',
+                      {
+                        key: entry.path,
+                        type: 'button',
+                        style: S.dirRow,
+                        title: entry.path,
+                        onClick: () => { void refreshDirectory(dirPicker.picker, entry.path); },
+                      },
+                      h('span', { 'aria-hidden': true }, '▸'),
+                      h('span', { style: { overflowWrap: 'anywhere', minWidth: 0 } }, entry.name),
+                    )),
+              ),
+          listing?.truncated === true ? h('p', { style: S.hint }, t('dirPickerTruncated')) : null,
+          h(
+            'div',
+            { style: S.row },
+            h('input', {
+              style: { ...S.input, flex: '1 1 160px' },
+              value: dirPicker.newName,
+              placeholder: t('dirPickerCreate'),
+              disabled: busy || listing === null,
+              onChange: (event) => setDirPicker((previous) => (
+                previous === null ? previous : { ...previous, newName: event.target.value }
+              )),
+              onKeyDown: (event) => {
+                if (event.key === 'Enter') {
+                  event.preventDefault();
+                  void createDirectoryInPicker();
+                }
+              },
+            }),
+            h(
+              Button,
+              {
+                onClick: () => { void createDirectoryInPicker(); },
+                disabled: busy || listing === null || dirPicker.newName.trim() === '',
+              },
+              t('dirPickerCreateAction'),
+            ),
           ),
         );
       }
@@ -1860,7 +2949,7 @@ window.__ModuleLoader__.load({
                   style: S.select,
                   disabled: busy !== null,
                   value: entry.kind,
-                  onChange: (event) => updateEntry({ kind: event.target.value, category: '', source: '' }),
+                  onChange: (event) => { setEntryPicker(null); updateEntry({ kind: event.target.value, category: '', source: '' }); },
                 },
                 h('option', { value: 'expense' }, t('entryExpense')),
                 h('option', { value: 'income' }, t('entryIncome')),
@@ -1908,30 +2997,28 @@ window.__ModuleLoader__.load({
               Field,
               { label: t('entryCategory') },
               h(
-                'select',
+                'button',
                 {
-                  style: { ...S.select, minWidth: 180 },
+                  type: 'button',
+                  style: { ...S.input, minWidth: 180, textAlign: 'left', cursor: 'pointer', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
                   disabled: busy !== null,
-                  value: entry.category,
-                  onChange: (event) => updateEntry({ category: event.target.value }),
+                  onClick: () => setEntryPicker({ field: 'category', query: '' }),
                 },
-                h('option', { value: '' }, t('entryChooseCategory')),
-                entryCategoryOptions.map((account) => h('option', { key: account.account, value: account.name }, account.name)),
+                entry.category || t('entryChooseCategory'),
               ),
             ),
             h(
               Field,
               { label: t('entrySource') },
               h(
-                'select',
+                'button',
                 {
-                  style: { ...S.select, minWidth: 180 },
+                  type: 'button',
+                  style: { ...S.input, minWidth: 180, textAlign: 'left', cursor: 'pointer', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
                   disabled: busy !== null,
-                  value: entry.source,
-                  onChange: (event) => updateEntry({ source: event.target.value }),
+                  onClick: () => setEntryPicker({ field: 'source', query: '' }),
                 },
-                h('option', { value: '' }, t('entryChooseSource')),
-                entrySourceOptions.map((account) => h('option', { key: account.account, value: account.name }, account.name)),
+                entry.source || t('entryChooseSource'),
               ),
             ),
             h(
@@ -1955,6 +3042,53 @@ window.__ModuleLoader__.load({
               busy === 'entry' ? t('entrySaving') : t('entrySave'),
             ),
             h(Button, { onClick: () => setEntryOpen(false), disabled: busy !== null }, t('entryCancel')),
+          ),
+          entryPicker !== null ? renderEntryPicker() : null,
+        );
+      }
+
+      function renderEntryPicker() {
+        const field = entryPicker.field;
+        const options = field === 'source' ? entrySourceOptions : entryCategoryOptions;
+        const query = entryPicker.query.trim().toLowerCase();
+        const filtered = query === ''
+          ? options
+          : options.filter((account) => `${account.name} ${account.account}`.toLowerCase().includes(query));
+        return h(
+          Modal,
+          {
+            title: field === 'source' ? t('entrySource') : t('entryCategory'),
+            onClose: () => setEntryPicker(null),
+            footer: [h(Button, { key: 'cancel', onClick: () => setEntryPicker(null) }, t('entryCancel'))],
+          },
+          h('input', {
+            autoFocus: true,
+            style: S.input,
+            placeholder: t('searchAccounts'),
+            value: entryPicker.query,
+            onChange: (event) => setEntryPicker((previous) => (
+              previous === null ? previous : { ...previous, query: event.target.value }
+            )),
+          }),
+          h(
+            'div',
+            { style: { display: 'grid', gap: 4, maxHeight: '52vh', overflow: 'auto' } },
+            filtered.length === 0
+              ? h('div', { style: S.empty }, t('noAccounts'))
+              : filtered.map((account) => h(
+                  'button',
+                  {
+                    key: account.account,
+                    type: 'button',
+                    style: { ...S.input, display: 'grid', gap: 2, textAlign: 'left', cursor: 'pointer' },
+                    onClick: () => {
+                      updateEntry({ [field]: account.name });
+                      setEntryPicker(null);
+                    },
+                  },
+                  h('span', { style: S.name }, account.name),
+                  h('span', { style: S.canonical }, account.account),
+                )),
           ),
         );
       }
@@ -2033,6 +3167,7 @@ window.__ModuleLoader__.load({
         const slots = ctx.slots;
         const locale = ctx.locale;
         localeService = locale;
+        clientContext = ctx;
         const t = locale.bind(NS);
 
         ctx.effect(() => {

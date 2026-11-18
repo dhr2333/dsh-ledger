@@ -1,7 +1,7 @@
 {
   "meta": {
-    "title": "账本领域层",
-    "description": "这本 Beancount 账本的 DSH 展示页。别名、对账周期、草稿队列、校验后原子写入全部由独立的 Python 核心库 ledger-domain-core 完成；插件只做浏览器会话校验、把请求转成 `python -m ledger_domain` 调用，并渲染返回的 JSON。不含领域逻辑，不注册 Agent 工具。首次启动可一键准备本地引擎并创建账本，审核页可手动记一笔。",
+    "title": "账本",
+    "description": "查看待对账账户、审核草稿与账本变更，维护账户别名和对账周期。",
     "detail": "docs/DETAIL.md"
   }
 }

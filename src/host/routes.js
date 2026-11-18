@@ -12,6 +12,7 @@ import { existsSync } from 'node:fs';
 import path from 'node:path';
 
 import { engineStatus, installEngine, runtimeFor } from './engine.js';
+import { initializeLedger } from './init.js';
 
 /** Prefix owned by this bundle. */
 export const API_PREFIX = '/ledger-api';
@@ -35,7 +36,7 @@ export function registerRoutes(ctx, options) {
     handler: async (req, res) => {
       if (rejectUntrusted(ctx, req, res)) return;
       try {
-        await dispatch(options, req, res);
+        await dispatch(ctx, options, req, res);
       } catch (error) {
         sendJson(res, 500, {
           ok: false,
@@ -49,12 +50,13 @@ export function registerRoutes(ctx, options) {
 
 /**
  * Route one request inside the prefix.
+ * @param {import('@deepseek-ai/cordis').Context} ctx Host context.
  * @param {object} options bridge options.
  * @param {import('node:http').IncomingMessage} req request.
  * @param {import('node:http').ServerResponse} res response.
  * @returns {Promise<void>}
  */
-async function dispatch(options, req, res) {
+async function dispatch(ctx, options, req, res) {
   const url = new URL(String(req.url), 'http://localhost');
   const route = url.pathname.slice(API_PREFIX.length) || '/';
   const method = req.method ?? 'GET';
@@ -107,12 +109,38 @@ async function dispatch(options, req, res) {
       return;
     }
     const value = /** @type {Record<string, unknown>} */ (body.value);
-    const payload = {
-      title: optionalString(value.title) ?? '我的账本',
-      currency: optionalString(value.currency) ?? 'CNY',
-    };
-    if (Number.isSafeInteger(value.year)) payload.year = value.year;
-    sendEnvelope(res, await runCore(options, 'init', [], payload));
+    try {
+      const created = await initializeLedger(options, {
+        title: optionalString(value.title) ?? '我的账本',
+        root: optionalString(value.root),
+      });
+      // Creating a ledger is the natural moment to give it a DSH workspace: the
+      // workspace path is the ledger root, so sessions started there see main.bean.
+      created.workspace = await workspaceOutcome(ctx, created.root, created.title);
+      sendJson(res, 200, { ok: true, value: created });
+    } catch (error) {
+      const failure = /** @type {Error & { code?: string, details?: object }} */ (error);
+      sendJson(res, 200, {
+        ok: false,
+        error: {
+          code: failure.code ?? 'init_failed',
+          message: failure.message,
+          details: failure.details ?? {},
+        },
+      });
+    }
+    return;
+  }
+  if (route === '/workspace' && method === 'POST') {
+    const body = await readJson(req);
+    if (!body.ok) {
+      sendJson(res, body.status, { ok: false, error: body.error });
+      return;
+    }
+    const value = /** @type {Record<string, unknown>} */ (body.value);
+    const outcome = await workspaceOutcome(ctx, options.root, optionalString(value.title));
+    if (outcome.ok) sendJson(res, 200, { ok: true, created: outcome.created, workspace: outcome.workspace });
+    else sendJson(res, 200, { ok: false, error: outcome.error });
     return;
   }
   if (route === '/bootstrap' && method === 'GET') {
@@ -126,20 +154,6 @@ async function dispatch(options, req, res) {
       return;
     }
     sendEnvelope(res, await runCore(options, 'submit-draft', [], /** @type {object} */ (body.value)));
-    return;
-  }
-  if (route === '/draft/update' && method === 'POST') {
-    const body = await readJson(req);
-    if (!body.ok) {
-      sendJson(res, body.status, { ok: false, error: body.error });
-      return;
-    }
-    const value = /** @type {Record<string, unknown>} */ (body.value);
-    const payload = { id: requireString(value.id, 'id'), actor: 'panel' };
-    for (const key of ['date', 'flag', 'payee', 'narration', 'tags', 'links', 'postings', 'source', 'confidence']) {
-      if (Object.hasOwn(value, key)) payload[key] = value[key];
-    }
-    sendEnvelope(res, await runCore(options, 'update-draft', [], payload));
     return;
   }
   if (route === '/account/open' && method === 'POST') {
@@ -159,6 +173,33 @@ async function dispatch(options, req, res) {
     if (optionalString(value.alias)) payload.alias = optionalString(value.alias);
     if (optionalString(value.reconcile)) payload.reconcile = optionalString(value.reconcile);
     sendEnvelope(res, await runCore(options, 'account-open', [], payload));
+    return;
+  }
+  if (route === '/reconcile/preview' && method === 'POST') {
+    const body = await readJson(req);
+    if (!body.ok) {
+      sendJson(res, body.status, { ok: false, error: body.error });
+      return;
+    }
+    sendEnvelope(res, await runCore(options, 'reconcile-preview', [], /** @type {Record<string, unknown>} */ (body.value)));
+    return;
+  }
+  if (route === '/reconcile/commit' && method === 'POST') {
+    const body = await readJson(req);
+    if (!body.ok) {
+      sendJson(res, body.status, { ok: false, error: body.error });
+      return;
+    }
+    sendEnvelope(res, await runCore(options, 'reconcile-commit', [], /** @type {Record<string, unknown>} */ (body.value)));
+    return;
+  }
+  if (route === '/reconcile/history' && method === 'GET') {
+    const account = url.searchParams.get('account');
+    const limit = url.searchParams.get('limit') ?? '50';
+    const extraArgs = [];
+    if (account) extraArgs.push('--account', account);
+    extraArgs.push('--limit', limit);
+    sendEnvelope(res, await runCore(options, 'reconcile-history', extraArgs));
     return;
   }
   if (route === '/balance' && method === 'POST') {
@@ -207,6 +248,38 @@ async function dispatch(options, req, res) {
     sendEnvelope(res, await runCore(options, 'approve-draft', [], payload));
     return;
   }
+  if (route === '/operation/approve-all' && method === 'POST') {
+    sendEnvelope(res, await runCore(options, 'op-approve-all', [], {}));
+    return;
+  }
+  if (route === '/draft/approve-all' && method === 'POST') {
+    sendEnvelope(res, await runCore(options, 'approve-all-drafts', [], {}));
+    return;
+  }
+  if (route === '/operation/approve' && method === 'POST') {
+    const body = await readJson(req);
+    if (!body.ok) {
+      sendJson(res, body.status, { ok: false, error: body.error });
+      return;
+    }
+    const value = /** @type {Record<string, unknown>} */ (body.value);
+    sendEnvelope(res, await runCore(options, 'op-approve', [], { id: requireString(value.id, 'id'), actor: 'panel' }));
+    return;
+  }
+  if (route === '/operation/reject' && method === 'POST') {
+    const body = await readJson(req);
+    if (!body.ok) {
+      sendJson(res, body.status, { ok: false, error: body.error });
+      return;
+    }
+    const value = /** @type {Record<string, unknown>} */ (body.value);
+    sendEnvelope(res, await runCore(options, 'op-reject', [], {
+      id: requireString(value.id, 'id'),
+      reason: optionalString(value.reason) ?? '',
+      actor: 'panel',
+    }));
+    return;
+  }
   if (route === '/draft/reject' && method === 'POST') {
     const body = await readJson(req);
     if (!body.ok) {
@@ -225,7 +298,7 @@ async function dispatch(options, req, res) {
     return;
   }
 
-  const known = new Set(['/engine', '/engine/install', '/health', '/setup', '/init', '/bootstrap', '/balance', '/metadata', '/draft/submit', '/draft/update', '/draft/approve', '/draft/reject', '/account/open']);
+  const known = new Set(['/engine', '/engine/install', '/health', '/setup', '/init', '/bootstrap', '/balance', '/reconcile/preview', '/reconcile/commit', '/reconcile/history', '/metadata', '/draft/submit', '/draft/approve', '/draft/reject', '/account/open', '/workspace', '/operation/approve', '/operation/reject', '/operation/approve-all', '/draft/approve-all']);
   if (known.has(route)) {
     res.statusCode = 405;
     res.setHeader('allow', method === 'GET' ? 'POST' : 'GET');
@@ -233,6 +306,43 @@ async function dispatch(options, req, res) {
     return;
   }
   sendJson(res, 404, { ok: false, error: { code: 'not_found', message: `unknown ledger route ${route}` } });
+}
+
+/**
+ * Register the ledger root as a DSH workspace, idempotently by canonical path.
+ *
+ * The workspace record is the Host's own directory ledger, not ledger data: a
+ * session started there simply runs in the ledger directory. Creation is
+ * deliberately non-fatal for the caller — a profile without the optional
+ * workspace subsystem still creates and reads ledgers, it just cannot list
+ * them as workspaces.
+ * @param {import('@deepseek-ai/cordis').Context} ctx Host context.
+ * @param {string} root absolute ledger root to register.
+ * @param {string} [title] initial display title for a new record.
+ * @returns {Promise<{ ok: true, created: boolean, workspace: { workspaceId: string, path: string, title: string } } | { ok: false, error: { code: string, message: string } }>} outcome.
+ */
+async function workspaceOutcome(ctx, root, title) {
+  const registry = ctx.get('workspaceRegistry');
+  if (registry === undefined || typeof registry.create !== 'function') {
+    return {
+      ok: false,
+      error: { code: 'workspace_unavailable', message: 'the DSH workspace registry is not available in this profile' },
+    };
+  }
+  try {
+    const existing = typeof registry.resolveByPath === 'function' ? registry.resolveByPath(root) : undefined;
+    const workspace = await registry.create(root, optionalString(title));
+    return {
+      ok: true,
+      created: existing === undefined,
+      workspace: { workspaceId: String(workspace.id), path: workspace.path, title: workspace.title },
+    };
+  } catch (error) {
+    return {
+      ok: false,
+      error: { code: 'workspace_failed', message: error instanceof Error ? error.message : String(error) },
+    };
+  }
 }
 
 /**
