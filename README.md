@@ -115,7 +115,7 @@ ledger/
 
 ## 开发
 
-- 本仓库只做 DSH 面板；领域逻辑在 [`ledger-domain-core`](https://github.com/dhr2333/ledger-domain-core)。
+- 本仓库只做 DSH 面板；账本规则在 [`ledger-domain-core`](https://github.com/dhr2333/ledger-domain-core)。
 - 路由、配置、引擎与写入细节见 [docs/DETAIL.md](docs/DETAIL.md)。
 - `npm run check` 做 bundle 静态检查。
 
