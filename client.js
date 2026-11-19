@@ -78,7 +78,8 @@ window.__ModuleLoader__.load({
       balanceExists: '该账户当天已经有一条同币种断言。',
       closedAccount: '账户已关闭，无法对账。',
       reviewTitle: '待审核草稿',
-      pendingEmpty: '审核队列为空。',
+      pendingEmpty: '还没有待审核草稿。把最近一个月的账单交给账本工作区的 Agent。',
+      starterPrompt: '这是我最近一个月的支付宝/微信账单（附件）。帮我记成草稿：\n- 分类不确定的标出来，不要猜；\n- 不要直接写入，等我审核；\n- 金额/日期按账单原文。',
       operationsTitle: '待你批准的账本变更',
       operationAccountOpen: '开户',
       operationAccountRedate: '修改开立日',
@@ -122,7 +123,7 @@ window.__ModuleLoader__.load({
       sourceImport: '导入',
       sourceExternal: '外部',
       statusPending: '待审核',
-      accountsTitle: '账户与元数据',
+      accountsTitle: '账户',
       searchAccounts: '搜索账户或别名',
       accountName: '名称',
       alias: '别名',
@@ -297,7 +298,8 @@ window.__ModuleLoader__.load({
       balanceExists: 'This account already has an assertion for that date and currency.',
       closedAccount: 'The account is closed and cannot be reconciled.',
       reviewTitle: 'Pending drafts',
-      pendingEmpty: 'The review queue is empty.',
+      pendingEmpty: 'No drafts yet. Hand last month of bills to the agent in the ledger workspace.',
+      starterPrompt: "Here is last month's Alipay/WeChat statement (attached). Draft the entries for me:\n- Flag anything you are unsure about; do not guess.\n- Do not write directly; wait for my review.\n- Keep amounts and dates as they appear in the statement.",
       operationsTitle: 'Ledger changes awaiting approval',
       operationAccountOpen: 'Open account',
       operationAccountRedate: 'Change open date',
@@ -341,7 +343,7 @@ window.__ModuleLoader__.load({
       sourceImport: 'Import',
       sourceExternal: 'External',
       statusPending: 'Pending',
-      accountsTitle: 'Accounts and metadata',
+      accountsTitle: 'Accounts',
       searchAccounts: 'Search account or alias',
       accountName: 'Name',
       alias: 'Alias',
@@ -1822,6 +1824,44 @@ window.__ModuleLoader__.load({
         setDirPicker(null);
       }
 
+      /**
+       * Open a fresh conversation in the ledger workspace and seed its composer.
+       * Returns false when the Host navigation services are unavailable.
+       */
+      async function openConversationWithPrompt(workspaceId, prompt) {
+        const navigation = clientContext?.get('uiWorkspace');
+        const sessions = clientContext?.get('sessions');
+        const conversation = clientContext?.get('conversation');
+        if (typeof navigation?.openWorkspace !== 'function' || sessions === undefined || conversation === undefined) {
+          return false;
+        }
+        let sessionId;
+        await navigation.openWorkspace(workspaceId, (created) => { sessionId = created; });
+        if (sessionId === undefined) return false;
+        // Navigation already happened; seeding the composer stays best effort.
+        try {
+          const reference = sessions.retain(sessionId, { source: 'controllerOperation' });
+          try {
+            await Promise.race([
+              reference.ready,
+              new Promise((_, reject) => setTimeout(() => reject(new Error('session open timed out')), 3000)),
+            ]);
+            let scope = sessions.scope(sessionId);
+            // The new Session's scope can materialize one frame after navigation.
+            for (let attempt = 0; scope === undefined && attempt < 10; attempt += 1) {
+              await new Promise((resolve) => setTimeout(resolve, 50));
+              scope = sessions.scope(sessionId);
+            }
+            if (scope !== undefined) conversation.input.for(scope).setDraft(prompt);
+          } finally {
+            reference.release();
+          }
+        } catch (failure) {
+          console.warn('ledger: seeding the starter prompt failed', failure);
+        }
+        return true;
+      }
+
       function createLedger() {
         const title = setupForm.title.trim();
         if (title === '') {
@@ -1829,12 +1869,45 @@ window.__ModuleLoader__.load({
           return;
         }
         const root = setupForm.root.trim() || setup?.root || '';
-        void runAction('init', async () => {
-          const response = await postJson(API.init, { title, root });
-          const created = response?.value ?? {};
-          const opened = created.existing === true;
-          return fill(t(opened ? 'setupOpened' : 'setupCreated'), { title: created.title ?? title });
-        }, '');
+        if (busyRef.current !== null) return;
+        busyRef.current = 'init';
+        setBusy('init');
+        setActionError(null);
+        setNotice(null);
+        void (async () => {
+          try {
+            const response = await postJson(API.init, { title, root });
+            const created = response?.value ?? {};
+            const outcome = created.workspace;
+            let workspaceId = outcome?.ok === true ? outcome.workspace?.workspaceId : undefined;
+            // The Host registered the workspace during /init, but the client list can
+            // still be stale; creating by path here merges the row before navigation.
+            const workspaces = clientContext?.get('workspaces');
+            if (typeof workspaces?.create === 'function' && typeof created.root === 'string' && created.root !== '') {
+              try {
+                const view = await workspaces.create({ path: created.root });
+                workspaceId = view.workspaceId;
+              } catch (failure) {
+                console.warn('ledger: registering the workspace failed', failure);
+              }
+            }
+            if (workspaceId !== undefined) {
+              try {
+                if (await openConversationWithPrompt(workspaceId, t('starterPrompt'))) return;
+              } catch (failure) {
+                // Navigation is best effort; creation still succeeded, so fall back to the panel.
+                console.warn('ledger: opening the starter conversation failed', failure);
+              }
+            }
+            setNotice(fill(t(created.existing === true ? 'setupOpened' : 'setupCreated'), { title: created.title ?? title }));
+            await load();
+          } catch (failure) {
+            setActionError(describeFailure(t, failure));
+          } finally {
+            busyRef.current = null;
+            setBusy(null);
+          }
+        })();
       }
 
       function openEntry() {
