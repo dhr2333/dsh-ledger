@@ -10,6 +10,8 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { venvProgram } from './host/platform.js';
+
 /** Subdirectory under `$DSH_HOME` that holds plugin-owned state. */
 const STATE_DIR = 'ledger-domain';
 /** Standard source checkout created by `scripts/install.sh` under `$DSH_HOME`. */
@@ -150,6 +152,7 @@ export function rememberActiveRoot(options, root) {
  *   corePath: string,
  *   templatePath: string,
  *   engineDir: string,
+ *   runtimePath: string,
  *   systemPython: string,
  *   pythonPath: string,
  *   pythonModule: string,
@@ -168,7 +171,7 @@ export function readOptions(config) {
   const defaultRoot = path.resolve(text('root') ?? path.join(dshHome, 'ledger'));
   const root = readActiveRoot(defaultRoot, dshHome) ?? defaultRoot;
   const configuredPython = text('pythonPath');
-  const ledgerPython = path.join(root, '.venv', 'bin', 'python');
+  const ledgerPython = venvProgram(path.join(root, '.venv'), 'python');
   const pythonPath = configuredPython === undefined
     ? (existsSync(ledgerPython) ? ledgerPython : '')
     : path.isAbsolute(configuredPython)
@@ -185,7 +188,8 @@ export function readOptions(config) {
     corePath: configuredCore === undefined ? (discoverCorePath(dshHome) ?? '') : path.resolve(configuredCore),
     templatePath: configuredTemplate === undefined ? (discoverTemplatePath(dshHome) ?? '') : path.resolve(configuredTemplate),
     engineDir: path.resolve(text('engineDir') ?? path.join(dshHome, 'ledger-engine')),
-    systemPython: text('systemPython') ?? 'python3',
+    runtimePath: text('runtimePath') === undefined ? '' : path.resolve(text('runtimePath')),
+    systemPython: text('systemPython') ?? '',
     pythonPath,
     pythonModule: text('pythonModule') ?? 'ledger_domain',
     beanCheck: text('beanCheck') ?? '',

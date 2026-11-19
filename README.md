@@ -16,7 +16,9 @@ DSH 账本面板的维护者参考与兜底说明。用户使用说明见 [docs/
 dsh plugin --profile web add @dhr2333/dsh-ledger
 ```
 
-发布包自带核心库和模板，不需要再检出其他仓库。首次使用需要 DSH、Python 3.11+ 和网络；默认账本目录是 `$DSH_HOME/ledger`。
+发布包自带核心库、账本模板和引擎运行时，不需要再检出其他仓库，也不需要安装 Python。首次安装引擎完全离线；默认账本目录是 `$DSH_HOME/ledger`。
+
+支持六个平台：`win32-x64`、`win32-arm64`（x64 运行时，Windows on ARM 模拟执行）、`darwin-x64`、`darwin-arm64`、`linux-x64`、`linux-arm64`。没有匹配运行时包时回退到系统 Python 3.11+（64 位）。
 
 ### 从源码安装
 
@@ -44,7 +46,8 @@ curl -fsSL https://raw.githubusercontent.com/dhr2333/dsh-ledger/main/scripts/ins
 
 ## 引擎与路径
 
-- **托管引擎（默认）**：在 `$DSH_HOME/ledger-engine` 建私有 venv，安装 `beancount`、`beanquery`、`mcp`，并复制核心库；核心库更新后按内容指纹提示修复。
+- **托管引擎（默认）**：优先使用平台运行时包自带的 CPython 3.12，把它复制到 `$DSH_HOME/ledger-engine/python`，再建私有 venv，用离线 wheelhouse 安装 `beancount`、`beanquery`、`mcp`；核心库复制进 site-packages，更新后按内容指纹提示修复。
+- **系统 Python 兜底**：没有匹配的运行时包时，自动探测 `py -3` / `python` / `python3`（要求 3.11+、64 位），联网安装 wheel。
 - **外部引擎（开发机）**：配置 `pythonPath` 指向已有 venv，`corePath` 指向核心库源码。
 
 核心库 / 模板的查找顺序：显式配置 → 环境变量 → 同级源码 checkout → 包内 `vendor/` → `$DSH_HOME/ledger-domain-src` → `$DSH_HOME`。
@@ -58,6 +61,8 @@ curl -fsSL https://raw.githubusercontent.com/dhr2333/dsh-ledger/main/scripts/ins
     root: "/path/to/ledger"          # 默认 $DSH_HOME/ledger
     corePath: "/path/to/ledger-domain-core"   # 留空自动发现
     templatePath: "/path/to/ledger-domain-assets"  # 留空自动发现
+    # runtimePath: "/path/to/dsh-ledger-runtime-linux-x64"  # 显式指定运行时包（一般留空）
+    # systemPython: "python3"        # 只在内置运行时缺失时用作兜底
     # pythonPath: "/path/to/ledger/.venv/bin/python"  # 外部引擎才需要
 ```
 
@@ -111,7 +116,8 @@ ledger/
 
 - `npm run check` 做 bundle 静态检查。
 - `npm run vendor` 把两个源码 checkout 复制进 `vendor/`（`prepack` 自动执行）；`npm run vendor:check` 检查副本是否落后。
-- 发布前先更新同级的 core / assets，再 `npm publish`；`vendor/` 不提交到 git。
+- `npm run runtime:pack` 生成 `dist/packages/` 下的六个运行时包；先发布运行时包，再发布主包，版本必须对齐。
+- 发布前先更新同级的 core / assets，再 `npm publish`；`vendor/`、`dist/`、`.cache/` 不提交到 git。
 - CI 配置与本地等价命令见 [docs/CI.md](docs/CI.md)。
 
 ## 边界
@@ -119,7 +125,7 @@ ledger/
 - Core 是唯一写者；插件不含账本规则，不直接写文件。
 - Agent 只能提交草稿/结构提案，批准由人触发；同 OS 用户 + 全 shell 下仍可绕过 `AGENTS.md` 改文件。
 - 默认单币种；不内置账单解析/导入；不做多用户、移动端、月结批次、对账撤销。
-- 对账漂移不主动告警；POSIX 优先，Windows 未验证。
+- 对账漂移不主动告警；市场安装不依赖系统 Python，源码安装与缺失运行时包时仍走系统 Python。
 
 ## License
 

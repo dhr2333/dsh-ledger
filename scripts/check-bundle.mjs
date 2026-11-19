@@ -21,6 +21,35 @@ assert.equal(pkg.dsh?.client?.platform, 'web');
 assert.equal(pkg.scripts?.prepack, 'node scripts/vendor.mjs', 'prepack must vendor the core and template');
 assert.ok(pkg.files?.includes('vendor'), 'package files must include vendor');
 
+// Every supported platform gets an exact-version runtime package; npm installs
+// only the one matching the host and the panel falls back to system Python when
+// none resolves.
+const RUNTIME_KEYS = ['win32-x64', 'win32-arm64', 'darwin-x64', 'darwin-arm64', 'linux-x64', 'linux-arm64'];
+assert.deepEqual(
+  Object.keys(pkg.optionalDependencies ?? {}).sort(),
+  RUNTIME_KEYS.map((key) => `@dhr2333/dsh-ledger-runtime-${key}`).sort(),
+  'optionalDependencies must list every runtime package',
+);
+for (const [name, version] of Object.entries(pkg.optionalDependencies)) {
+  assert.equal(version, pkg.version, `${name} must match the plugin version`);
+}
+
+const platform = await import(pathToFileURL(path.join(root, 'src/host/platform.js')).href);
+assert.equal(
+  platform.venvProgram('/v', 'python', 'win32'),
+  path.join('/v', 'Scripts', 'python.exe'),
+  'Windows virtualenvs keep programs in Scripts with .exe',
+);
+assert.equal(
+  platform.venvProgram('/v', 'bean-check', 'linux'),
+  path.join('/v', 'bin', 'bean-check'),
+  'POSIX virtualenvs keep programs in bin',
+);
+assert.equal(platform.runtimePackageName('win32', 'x64'), '@dhr2333/dsh-ledger-runtime-win32-x64');
+assert.equal(platform.runtimePackageName('linux', 'arm64'), '@dhr2333/dsh-ledger-runtime-linux-arm64');
+assert.equal(platform.runtimePython('/r', 'win32'), path.join('/r', 'python.exe'));
+assert.equal(platform.runtimePython('/r', 'darwin'), path.join('/r', 'bin', 'python3'));
+
 for (const relative of [
   'index.js',
   'client.js',
@@ -28,6 +57,7 @@ for (const relative of [
   'docs/DETAIL.md',
   'icon.svg',
   'src/options.js',
+  'src/host/platform.js',
   'src/host/routes.js',
   'src/host/engine.js',
 ]) {
@@ -94,6 +124,27 @@ if (existsSync(vendorDir)) {
   console.log(
     `vendor check ok: core ${manifest.core.version ?? '?'} @ ${manifest.core.commit ?? 'nogit'}, assets @ ${manifest.assets.commit ?? 'nogit'}`,
   );
+}
+
+// Built runtime packages are generated, so a source checkout may not have them.
+// When present, their platform lock and offline payload must be complete.
+const packagesDir = path.join(root, 'dist', 'packages');
+if (existsSync(packagesDir)) {
+  const runtimes = await readJson('scripts/runtimes.json');
+  for (const [key, target] of Object.entries(runtimes.targets)) {
+    const directory = path.join(packagesDir, `dsh-ledger-runtime-${key}`);
+    if (!existsSync(directory)) continue;
+    const descriptor = JSON.parse(await readFile(path.join(directory, 'package.json'), 'utf8'));
+    assert.deepEqual(descriptor.os, [target.os], `${key} os lock`);
+    assert.deepEqual(descriptor.cpu, [target.cpu], `${key} cpu lock`);
+    for (const relative of ['python', 'wheelhouse', 'manifest.json']) {
+      assert.ok(existsSync(path.join(directory, relative)), `${key} missing ${relative}`);
+    }
+    const manifest = JSON.parse(await readFile(path.join(directory, 'manifest.json'), 'utf8'));
+    assert.equal(manifest.pythonVersion, runtimes.python, `${key} python version`);
+    assert.ok(manifest.wheels.length > 0, `${key} wheelhouse is empty`);
+  }
+  console.log('runtime package check ok');
 }
 
 // Load the Client module with a minimal React/ModuleLoader shim, then run its

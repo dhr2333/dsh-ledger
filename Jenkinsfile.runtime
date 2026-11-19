@@ -1,0 +1,83 @@
+#!/usr/bin/env groovy
+
+// dsh-ledger runtime CI — builds the per-platform engine packages.
+//
+// The job needs Node 22, a Python 3 with pip, `tar`, and network access to
+// download python-build-standalone and the wheels. Publishing is manual:
+// publish every dist/packages/* runtime package before the main plugin.
+
+pipeline {
+    agent any
+
+    parameters {
+        choice(
+            name: 'TARGET',
+            choices: ['all', 'win32-x64', 'win32-arm64', 'darwin-x64', 'darwin-arm64', 'linux-x64', 'linux-arm64'],
+            description: 'all 构建六个平台；单个值只构建该平台'
+        )
+    }
+
+    options {
+        timeout(time: 60, unit: 'MINUTES')
+        buildDiscarder(logRotator(numToKeepStr: '10'))
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                sh '''
+                    git log -1 --oneline
+                    git status --short
+                '''
+            }
+        }
+
+        stage('Bundle checks') {
+            steps {
+                sh '''
+                    set -eu
+                    node --version
+                    python3 --version
+                    for file in index.js client.js src/options.js src/host/platform.js src/host/routes.js src/host/engine.js src/host/init.js scripts/vendor.mjs scripts/check-bundle.mjs scripts/build-runtime.mjs scripts/smoke-runtime.mjs; do
+                      node --check "$file"
+                    done
+                    node scripts/check-bundle.mjs
+                '''
+            }
+        }
+
+        stage('Build runtime') {
+            steps {
+                sh '''
+                    set -eu
+                    if [ "$TARGET" = "all" ]; then
+                      node scripts/build-runtime.mjs --all --pack
+                    else
+                      node scripts/build-runtime.mjs --target "$TARGET" --pack
+                    fi
+                '''
+            }
+        }
+
+        stage('Smoke linux-x64') {
+            when {
+                expression { params.TARGET == 'all' || params.TARGET == 'linux-x64' }
+            }
+            steps {
+                sh '''
+                    set -eu
+                    node scripts/smoke-runtime.mjs --target linux-x64
+                '''
+            }
+        }
+    }
+
+    post {
+        success {
+            echo '✅ runtime 构建完成；运行 dist/packages/ 的冒烟结果后再发布'
+        }
+        failure {
+            echo '❌ runtime 构建失败，请查看日志'
+        }
+    }
+}

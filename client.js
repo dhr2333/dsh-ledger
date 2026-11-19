@@ -165,9 +165,10 @@ window.__ModuleLoader__.load({
       engineTitle: '准备账本引擎',
       enginePath: '引擎位置',
       engineInstall: '安装 / 修复账本引擎',
-      engineInstalling: '正在准备引擎，首次可能需要几分钟…',
+      engineInstalling: '正在准备内置引擎（离线安装），首次可能需要一分钟…',
       engineLog: '安装日志',
       engineError: '引擎操作失败：',
+      engineRuntimeMissing: '当前平台没有可用的内置引擎，也没有找到 Python 3.11+（64 位）。请安装 Python 后重试。',
       errorEngine: '引擎操作失败：',
       setupTitle: '创建你的第一个账本',
       setupPath: '账本位置',
@@ -385,9 +386,10 @@ window.__ModuleLoader__.load({
       engineTitle: 'Prepare the ledger engine',
       enginePath: 'Engine location',
       engineInstall: 'Install / repair engine',
-      engineInstalling: 'Preparing the engine; the first run can take a few minutes…',
+      engineInstalling: 'Preparing the built-in engine offline; the first run can take a minute…',
       engineLog: 'Install log',
       engineError: 'Engine operation failed: ',
+      engineRuntimeMissing: 'No built-in engine is available for this platform and no Python 3.11+ (64-bit) was found. Install Python and retry.',
       errorEngine: 'Engine operation failed: ',
       setupTitle: 'Create your first ledger',
       setupPath: 'Ledger location',
@@ -3251,6 +3253,7 @@ window.__ModuleLoader__.load({
       if (failure?.handled === true) return String(failure.message);
       const code = failure?.code ?? '';
       if (code === 'HTTP_401' || code === 'HTTP_403') return t('errorAuth');
+      if (code === 'engine_runtime_missing') return t('engineRuntimeMissing');
       if (['engine_missing', 'engine_probe_failed', 'engine_source_missing', 'engine_python_missing', 'engine_install_failed', 'engine_core_changed'].includes(code)) {
         return `${t('errorEngine')}${failure?.message ?? ''}`;
       }

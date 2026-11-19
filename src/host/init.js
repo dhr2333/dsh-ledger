@@ -15,6 +15,7 @@ import os from 'node:os';
 import path from 'node:path';
 
 import { enginePaths, runCommand } from './engine.js';
+import { isWindows } from './platform.js';
 import { rememberActiveRoot } from '../options.js';
 
 /** Files every `ledger-domain-assets` checkout must contain. */
@@ -83,7 +84,7 @@ export function beanCheckBinary(options) {
   const managed = enginePaths(options);
   if (existsSync(managed.beanCheck)) return managed.beanCheck;
   if (options.pythonPath) {
-    const sibling = path.join(path.dirname(options.pythonPath), 'bean-check');
+    const sibling = path.join(path.dirname(options.pythonPath), isWindows() ? 'bean-check.exe' : 'bean-check');
     if (existsSync(sibling)) return sibling;
   }
   return 'bean-check';

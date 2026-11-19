@@ -12,19 +12,49 @@
 | Script Path | `Jenkinsfile` |
 | 构建环境 | `node:22-bookworm-slim` 一次性容器 |
 
+运行时包使用独立作业 `dsh-ledger-runtime`（`Jenkinsfile.runtime`），需要 Node 22、带 pip 的 Python 3、`tar` 和访问 GitHub / PyPI 的网络。
+
 ## 构建做什么
 
 1. checkout 当前 commit；
 2. 把工作区 tar 流送进 Node 22 容器；
-3. 对 `index.js`、`client.js`、`src/options.js`、`src/host/routes.js`、`src/host/engine.js` 跑 `node --check`；
+3. 对 `index.js`、`client.js`、`src/options.js`、`src/host/platform.js`、`src/host/routes.js`、`src/host/engine.js`、`scripts/*.mjs` 跑 `node --check`；
 4. 跑 `scripts/check-bundle.mjs`：
    - 校验 `package.json`、bundle patch、locale meta/detail、icon；
+   - 校验六个运行时包都出现在 `optionalDependencies` 且版本与主包一致；
+   - 校验 `src/host/platform.js` 的 Windows / POSIX 路径映射；
    - 用最小 React/ModuleLoader shim 加载 `client.js`，确认 `main` / `sidebar.panellist` 注册；
    - 提取 client 中所有 `t('...')`，确认中英文字典没有缺键；
    - 确认插件源码不注册 Agent 工具；
    - 样式对比度：文字颜色不得与同一样式的背景来自同一色系别名（`--dsw-alias-brand-primary`、`--dsw-alias-brand-primary-invert`、`--dsw-alias-label-primary`、`--dsw-alias-brand-text` 在主题里同值，曾让主按钮文字与底色同色而不可见）。
 
 CI 不安装引擎、不访问账本、不写用户目录。
+
+## 运行时包构建与发布
+
+`node scripts/build-runtime.mjs --all --pack` 会按 `scripts/runtimes.json`：
+
+1. 下载并校验 python-build-standalone 的 CPython 3.12；
+2. 用 `pip download --only-binary=:all:` 拉取目标平台的离线 wheelhouse；
+3. 生成 `dist/packages/dsh-ledger-runtime-<os>-<arch>/`，包含 `python/`、`wheelhouse/`、`manifest.json`、`package.json`。
+
+目标平台：`win32-x64`、`win32-arm64`（x64 运行时，Windows on ARM 模拟执行）、`darwin-x64`、`darwin-arm64`、`linux-x64`、`linux-arm64`。任何平台缺少 wheel 时构建直接失败，不允许带着空 wheelhouse 发布。
+
+发布顺序（版本必须与主包一致）：
+
+```bash
+node scripts/build-runtime.mjs --all --pack
+for key in win32-x64 win32-arm64 darwin-x64 darwin-arm64 linux-x64 linux-arm64; do
+  npm publish "dist/packages/dsh-ledger-runtime-$key" --access public
+done
+npm publish   # 主包最后发布
+```
+
+发布前冒烟：
+
+- Linux：`node scripts/smoke-runtime.mjs --target linux-x64`（CI 自动执行）；
+- 其余平台：在对应系统上运行同一命令，并完成一次面板流程（安装引擎 → 建账 → 提交并批准草稿 → 对账），结果记入发布检查单；
+- Windows x64 额外确认 PATH 中没有 `python3`，且 `%DSH_HOME%\ledger-engine\venv\Scripts\bean-check.exe` 存在。
 
 ## npm 发布
 
@@ -40,7 +70,7 @@ npm publish
 ## 本地等价命令
 
 ```bash
-for file in index.js client.js src/options.js src/host/routes.js src/host/engine.js src/host/init.js scripts/vendor.mjs scripts/check-bundle.mjs; do
+for file in index.js client.js src/options.js src/host/platform.js src/host/routes.js src/host/engine.js src/host/init.js scripts/vendor.mjs scripts/check-bundle.mjs scripts/build-runtime.mjs scripts/smoke-runtime.mjs; do
   node --check "$file"
 done
 node scripts/check-bundle.mjs

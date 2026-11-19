@@ -12,7 +12,8 @@
 #                包内 vendor/core（npm 发布包自带）、$DSH_HOME/ledger-domain-src
 # templatePath—— 账本模板根；留空时同样先找源码，再用包内 vendor/assets
 # engineDir   —— 托管引擎目录；默认 $DSH_HOME/ledger-engine
-# systemPython—— 创建托管 venv 的解释器；默认 python3
+# runtimePath —— 显式指定平台运行时包目录；留空时用 optionalDependencies 里的包
+# systemPython—— 内置运行时缺失时的兜底解释器；留空自动探测（要求 3.11+、64 位）
 # pythonPath  —— 外部引擎解释器；留空则使用托管引擎一键安装
 # beanCheck / beanQuery —— 含 / 时相对 root；缺失时核心自动回退到引擎 venv
 - insert:

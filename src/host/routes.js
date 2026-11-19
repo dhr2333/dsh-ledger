@@ -11,7 +11,7 @@ import { spawn } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import path from 'node:path';
 
-import { engineStatus, installEngine, runtimeFor } from './engine.js';
+import { enginePaths, engineStatus, installEngine, runtimeFor } from './engine.js';
 import { initializeLedger } from './init.js';
 
 /** Prefix owned by this bundle. */
@@ -390,7 +390,9 @@ export function runCore(options, command, extraArgs = [], payload) {
       String(options.timeoutMs / 1000),
     ];
     if (options.beanCheck) args.push('--bean-check', options.beanCheck);
+    else if (runtime.kind === 'managed') args.push('--bean-check', enginePaths(options).beanCheck);
     if (options.beanQuery) args.push('--bean-query', options.beanQuery);
+    else if (runtime.kind === 'managed') args.push('--bean-query', enginePaths(options).beanQuery);
     args.push(command, ...extraArgs);
 
     const env = { ...process.env, PYTHONIOENCODING: 'utf-8' };

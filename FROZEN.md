@@ -11,6 +11,13 @@ The panel now exposes:
 - draft review is read-only in the panel; Core keeps `update-draft` for other clients;
 - account creation via `account-open`;
 - engine install includes `mcp`;
+- the market install ships a per-platform engine runtime (CPython 3.12 +
+  offline wheelhouse), so Windows and macOS users do not install Python;
+  supported platforms are win32-x64, win32-arm64 (x64 runtime under Windows on
+  ARM emulation), darwin-x64, darwin-arm64, linux-x64 and linux-arm64;
+  the managed engine copies the runtime into `$DSH_HOME/ledger-engine/python`
+  and installs the wheelhouse with `pip --no-index`; a missing platform package
+  falls back to a system Python 3.11+ (64-bit) with network access;
 - ledger initialization is implemented by the plugin: it copies the
   `ledger-domain-assets` template, validates a staging tree, then renames it
   into place; the creation wizard asks for a name and picks a location through
