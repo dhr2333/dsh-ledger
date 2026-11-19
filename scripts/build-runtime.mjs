@@ -128,12 +128,19 @@ function downloadWheels(target, wheelhouse) {
       config.abi,
       ...platformArgs,
       ...config.wheels,
+      ...(target.extraWheels ?? []),
     ],
     { stdio: 'inherit' },
   );
   const files = readdirSync(wheelhouse);
   if (!files.some((name) => name.startsWith('beancount-') && name.endsWith('.whl'))) {
     throw new Error(`${target.os}-${target.cpu} 缺少 beancount wheel；该平台需要先提供可用的 wheel`);
+  }
+  // `mcp` requires pywin32 on Windows; pip's cross-platform download cannot
+  // see that marker when the build host is Linux, so the wheel is requested
+  // explicitly above and this check keeps the regression from shipping again.
+  if (target.os === 'win32' && !files.some((name) => name.startsWith('pywin32-') && name.endsWith('.whl'))) {
+    throw new Error(`${target.os}-${target.cpu} 缺少 pywin32 wheel；Windows 离线安装会失败`);
   }
 }
 

@@ -17,6 +17,9 @@
       "sha256": "355ee61b8207b91574491b1c6dc9b0ebb4408fc56bfafe498f3ef439314b52dc",
       "platforms": [
         "win_amd64"
+      ],
+      "extraWheels": [
+        "pywin32"
       ]
     },
     "win32-arm64": {
@@ -26,6 +29,9 @@
       "sha256": "355ee61b8207b91574491b1c6dc9b0ebb4408fc56bfafe498f3ef439314b52dc",
       "platforms": [
         "win_amd64"
+      ],
+      "extraWheels": [
+        "pywin32"
       ],
       "note": "beancount 未发布 win_arm64 wheel；Windows on ARM 使用 x64 运行时与 x64 wheel，由系统模拟执行"
     },
