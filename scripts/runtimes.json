@@ -4,50 +4,68 @@
   "pbaBaseUrl": "https://github.com/astral-sh/python-build-standalone/releases/download",
   "wheelPython": "3.12",
   "abi": "cp312",
-  "wheels": ["beancount", "beanquery", "mcp"],
+  "wheels": [
+    "beancount",
+    "beanquery",
+    "mcp"
+  ],
   "targets": {
     "win32-x64": {
       "os": "win32",
       "cpu": "x64",
-      "asset": "cpython-3.12.16+20261110-x86_64-pc-windows-msvc-install_only.tar.gz",
-      "sha256": "e23fe5b16926de1d81661b1a97352e89fb167549c55a6825796ccd0f32ec7f1b",
-      "platforms": ["win_amd64"]
+      "asset": "cpython-3.12.16+20261110-x86_64-pc-windows-msvc-install_only_stripped.tar.gz",
+      "sha256": "355ee61b8207b91574491b1c6dc9b0ebb4408fc56bfafe498f3ef439314b52dc",
+      "platforms": [
+        "win_amd64"
+      ]
     },
     "win32-arm64": {
       "os": "win32",
       "cpu": "arm64",
-      "asset": "cpython-3.12.16+20261110-x86_64-pc-windows-msvc-install_only.tar.gz",
-      "sha256": "e23fe5b16926de1d81661b1a97352e89fb167549c55a6825796ccd0f32ec7f1b",
-      "platforms": ["win_amd64"],
+      "asset": "cpython-3.12.16+20261110-x86_64-pc-windows-msvc-install_only_stripped.tar.gz",
+      "sha256": "355ee61b8207b91574491b1c6dc9b0ebb4408fc56bfafe498f3ef439314b52dc",
+      "platforms": [
+        "win_amd64"
+      ],
       "note": "beancount 未发布 win_arm64 wheel；Windows on ARM 使用 x64 运行时与 x64 wheel，由系统模拟执行"
     },
     "darwin-x64": {
       "os": "darwin",
       "cpu": "x64",
-      "asset": "cpython-3.12.16+20261110-x86_64-apple-darwin-install_only.tar.gz",
-      "sha256": "83f2922437e6d546d0fcdb8c11f150a8e52787e8d9ea8651b1974e20908eb1bc",
-      "platforms": ["macosx_10_15_x86_64"]
+      "asset": "cpython-3.12.16+20261110-x86_64-apple-darwin-install_only_stripped.tar.gz",
+      "sha256": "b78a4c479f1964ec484880bee567568266f68da102269fb93a05fe8716b45f91",
+      "platforms": [
+        "macosx_10_15_x86_64"
+      ]
     },
     "darwin-arm64": {
       "os": "darwin",
       "cpu": "arm64",
-      "asset": "cpython-3.12.16+20261110-aarch64-apple-darwin-install_only.tar.gz",
-      "sha256": "e956e60bc9465d577ef8062059aa05cd3a2665b4b8678a2ed24e432368330b8f",
-      "platforms": ["macosx_11_0_arm64"]
+      "asset": "cpython-3.12.16+20261110-aarch64-apple-darwin-install_only_stripped.tar.gz",
+      "sha256": "2f11b8aa3726bdbd87dd9eb76568412faddf4f47e26913fa45d6a2e424972acd",
+      "platforms": [
+        "macosx_11_0_arm64"
+      ]
     },
     "linux-x64": {
       "os": "linux",
       "cpu": "x64",
-      "asset": "cpython-3.12.16+20261110-x86_64-unknown-linux-gnu-install_only.tar.gz",
-      "sha256": "c2f87d4b4e8db3abddb0f116c6ccfc503d0cbdbb9ee8faacddad1b679ec12e99",
-      "platforms": ["manylinux_2_17_x86_64", "manylinux2014_x86_64"]
+      "asset": "cpython-3.12.16+20261110-x86_64-unknown-linux-gnu-install_only_stripped.tar.gz",
+      "sha256": "6a9e62dad033790aef722dbd370e0ce76ce17b73627ba3ae679f537049350b39",
+      "platforms": [
+        "manylinux_2_17_x86_64",
+        "manylinux2014_x86_64"
+      ]
     },
     "linux-arm64": {
       "os": "linux",
       "cpu": "arm64",
-      "asset": "cpython-3.12.16+20261110-aarch64-unknown-linux-gnu-install_only.tar.gz",
-      "sha256": "4792f81750282597fb2a3389fe18b945ed2ba6aad5e45ad406d122c58cb33081",
-      "platforms": ["manylinux_2_17_aarch64", "manylinux2014_aarch64"]
+      "asset": "cpython-3.12.16+20261110-aarch64-unknown-linux-gnu-install_only_stripped.tar.gz",
+      "sha256": "b6a41defec4975d94b4ff1950236e7383e5c02ba40ea48c9ec33c66087a35aab",
+      "platforms": [
+        "manylinux_2_17_aarch64",
+        "manylinux2014_aarch64"
+      ]
     }
   }
 }
