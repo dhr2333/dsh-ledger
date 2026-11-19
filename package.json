@@ -1,6 +1,6 @@
 {
   "name": "@dhr2333/dsh-ledger",
-  "version": "0.3.0",
+  "version": "0.2.1",
   "type": "module",
   "description": "Local-first Beancount ledger panel for DSH (ships the Python core and ledger template): AI proposes, you approve and reconcile.",
   "license": "MIT",
@@ -55,12 +55,12 @@
     }
   },
   "optionalDependencies": {
-    "@dhr2333/dsh-ledger-runtime-win32-x64": "0.3.0",
-    "@dhr2333/dsh-ledger-runtime-win32-arm64": "0.3.0",
-    "@dhr2333/dsh-ledger-runtime-darwin-x64": "0.3.0",
-    "@dhr2333/dsh-ledger-runtime-darwin-arm64": "0.3.0",
-    "@dhr2333/dsh-ledger-runtime-linux-x64": "0.3.0",
-    "@dhr2333/dsh-ledger-runtime-linux-arm64": "0.3.0"
+    "@dhr2333/dsh-ledger-runtime-win32-x64": "0.2.1",
+    "@dhr2333/dsh-ledger-runtime-win32-arm64": "0.2.1",
+    "@dhr2333/dsh-ledger-runtime-darwin-x64": "0.2.1",
+    "@dhr2333/dsh-ledger-runtime-darwin-arm64": "0.2.1",
+    "@dhr2333/dsh-ledger-runtime-linux-x64": "0.2.1",
+    "@dhr2333/dsh-ledger-runtime-linux-arm64": "0.2.1"
   },
   "scripts": {
     "check": "node scripts/check-bundle.mjs",
