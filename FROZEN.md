@@ -6,6 +6,7 @@ The panel now exposes:
 
 - two views: 审核 (reconciliation + draft review) and 账户;
 - 账户五类树 + 右侧详情表单；默认隐藏已关闭/隐式，新增账户弹窗;
+- 资产/负债叶子显示当前余额（只读 `query-balances`；0 余额不显示）;
 - reconciliation preview/commit/update with allocations and directive preview;
 - draft review is read-only in the panel; Core keeps `update-draft` for other clients;
 - account creation via `account-open`;

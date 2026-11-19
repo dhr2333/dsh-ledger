@@ -14,7 +14,7 @@ import { fileURLToPath } from 'node:url';
 import os from 'node:os';
 import path from 'node:path';
 
-import { runCommand } from './engine.js';
+import { enginePaths, runCommand } from './engine.js';
 import { rememberActiveRoot } from '../options.js';
 
 /** Files every `ledger-domain-assets` checkout must contain. */
@@ -54,9 +54,11 @@ function fail(code, message, details = {}) {
  */
 export function resolveTemplate(options) {
   const dshHome = process.env.DSH_HOME ?? path.join(process.env.HOME ?? '', '.dsh');
+  const packageDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
   const candidates = [
     options.templatePath,
-    path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..', '..', 'ledger-domain-assets'),
+    path.resolve(packageDir, '..', 'ledger-domain-assets'),
+    path.join(packageDir, 'vendor', 'assets'),
     options.corePath ? path.resolve(options.corePath, '..', 'ledger-domain-assets') : undefined,
     path.join(dshHome, 'ledger-domain-src', 'ledger-domain-assets'),
     path.join(dshHome, 'ledger-domain-assets'),
@@ -75,6 +77,11 @@ export function beanCheckBinary(options) {
     if (options.beanCheck.includes('/') || options.beanCheck.includes('\\')) return path.join(options.root, options.beanCheck);
     return options.beanCheck;
   }
+  // The wizard runs after the panel reports a ready engine. For the managed
+  // engine that binary lives inside its private venv, which is not on PATH, so
+  // validation must not fall back to a global `bean-check`.
+  const managed = enginePaths(options);
+  if (existsSync(managed.beanCheck)) return managed.beanCheck;
   if (options.pythonPath) {
     const sibling = path.join(path.dirname(options.pythonPath), 'bean-check');
     if (existsSync(sibling)) return sibling;

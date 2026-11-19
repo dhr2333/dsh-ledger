@@ -9,6 +9,7 @@
  */
 
 import { spawn } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -101,11 +102,13 @@ function readMarker(paths) {
 }
 
 /**
- * Cheap fingerprint of the core source package.
+ * Fingerprint the core source package by content.
  *
  * The managed engine holds a copy of ``ledger_domain`` in its site-packages.
  * When the source changes, that copy is stale even though the engine still
  * imports; the marker records this fingerprint so the panel can offer a repair.
+ * Content, not mtime: npm normalises every tarball mtime to 1985, so a
+ * timestamp fingerprint cannot see a core update inside a new plugin version.
  * @param {string} corePath core project root.
  * @returns {string} fingerprint or an empty string when the source is missing.
  */
@@ -114,15 +117,24 @@ function coreFingerprint(corePath) {
   const directory = path.join(corePath, 'ledger_domain');
   if (!existsSync(directory)) return '';
   try {
+    const hash = createHash('sha256');
     let files = 0;
-    let latest = 0;
-    for (const name of readdirSync(directory)) {
-      if (!name.endsWith('.py')) continue;
-      const info = statSync(path.join(directory, name));
-      files += 1;
-      latest = Math.max(latest, info.mtimeMs);
-    }
-    return `${files}:${latest}`;
+    const walk = (current, prefix) => {
+      for (const name of readdirSync(current).sort()) {
+        if (name === '__pycache__') continue;
+        const full = path.join(current, name);
+        const relative = prefix === '' ? name : `${prefix}/${name}`;
+        if (statSync(full).isDirectory()) {
+          walk(full, relative);
+          continue;
+        }
+        if (!name.endsWith('.py')) continue;
+        files += 1;
+        hash.update(relative).update('\0').update(readFileSync(full)).update('\0');
+      }
+    };
+    walk(directory, '');
+    return `${files}:${hash.digest('hex').slice(0, 16)}`;
   } catch {
     return '';
   }

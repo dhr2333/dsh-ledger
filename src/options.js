@@ -34,8 +34,11 @@ function firstMatching(candidates, marker) {
 
 /**
  * Find the Python core when the profile carries no explicit `corePath`.
- * The one-command installer puts the three checkouts next to each other under
- * `$DSH_HOME/ledger-domain-src`, so a fresh install needs no profile config.
+ *
+ * A published npm package carries its own copy under `vendor/` (`prepack`
+ * generates it), so installing the bundle from the market is enough. A source
+ * checkout next to the plugin still wins, which keeps the one-command installer
+ * and developer setups live; the `$DSH_HOME` layouts remain for older installs.
  * @param {string} dshHome DSH home directory.
  * @returns {string | undefined} core project root.
  */
@@ -44,6 +47,7 @@ function discoverCorePath(dshHome) {
     [
       process.env.DSH_LEDGER_CORE,
       path.resolve(packageDir, '..', 'ledger-domain-core'),
+      path.join(packageDir, 'vendor', 'core'),
       path.join(dshHome, INSTALL_DIR, 'ledger-domain-core'),
       path.join(dshHome, 'ledger-domain-core'),
     ],
@@ -61,6 +65,7 @@ function discoverTemplatePath(dshHome) {
     [
       process.env.DSH_LEDGER_TEMPLATE,
       path.resolve(packageDir, '..', 'ledger-domain-assets'),
+      path.join(packageDir, 'vendor', 'assets'),
       path.join(dshHome, INSTALL_DIR, 'ledger-domain-assets'),
       path.join(dshHome, 'ledger-domain-assets'),
     ],

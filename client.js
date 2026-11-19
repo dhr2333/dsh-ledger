@@ -15,6 +15,7 @@ window.__ModuleLoader__.load({
       setup: '/ledger-api/setup',
       init: '/ledger-api/init',
       bootstrap: '/ledger-api/bootstrap',
+      balances: '/ledger-api/balances',
       balance: '/ledger-api/balance',
       reconPreview: '/ledger-api/reconcile/preview',
       reconCommit: '/ledger-api/reconcile/commit',
@@ -32,7 +33,7 @@ window.__ModuleLoader__.load({
     const PERIODS = ['none', 'daily', 'weekly', 'monthly', 'quarterly', 'yearly'];
 
     const ZH = {
-      title: '账本',
+      title: '本地账本',
       refresh: '刷新',
       refreshing: '刷新中…',
       loading: '正在读取账本…',
@@ -115,7 +116,7 @@ window.__ModuleLoader__.load({
       unresolved: '未分类',
       confidence: '置信度',
       source: '来源',
-      sourceAi: 'AI',
+      sourceAi: 'Agent',
       sourceQuickpath: '别名匹配',
       sourceManual: '手动',
       sourceImport: '导入',
@@ -334,7 +335,7 @@ window.__ModuleLoader__.load({
       unresolved: 'Unclassified',
       confidence: 'Confidence',
       source: 'Source',
-      sourceAi: 'AI',
+      sourceAi: 'Agent',
       sourceQuickpath: 'Alias match',
       sourceManual: 'Manual',
       sourceImport: 'Import',
@@ -675,7 +676,14 @@ window.__ModuleLoader__.load({
         overflow: 'hidden',
       },
       treeDot: { width: 7, height: 7, borderRadius: '50%', display: 'inline-block', flex: 'none' },
-      treeCount: { fontSize: 10, color: 'var(--dsw-alias-label-secondary)', flex: 'none' },
+      treeAmount: {
+        fontSize: 11,
+        color: 'var(--dsw-alias-label-secondary)',
+        fontVariantNumeric: 'tabular-nums',
+        whiteSpace: 'nowrap',
+        flex: 'none',
+        paddingRight: 2,
+      },
       modalBackdrop: {
         position: 'fixed',
         inset: 0,
@@ -921,44 +929,47 @@ window.__ModuleLoader__.load({
      * Group the flat bootstrap account list into a display tree.
      *
      * Beancount has no explicit parent directive, so every intermediate path is
-     * synthesised as a virtual group. Leaves keep the original account object,
-     * which is what the detail form edits; virtual nodes are never editable.
+     * synthesised as a virtual group. A path is a real account exactly when it
+     * has an open directive; that account may still have children (income and
+     * expense parents usually do), so a node can be both recordable and
+     * expandable. Virtual nodes have no account object and are never editable.
      */
     function buildAccountTree(accounts) {
       const roots = [];
-      const rootMap = new Map();
-      const ensureRoot = (name) => {
-        if (rootMap.has(name)) return rootMap.get(name);
-        const node = { key: name, path: name, label: PARENT_LABELS[name] ?? name, virtual: true, children: [], account: null, hidden: false };
-        rootMap.set(name, node);
-        roots.push(node);
+      const nodeMap = new Map();
+      const ensureNode = (path) => {
+        const existing = nodeMap.get(path);
+        if (existing !== undefined) return existing;
+        const parts = path.split(':');
+        const node = {
+          key: path,
+          path,
+          label: PARENT_LABELS[path] ?? parts[parts.length - 1],
+          virtual: true,
+          children: [],
+          account: null,
+          hidden: false,
+        };
+        nodeMap.set(path, node);
+        if (parts.length === 1) {
+          roots.push(node);
+        } else {
+          ensureNode(parts.slice(0, -1).join(':')).children.push(node);
+        }
         return node;
       };
-      for (const name of ACCOUNT_ROOTS) ensureRoot(name);
+      for (const name of ACCOUNT_ROOTS) ensureNode(name);
       const sorted = accounts.slice().sort((left, right) => left.account.localeCompare(right.account));
       for (const account of sorted) {
         const parts = account.account.split(':');
         if (parts.length < 2) continue;
-        let parent = ensureRoot(parts[0]);
-        for (let index = 1; index < parts.length - 1; index += 1) {
-          const path = parts.slice(0, index + 1).join(':');
-          let child = parent.children.find((item) => item.virtual && item.path === path);
-          if (child === undefined) {
-            child = { key: path, path, label: PARENT_LABELS[path] ?? parts[index], virtual: true, children: [], account: null, hidden: false };
-            parent.children.push(child);
-          }
-          parent = child;
-        }
-        if (parent.children.some((item) => item.path === account.account)) continue;
-        parent.children.push({
-          key: account.account,
-          path: account.account,
-          label: account.name || account.account,
-          virtual: false,
-          children: [],
-          account,
-          hidden: account.implicit === true || account.closed === true,
-        });
+        // Promote an existing virtual ancestor to a real account instead of
+        // adding a second node for the same path.
+        const node = ensureNode(account.account);
+        node.virtual = false;
+        node.account = account;
+        node.label = account.name || account.account;
+        node.hidden = account.implicit === true || account.closed === true;
       }
       const sort = (nodes) => {
         nodes.sort((left, right) => {
@@ -971,14 +982,16 @@ window.__ModuleLoader__.load({
       return roots;
     }
 
+    // Count recordable accounts, not tree leaves: an account that also has
+    // children (income/expense parents) still counts as one.
     function countTreeLeaves(node) {
-      if (!node.virtual) return 1;
-      return node.children.reduce((total, child) => total + countTreeLeaves(child), 0);
+      const own = node.virtual ? 0 : 1;
+      return own + node.children.reduce((total, child) => total + countTreeLeaves(child), 0);
     }
 
     function countTreeDue(node) {
-      if (!node.virtual) return node.account && (node.account.status === 'due' || node.account.status === 'overdue') ? 1 : 0;
-      return node.children.reduce((total, child) => total + countTreeDue(child), 0);
+      const own = !node.virtual && node.account && (node.account.status === 'due' || node.account.status === 'overdue') ? 1 : 0;
+      return own + node.children.reduce((total, child) => total + countTreeDue(child), 0);
     }
 
     function treeHasChildren(accounts, path) {
@@ -1137,6 +1150,7 @@ window.__ModuleLoader__.load({
       const [setupForm, setSetupForm] = React.useState({ title: '我的账本', root: '' });
       const [dirPicker, setDirPicker] = React.useState(null);
       const [data, setData] = React.useState(null);
+      const [balances, setBalances] = React.useState(null);
       const [loading, setLoading] = React.useState(true);
       const [loadError, setLoadError] = React.useState(null);
       const [notice, setNotice] = React.useState(null);
@@ -1184,6 +1198,7 @@ window.__ModuleLoader__.load({
           setEngine(enginePayload);
           if (enginePayload.ready !== true) {
             setData(null);
+            setBalances(null);
             return;
           }
           const setupPayload = await fetchJson(API.setup);
@@ -1191,11 +1206,20 @@ window.__ModuleLoader__.load({
           setSetup(setupPayload);
           if (setupPayload.initialized !== true) {
             setData(null);
+            setBalances(null);
             return;
           }
           const payload = await fetchJson(API.bootstrap);
           if (request !== generation.current) return;
           setData(payload);
+          // Amounts are an optional read projection. A failing query must not
+          // hide the ledger, so the tree simply renders without amounts.
+          try {
+            const balancePayload = await fetchJson(API.balances);
+            if (request === generation.current) setBalances(balancePayload);
+          } catch {
+            if (request === generation.current) setBalances(null);
+          }
         } catch (failure) {
           if (request !== generation.current) return;
           setLoadError(describeFailure(t, failure));
@@ -1252,6 +1276,36 @@ window.__ModuleLoader__.load({
       );
 
       const accounts = data?.accounts ?? [];
+      // Canonical account -> current position for the accounts tree. The core
+      // projects balances onto display aliases, so join on the same name the
+      // tree renders; an ambiguous display name is skipped instead of being
+      // attached to two accounts. Only asset and liability leaves with a
+      // non-zero balance get an amount: the other three classes are flows or
+      // equity, not balances.
+      const balanceByAccount = React.useMemo(() => {
+        const rows = Array.isArray(balances?.balances) ? balances.balances : [];
+        if (rows.length === 0 || accounts.length === 0) return new Map();
+        const byName = new Map();
+        const ambiguous = new Set();
+        for (const account of accounts) {
+          if (byName.has(account.name)) ambiguous.add(account.name);
+          else byName.set(account.name, account.account);
+        }
+        for (const name of ambiguous) byName.delete(name);
+        const map = new Map();
+        for (const row of rows) {
+          if (row === null || typeof row !== 'object') continue;
+          // A position carrying a cost does not have one comparable amount.
+          if (typeof row.cost === 'string' && row.cost !== '') continue;
+          const target = typeof row.account === 'string' ? byName.get(row.account) : undefined;
+          if (target === undefined) continue;
+          if (!target.startsWith('Assets:') && !target.startsWith('Liabilities:')) continue;
+          const amount = typeof row.amount === 'string' ? Number(row.amount) : Number.NaN;
+          if (!Number.isFinite(amount) || amount === 0) continue;
+          map.set(target, { amount: row.amount, currency: typeof row.currency === 'string' ? row.currency : '' });
+        }
+        return map;
+      }, [accounts, balances]);
       const openAccounts = React.useMemo(
         () => accounts.filter((account) => !account.closed).slice().sort((left, right) => left.name.localeCompare(right.name)),
         [accounts],
@@ -1271,13 +1325,15 @@ window.__ModuleLoader__.load({
         () => entryAccounts.filter((account) => account.account.startsWith('Income:')),
         [entryAccounts],
       );
+      // Assets and liabilities use their parent paths as grouping only, so a
+      // source account must be a leaf even if some parent was opened by hand.
       const assetSources = React.useMemo(
-        () => entryAccounts.filter((account) => account.account.startsWith('Assets:')),
-        [entryAccounts],
+        () => entryAccounts.filter((account) => account.account.startsWith('Assets:') && !treeHasChildren(accounts, account.account)),
+        [entryAccounts, accounts],
       );
       const liabilitySources = React.useMemo(
-        () => entryAccounts.filter((account) => account.account.startsWith('Liabilities:')),
-        [entryAccounts],
+        () => entryAccounts.filter((account) => account.account.startsWith('Liabilities:') && !treeHasChildren(accounts, account.account)),
+        [entryAccounts, accounts],
       );
       const today = data?.today ?? setup?.today ?? '';
       const ledgerCurrency = data?.operatingCurrency ?? 'CNY';
@@ -2329,20 +2385,21 @@ window.__ModuleLoader__.load({
         const displayTree = accountTree.filter((node) => countTreeLeaves(node) > 0);
         const isExpanded = (node, depth) => {
           if (Object.hasOwn(accountExpanded, node.path)) return accountExpanded[node.path] === true;
-          if (query !== '') return node.virtual;
+          if (query !== '') return node.children.length > 0;
           return depth === 0 && countTreeDue(node) > 0;
         };
         const renderNode = (node, depth) => {
-          const expanded = isExpanded(node, depth);
+          const hasChildren = node.children.length > 0;
+          const expanded = hasChildren && isExpanded(node, depth);
           const selected = node.account !== null && node.account.account === accountSelected;
-          const dueCount = node.virtual ? countTreeDue(node) : 0;
+          const position = node.account ? balanceByAccount.get(node.account.account) : undefined;
           return h(
             'div',
-            { key: node.key, role: 'treeitem', 'aria-expanded': node.virtual ? expanded : undefined },
+            { key: node.key, role: 'treeitem', 'aria-expanded': hasChildren ? expanded : undefined },
             h(
               'div',
               { style: { ...S.treeRow, ...(selected ? S.treeRowSelected : null), paddingLeft: depth * 12 } },
-              node.virtual
+              hasChildren
                 ? h(
                     'button',
                     {
@@ -2379,11 +2436,11 @@ window.__ModuleLoader__.load({
                     })
                   : null,
               ),
-              node.virtual
-                ? h('span', { style: S.treeCount }, `${countTreeLeaves(node)}${dueCount > 0 ? ` · ${dueCount} ${t('due')}` : ''}`)
+              position !== undefined
+                ? h('span', { style: S.treeAmount, title: formatMoney(position.amount, position.currency) }, formatMoney(position.amount, position.currency))
                 : null,
             ),
-            node.virtual && expanded ? h('div', { role: 'group' }, node.children.map((child) => renderNode(child, depth + 1))) : null,
+            hasChildren && expanded ? h('div', { role: 'group' }, node.children.map((child) => renderNode(child, depth + 1))) : null,
           );
         };
 

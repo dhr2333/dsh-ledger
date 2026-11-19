@@ -1,7 +1,7 @@
 {
   "meta": {
     "title": "Ledger",
-    "description": "AI proposes, you approve and reconcile; the ledger stays local plain text.",
+    "description": "Agent proposes, you approve and reconcile; the ledger stays local plain text.",
     "detail": "docs/DETAIL.md"
   }
 }

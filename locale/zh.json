@@ -1,7 +1,7 @@
 {
   "meta": {
-    "title": "账本",
-    "description": "AI 助手提案，你审批和对账；账本是本地纯文本。",
+    "title": "本地账本",
+    "description": "Agent 提案，你审批和对账；账本是本地纯文本。",
     "detail": "docs/DETAIL.md"
   }
 }

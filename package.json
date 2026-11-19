@@ -1,8 +1,8 @@
 {
   "name": "@dhr2333/dsh-ledger",
-  "version": "0.2.2",
+  "version": "0.3.0",
   "type": "module",
-  "description": "Local-first Beancount ledger panel for DSH: AI proposes, you approve and reconcile.",
+  "description": "Local-first Beancount ledger panel for DSH (ships the Python core and ledger template): AI proposes, you approve and reconcile.",
   "license": "MIT",
   "author": "dhr2333",
   "repository": {
@@ -41,7 +41,9 @@
     "locale",
     "README.md",
     "scripts/check-bundle.mjs",
-    "src"
+    "scripts/vendor.mjs",
+    "src",
+    "vendor"
   ],
   "dsh": {
     "bundle": {
@@ -53,6 +55,9 @@
     }
   },
   "scripts": {
-    "check": "node scripts/check-bundle.mjs"
+    "check": "node scripts/check-bundle.mjs",
+    "vendor": "node scripts/vendor.mjs",
+    "vendor:check": "node scripts/vendor.mjs --check",
+    "prepack": "node scripts/vendor.mjs"
   }
 }

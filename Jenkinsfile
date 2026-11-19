@@ -33,7 +33,7 @@ pipeline {
                           tar -xf - -C /workspace
                           cd /workspace
                           node --version
-                          for file in index.js client.js src/options.js src/host/routes.js src/host/engine.js; do
+                          for file in index.js client.js src/options.js src/host/routes.js src/host/engine.js src/host/init.js scripts/vendor.mjs scripts/check-bundle.mjs; do
                             node --check "$file"
                           done
                           node scripts/check-bundle.mjs

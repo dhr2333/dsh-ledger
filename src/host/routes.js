@@ -147,6 +147,13 @@ async function dispatch(ctx, options, req, res) {
     sendEnvelope(res, await runCore(options, 'bootstrap'));
     return;
   }
+  // Read-only account balances for the accounts tree. The core owns the query
+  // and projects accounts to their display names; the panel decides which
+  // account classes to show.
+  if (route === '/balances' && method === 'GET') {
+    sendEnvelope(res, await runCore(options, 'query-balances'));
+    return;
+  }
   if (route === '/draft/submit' && method === 'POST') {
     const body = await readJson(req);
     if (!body.ok) {
@@ -298,7 +305,7 @@ async function dispatch(ctx, options, req, res) {
     return;
   }
 
-  const known = new Set(['/engine', '/engine/install', '/health', '/setup', '/init', '/bootstrap', '/balance', '/reconcile/preview', '/reconcile/commit', '/reconcile/history', '/metadata', '/draft/submit', '/draft/approve', '/draft/reject', '/account/open', '/workspace', '/operation/approve', '/operation/reject', '/operation/approve-all', '/draft/approve-all']);
+  const known = new Set(['/engine', '/engine/install', '/health', '/setup', '/init', '/bootstrap', '/balances', '/balance', '/reconcile/preview', '/reconcile/commit', '/reconcile/history', '/metadata', '/draft/submit', '/draft/approve', '/draft/reject', '/account/open', '/workspace', '/operation/approve', '/operation/reject', '/operation/approve-all', '/draft/approve-all']);
   if (known.has(route)) {
     res.statusCode = 405;
     res.setHeader('allow', method === 'GET' ? 'POST' : 'GET');

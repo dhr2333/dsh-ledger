@@ -26,10 +26,21 @@
 
 CI 不安装引擎、不访问账本、不写用户目录。
 
+## npm 发布
+
+发布包必须自带核心库和模板，否则插件市场安装后无法建账：
+
+```bash
+node scripts/vendor.mjs --check   # 发布前确认 vendor/ 与两个源码 checkout 一致
+npm publish
+```
+
+`prepack` 会自动重新生成 `vendor/`（`ledger_domain` + `assets` + `manifest.json`），并把来源 commit 写进 manifest；`vendor/` 不提交到 git。发布前先更新同级的 `ledger-domain-core` / `ledger-domain-assets`，否则会打包旧副本。CI 只有本仓库的 checkout，因此不生成也不校验 `vendor/`。
+
 ## 本地等价命令
 
 ```bash
-for file in index.js client.js src/options.js src/host/routes.js src/host/engine.js; do
+for file in index.js client.js src/options.js src/host/routes.js src/host/engine.js src/host/init.js scripts/vendor.mjs scripts/check-bundle.mjs; do
   node --check "$file"
 done
 node scripts/check-bundle.mjs

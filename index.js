@@ -4,7 +4,7 @@
  * There are no ledger rules here. The Python project at ``corePath`` owns the
  * ledger; this bundle authenticates the panel, forwards its requests to
  * ``python -m ledger_domain`` and renders the returned JSON. It registers no
- * agent tools: AI adapters call the core directly, not through this panel.
+ * agent tools: Agent adapters call the core directly, not through this panel.
  */
 
 import { registerRoutes } from './src/host/routes.js';
