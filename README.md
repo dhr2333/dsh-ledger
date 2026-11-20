@@ -6,7 +6,7 @@ DSH 账本面板的维护者参考与兜底说明。用户使用说明见 [docs/
 
 - 本仓库只做面板：注册「本地账本」入口、校验浏览器请求、调用 `python -m ledger_domain`、把返回的 JSON 投影成页面。
 - 账本规则在 [`ledger-domain-core`](https://github.com/dhr2333/ledger-domain-core)，模板在 [`ledger-domain-assets`](https://github.com/dhr2333/ledger-domain-assets)。
-- 发布包通过 `vendor/` 自带核心库和模板；面板不注册 Agent 写工具。
+- 发布包通过 `vendor/` 自带账本模板；核心库是独立 PyPI 包 `ledger-domain`，由运行时 wheelhouse 离线安装，面板不持有核心源码副本。
 
 ## 安装
 
@@ -16,7 +16,7 @@ DSH 账本面板的维护者参考与兜底说明。用户使用说明见 [docs/
 dsh plugin --profile web add @dhr2333/dsh-ledger
 ```
 
-发布包自带核心库、账本模板和引擎运行时，不需要再检出其他仓库，也不需要安装 Python。首次安装引擎完全离线；默认账本目录是 `$DSH_HOME/ledger`。
+发布包自带账本模板和引擎运行时，不需要再检出其他仓库，也不需要安装 Python。首次安装引擎完全离线；默认账本目录是 `$DSH_HOME/ledger`。
 
 支持六个平台：`win32-x64`、`win32-arm64`（x64 运行时，Windows on ARM 模拟执行）、`darwin-x64`、`darwin-arm64`、`linux-x64`、`linux-arm64`。没有匹配运行时包时回退到系统 Python 3.11+（64 位）。
 
@@ -46,11 +46,20 @@ curl -fsSL https://raw.githubusercontent.com/dhr2333/dsh-ledger/main/scripts/ins
 
 ## 引擎与路径
 
-- **托管引擎（默认）**：优先使用平台运行时包自带的 CPython 3.12，把它复制到 `$DSH_HOME/ledger-engine/python`，再建私有 venv，用离线 wheelhouse 安装 `beancount`、`beanquery`、`mcp`；核心库复制进 site-packages，更新后按内容指纹提示修复。
-- **系统 Python 兜底**：没有匹配的运行时包时，自动探测 `py -3` / `python` / `python3`（要求 3.11+、64 位），联网安装 wheel。
-- **外部引擎（开发机）**：配置 `pythonPath` 指向已有 venv，`corePath` 指向核心库源码。
+- **托管引擎（默认）**：优先使用平台运行时包自带的 CPython 3.12，把它复制到 `$DSH_HOME/ledger-engine/python`，再建私有 venv，用离线 wheelhouse 安装 `beancount`、`beanquery`、`mcp` 和 `ledger-domain`（核心的固定基线）。
+- **系统 Python 兜底**：没有匹配的运行时包时，自动探测 `py -3` / `python` / `python3`（要求 3.11+、64 位），联网安装 wheel（核心装最新版，协议不兼容会拒绝）。
+- **外部引擎（开发机）**：配置 `pythonPath` 指向已有 venv；该 venv 里 `pip install ledger-domain` 即可，`corePath` 只在需要直接跑核心源码时设置。
 
-核心库 / 模板的查找顺序：显式配置 → 环境变量 → 同级源码 checkout → 包内 `vendor/` → `$DSH_HOME/ledger-domain-src` → `$DSH_HOME`。
+核心库 / 模板的查找顺序：显式配置 → 环境变量 → 同级源码 checkout → `$DSH_HOME/ledger-domain-src` → `$DSH_HOME`。托管引擎不读 `corePath`：它通过 pip 拥有唯一一份 `ledger-domain`。
+
+## 核心版本与更新
+
+核心有自己的发布线（PyPI `ledger-domain`），修复不必重新发插件：
+
+- 面板打开时会检查一次 PyPI（12 小时缓存，2 秒超时，离线静默跳过），引擎状态里带 `core.version` / `core.latest`。
+- 有新版本时面板显示「升级核心」，点击后在引擎 venv 里 `pip install --upgrade ledger-domain`；安装后校验 `health` 的 `protocol`，超出面板支持窗口会自动回滚到随包基线并提示更新插件。
+- 「恢复随包版本」从运行时 wheelhouse 离线重装固定基线，不需要网络。
+- 镜像/私有索引：`pypiIndex` 用于版本检查（JSON API），pip 侧沿用 `PIP_INDEX_URL`。
 
 ## 配置
 
@@ -59,20 +68,21 @@ curl -fsSL https://raw.githubusercontent.com/dhr2333/dsh-ledger/main/scripts/ins
 - id: ledger-domain
   config:
     root: "/path/to/ledger"          # 默认 $DSH_HOME/ledger
-    corePath: "/path/to/ledger-domain-core"   # 留空自动发现
+    # corePath: "/path/to/ledger-domain-core"  # 仅开发：让外部引擎直接跑核心源码
     templatePath: "/path/to/ledger-domain-assets"  # 留空自动发现
     # runtimePath: "/path/to/dsh-ledger-runtime-linux-x64"  # 显式指定运行时包（一般留空）
     # systemPython: "python3"        # 只在内置运行时缺失时用作兜底
     # pythonPath: "/path/to/ledger/.venv/bin/python"  # 外部引擎才需要
+    # pypiIndex: "https://pypi.tuna.tsinghua.edu.cn/pypi"  # 仅用于核心版本检查
 ```
 
 `beanCheck` / `beanQuery` 含 `/` 时相对 `root`；留空会回退到引擎 venv。`stateDir` 默认 `.ledger`。
 
 ## HTTP 路由
 
-面板只注册 `/ledger-api/*` 二十一条路由：
+面板只注册 `/ledger-api/*` 二十三条路由：
 
-`engine` / `engine/install` / `health` / `setup` / `init` / `bootstrap` / `balances` / `balance` / `reconcile/preview` / `reconcile/commit` / `reconcile/history` / `metadata` / `account/open` / `draft/submit` / `draft/approve` / `draft/approve-all` / `draft/reject` / `operation/approve` / `operation/approve-all` / `operation/reject` / `workspace`。
+`engine` / `engine/install` / `engine/core-upgrade` / `engine/core-rollback` / `health` / `setup` / `init` / `bootstrap` / `balances` / `balance` / `reconcile/preview` / `reconcile/commit` / `reconcile/history` / `metadata` / `account/open` / `draft/submit` / `draft/approve` / `draft/approve-all` / `draft/reject` / `operation/approve` / `operation/approve-all` / `operation/reject` / `workspace`。
 
 ## Core CLI
 

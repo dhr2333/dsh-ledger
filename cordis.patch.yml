@@ -8,13 +8,13 @@
 # 那里的 id 与本行相同，优先级更高。
 #
 # root        —— 账本根目录（含 main.bean）；默认 $DSH_HOME/ledger
-# corePath    —— Python 核心库项目根；留空时按顺序自动发现插件同级源码、
-#                包内 vendor/core（npm 发布包自带）、$DSH_HOME/ledger-domain-src
-# templatePath—— 账本模板根；留空时同样先找源码，再用包内 vendor/assets
+# corePath    —— 核心库源码根，仅开发用；托管引擎通过 pip 安装 PyPI 包 ledger-domain
+# templatePath—— 账本模板根；留空时先找源码，再用包内 vendor/assets
 # engineDir   —— 托管引擎目录；默认 $DSH_HOME/ledger-engine
 # runtimePath —— 显式指定平台运行时包目录；留空时用 optionalDependencies 里的包
 # systemPython—— 内置运行时缺失时的兜底解释器；留空自动探测（要求 3.11+、64 位）
 # pythonPath  —— 外部引擎解释器；留空则使用托管引擎一键安装
+# pypiIndex   —— 核心版本检查用的索引基址；留空走 https://pypi.org/pypi
 # beanCheck / beanQuery —— 含 / 时相对 root；缺失时核心自动回退到引擎 venv
 - insert:
     - id: ledger-domain

@@ -35,12 +35,12 @@ function firstMatching(candidates, marker) {
 }
 
 /**
- * Find the Python core when the profile carries no explicit `corePath`.
+ * Find a Python core *source* checkout, for development only.
  *
- * A published npm package carries its own copy under `vendor/` (`prepack`
- * generates it), so installing the bundle from the market is enough. A source
- * checkout next to the plugin still wins, which keeps the one-command installer
- * and developer setups live; the `$DSH_HOME` layouts remain for older installs.
+ * An installed bundle does not carry the core: it is a PyPI distribution
+ * installed into the managed engine venv, so a core fix reaches users without a
+ * plugin release. `corePath` therefore only matters for a source checkout used
+ * with an external interpreter, and for the one-command installer.
  * @param {string} dshHome DSH home directory.
  * @returns {string | undefined} core project root.
  */
@@ -49,7 +49,6 @@ function discoverCorePath(dshHome) {
     [
       process.env.DSH_LEDGER_CORE,
       path.resolve(packageDir, '..', 'ledger-domain-core'),
-      path.join(packageDir, 'vendor', 'core'),
       path.join(dshHome, INSTALL_DIR, 'ledger-domain-core'),
       path.join(dshHome, 'ledger-domain-core'),
     ],
@@ -158,6 +157,7 @@ export function rememberActiveRoot(options, root) {
  *   pythonModule: string,
  *   beanCheck: string,
  *   beanQuery: string,
+ *   pypiIndex: string,
  *   timeZone: string,
  *   graceDays: number,
  *   timeoutMs: number,
@@ -194,6 +194,7 @@ export function readOptions(config) {
     pythonModule: text('pythonModule') ?? 'ledger_domain',
     beanCheck: text('beanCheck') ?? '',
     beanQuery: text('beanQuery') ?? '',
+    pypiIndex: text('pypiIndex') ?? process.env.DSH_LEDGER_PYPI_INDEX ?? '',
     timeZone: text('timeZone') ?? 'Asia/Shanghai',
     graceDays: integer('graceDays', 3),
     timeoutMs: integer('timeoutMs', 120_000),

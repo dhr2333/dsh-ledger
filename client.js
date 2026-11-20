@@ -12,6 +12,8 @@ window.__ModuleLoader__.load({
     const API = {
       engine: '/ledger-api/engine',
       engineInstall: '/ledger-api/engine/install',
+      coreUpgrade: '/ledger-api/engine/core-upgrade',
+      coreRollback: '/ledger-api/engine/core-rollback',
       setup: '/ledger-api/setup',
       init: '/ledger-api/init',
       bootstrap: '/ledger-api/bootstrap',
@@ -170,6 +172,15 @@ window.__ModuleLoader__.load({
       engineError: '引擎操作失败：',
       engineRuntimeMissing: '当前平台没有可用的内置引擎，也没有找到 Python 3.11+（64 位）。请安装 Python 后重试。',
       errorEngine: '引擎操作失败：',
+      coreLabel: '核心',
+      coreUpdateAvailable: '核心 {current} 可升级到 {latest}（来自 PyPI，不影响插件版本）',
+      coreFromIndex: '核心 {version} 来自 PyPI，与随包版本不同',
+      coreIncompatible: '核心 {version} 需要更新面板插件（协议 {protocol}）',
+      coreUpgrade: '升级核心',
+      coreRollback: '恢复随包版本',
+      coreUpgraded: '核心已升级。',
+      coreRestored: '核心已恢复到随包版本。',
+      errorCoreUpdate: '核心更新失败：',
       setupTitle: '创建你的第一个账本',
       setupPath: '账本位置',
       setupName: '账本名称',
@@ -391,6 +402,15 @@ window.__ModuleLoader__.load({
       engineError: 'Engine operation failed: ',
       engineRuntimeMissing: 'No built-in engine is available for this platform and no Python 3.11+ (64-bit) was found. Install Python and retry.',
       errorEngine: 'Engine operation failed: ',
+      coreLabel: 'Core',
+      coreUpdateAvailable: 'Core {current} can be upgraded to {latest} (from PyPI; the plugin version does not change)',
+      coreFromIndex: 'Core {version} comes from PyPI and differs from the bundled version',
+      coreIncompatible: 'Core {version} needs a newer panel plugin (protocol {protocol})',
+      coreUpgrade: 'Upgrade core',
+      coreRollback: 'Restore bundled core',
+      coreUpgraded: 'The core was upgraded.',
+      coreRestored: 'The bundled core was restored.',
+      errorCoreUpdate: 'Core update failed: ',
       setupTitle: 'Create your first ledger',
       setupPath: 'Ledger location',
       setupName: 'Ledger name',
@@ -1148,6 +1168,7 @@ window.__ModuleLoader__.load({
       const t = useT();
       const [engine, setEngine] = React.useState(null);
       const [engineBusy, setEngineBusy] = React.useState(false);
+      const [coreBusy, setCoreBusy] = React.useState(false);
       const [engineLog, setEngineLog] = React.useState('');
       const [engineError, setEngineError] = React.useState(null);
       const [setup, setSetup] = React.useState(null);
@@ -1730,6 +1751,31 @@ window.__ModuleLoader__.load({
         }
       }
 
+      /**
+       * Upgrade or roll back the Python core without touching the plugin.
+       *
+       * The core has its own release line on PyPI; the panel only offers the
+       * action and reports what the host did.
+       * @param {string} route upgrade or rollback endpoint.
+       * @param {string} message success text.
+       * @returns {Promise<void>}
+       */
+      async function runCoreAction(route, message) {
+        if (coreBusy) return;
+        setCoreBusy(true);
+        setActionError(null);
+        setNotice(null);
+        try {
+          await postJson(route, {});
+          await load();
+          setNotice(message);
+        } catch (failure) {
+          reportError(describeFailure(t, failure));
+        } finally {
+          setCoreBusy(false);
+        }
+      }
+
       /** Resolve the host directory-picker Remote namespace on demand. */
       function resolveDirectoryPicker() {
         try {
@@ -1979,6 +2025,9 @@ window.__ModuleLoader__.load({
         h(
           'div',
           { style: S.headMeta },
+          typeof engine?.core?.version === 'string'
+            ? h('span', { style: S.label }, `${t('coreLabel')} ${engine.core.version}`)
+            : null,
           h(Button, { onClick: () => { void load(); }, busy: loading, disabled: busy !== null, variant: 'outline' }, loading ? t('refreshing') : t('refresh')),
         ),
       );
@@ -2004,6 +2053,16 @@ window.__ModuleLoader__.load({
         else body = h('div', { style: { display: 'grid', gap: 16 } }, renderReconcile(), renderReview());
       }
 
+      // The core is a separate PyPI distribution: the panel only reports what is
+      // installed and offers the upgrade/rollback the host performs.
+      const core = engine?.core ?? null;
+      const coreIncompatible = core !== null && core.compatible === false;
+      const coreUpdate = core !== null && core.updateAvailable === true && core.compatible !== false;
+      const coreAhead = core !== null
+        && typeof core.version === 'string'
+        && typeof core.baseline === 'string'
+        && core.version !== core.baseline;
+
       return h(
         'div',
         { style: S.root },
@@ -2011,6 +2070,49 @@ window.__ModuleLoader__.load({
           'div',
           { style: S.inner },
           header,
+          core !== null && (coreUpdate || coreIncompatible || coreAhead)
+            ? h(
+                'div',
+                { style: S.alert, role: 'status' },
+                h(
+                  'span',
+                  null,
+                  coreIncompatible
+                    ? fill(t('coreIncompatible'), { version: core.version ?? '?', protocol: core.protocol ?? '?' })
+                    : coreUpdate
+                      ? fill(t('coreUpdateAvailable'), { current: core.version ?? '?', latest: core.latest ?? '?' })
+                      : fill(t('coreFromIndex'), { version: core.version ?? '?' }),
+                ),
+                h(
+                  'div',
+                  { style: { display: 'flex', gap: 8 } },
+                  coreUpdate
+                    ? h(
+                        Button,
+                        {
+                          variant: 'primary',
+                          busy: coreBusy,
+                          disabled: coreBusy,
+                          onClick: () => { void runCoreAction(API.coreUpgrade, t('coreUpgraded')); },
+                        },
+                        t('coreUpgrade'),
+                      )
+                    : null,
+                  coreAhead && !coreIncompatible
+                    ? h(
+                        Button,
+                        {
+                          variant: 'outline',
+                          busy: coreBusy,
+                          disabled: coreBusy,
+                          onClick: () => { void runCoreAction(API.coreRollback, t('coreRestored')); },
+                        },
+                        t('coreRollback'),
+                      )
+                    : null,
+                ),
+              )
+            : null,
           loadError !== null && (data !== null || setup?.initialized === false || (engine !== null && engine.ready !== true))
             ? h(
                 'div',
@@ -3256,6 +3358,9 @@ window.__ModuleLoader__.load({
       if (code === 'engine_runtime_missing') return t('engineRuntimeMissing');
       if (['engine_missing', 'engine_probe_failed', 'engine_source_missing', 'engine_python_missing', 'engine_install_failed', 'engine_core_changed'].includes(code)) {
         return `${t('errorEngine')}${failure?.message ?? ''}`;
+      }
+      if (['core_upgrade_failed', 'core_rollback_failed', 'core_version_unknown', 'core_protocol_mismatch', 'engine_core_protocol_mismatch'].includes(code)) {
+        return `${t('errorCoreUpdate')}${failure?.message ?? ''}`;
       }
       if (['core_unavailable', 'core_timeout', 'core_protocol_error', 'bridge_error', 'internal_error'].includes(code)) {
         return `${t('errorCore')}${failure?.message ?? ''}`;

@@ -11,7 +11,7 @@ import { spawn } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import path from 'node:path';
 
-import { enginePaths, engineStatus, installEngine, runtimeFor } from './engine.js';
+import { enginePaths, engineStatus, installEngine, rollbackCore, runtimeFor, upgradeCore } from './engine.js';
 import { initializeLedger } from './init.js';
 
 /** Prefix owned by this bundle. */
@@ -92,6 +92,22 @@ async function dispatch(ctx, options, req, res) {
         },
       });
     }
+    return;
+  }
+  if (route === '/engine/core-upgrade' && method === 'POST') {
+    const body = await readJson(req);
+    if (!body.ok) {
+      sendJson(res, body.status, { ok: false, error: body.error });
+      return;
+    }
+    const value = /** @type {Record<string, unknown>} */ (body.value);
+    await sendEngineAction(res, () =>
+      upgradeCore(options, { version: typeof value.version === 'string' ? value.version : undefined }),
+    );
+    return;
+  }
+  if (route === '/engine/core-rollback' && method === 'POST') {
+    await sendEngineAction(res, () => rollbackCore(options));
     return;
   }
   if (route === '/health' && method === 'GET') {
@@ -305,7 +321,7 @@ async function dispatch(ctx, options, req, res) {
     return;
   }
 
-  const known = new Set(['/engine', '/engine/install', '/health', '/setup', '/init', '/bootstrap', '/balances', '/balance', '/reconcile/preview', '/reconcile/commit', '/reconcile/history', '/metadata', '/draft/submit', '/draft/approve', '/draft/reject', '/account/open', '/workspace', '/operation/approve', '/operation/reject', '/operation/approve-all', '/draft/approve-all']);
+  const known = new Set(['/engine', '/engine/install', '/engine/core-upgrade', '/engine/core-rollback', '/health', '/setup', '/init', '/bootstrap', '/balances', '/balance', '/reconcile/preview', '/reconcile/commit', '/reconcile/history', '/metadata', '/draft/submit', '/draft/approve', '/draft/reject', '/account/open', '/workspace', '/operation/approve', '/operation/reject', '/operation/approve-all', '/draft/approve-all']);
   if (known.has(route)) {
     res.statusCode = 405;
     res.setHeader('allow', method === 'GET' ? 'POST' : 'GET');
@@ -502,6 +518,28 @@ function sendEnvelope(res, envelope) {
     return;
   }
   sendJson(res, 200, { ok: false, error: envelope.error });
+}
+
+/**
+ * Run one engine action and answer with its status or a stable failure code.
+ * @param {import('node:http').ServerResponse} res response.
+ * @param {() => Promise<object>} action engine action.
+ * @returns {Promise<void>}
+ */
+async function sendEngineAction(res, action) {
+  try {
+    sendJson(res, 200, { ok: true, ...(await action()) });
+  } catch (error) {
+    const failure = /** @type {Error & { code?: string, details?: object }} */ (error);
+    sendJson(res, 200, {
+      ok: false,
+      error: {
+        code: failure.code ?? 'engine_install_failed',
+        message: failure.message,
+        details: failure.details ?? {},
+      },
+    });
+  }
 }
 
 /**

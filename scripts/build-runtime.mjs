@@ -7,6 +7,10 @@
  * runtime into `$DSH_HOME/ledger-engine` and installs the wheels without
  * network access, so users never install Python themselves.
  *
+ * The wheelhouse also carries the pinned `ledger-domain` core wheel: the core
+ * is an independent PyPI distribution, so the engine installs it with pip and
+ * can upgrade it later without a new plugin release.
+ *
  *   node scripts/build-runtime.mjs --all
  *   node scripts/build-runtime.mjs --target win32-x64 --pack
  *   node scripts/build-runtime.mjs --all --pack
@@ -128,6 +132,7 @@ function downloadWheels(target, wheelhouse) {
       config.abi,
       ...platformArgs,
       ...config.wheels,
+      `${config.core.package}==${config.core.version}`,
       ...(target.extraWheels ?? []),
     ],
     { stdio: 'inherit' },
@@ -135,6 +140,13 @@ function downloadWheels(target, wheelhouse) {
   const files = readdirSync(wheelhouse);
   if (!files.some((name) => name.startsWith('beancount-') && name.endsWith('.whl'))) {
     throw new Error(`${target.os}-${target.cpu} 缺少 beancount wheel；该平台需要先提供可用的 wheel`);
+  }
+  // The core is an independent PyPI distribution; the wheelhouse carries the
+  // pinned baseline so a first install still works without network access.
+  if (!files.some((name) => name.startsWith('ledger_domain-') && name.endsWith('.whl'))) {
+    throw new Error(
+      `${target.os}-${target.cpu} 缺少 ledger_domain wheel；先发布 ${config.core.package}==${config.core.version} 到 PyPI`,
+    );
   }
   // `mcp` requires pywin32 on Windows; pip's cross-platform download cannot
   // see that marker when the build host is Linux, so the wheel is requested
@@ -164,6 +176,7 @@ function writeManifest(target, key, dir) {
     arch: target.cpu,
     wheelPython: config.wheelPython,
     abi: config.abi,
+    core: { package: config.core.package, version: config.core.version },
     wheels,
     createdAt: new Date().toISOString(),
   };

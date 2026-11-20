@@ -5,17 +5,21 @@
  * The npm package must be usable on its own: `dsh plugin --profile web add
  * @dhr2333/dsh-ledger` is the entry point most people see, and DSH does not
  * fetch extra repositories for a bundle. So the published tarball carries the
- * Python core (`ledger_domain`) and the ledger template next to the panel.
+ * ledger template next to the panel.
+ *
+ * The Python core is NOT vendored: it is an independent PyPI distribution
+ * (`ledger-domain`) whose wheel ships inside each runtime package's wheelhouse.
+ * A core fix therefore reaches users through PyPI, without a plugin release.
  *
  * Copies are generated, never committed:
  *
  *   node scripts/vendor.mjs          # build vendor/ (also runs on npm publish)
- *   node scripts/vendor.mjs --check  # verify vendor/ matches the checkouts
+ *   node scripts/vendor.mjs --check  # verify vendor/ matches the checkout
  *
- * Sources default to sibling checkouts and can be overridden with
- * `LEDGER_CORE_SRC` / `LEDGER_ASSETS_SRC`. Publishing from a stale checkout is
- * the one failure this script cannot detect, so the generated manifest records
- * the source commit and whether that checkout was dirty.
+ * The assets source defaults to the sibling checkout and can be overridden
+ * with `LEDGER_ASSETS_SRC`. Publishing from a stale checkout is the one failure
+ * this script cannot detect, so the generated manifest records the source
+ * commit and whether that checkout was dirty.
  */
 
 import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
@@ -27,7 +31,6 @@ import { fileURLToPath } from 'node:url';
 
 const packageDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const vendorDir = path.join(packageDir, 'vendor');
-const coreSource = path.resolve(process.env.LEDGER_CORE_SRC ?? path.join(packageDir, '..', 'ledger-domain-core'));
 const assetsSource = path.resolve(process.env.LEDGER_ASSETS_SRC ?? path.join(packageDir, '..', 'ledger-domain-assets'));
 
 /** Entries that belong to a source checkout, not to the shipped runtime. */
@@ -45,7 +48,6 @@ const SKIP_ANYWHERE = new Set([
 ]);
 
 /** Files the panel must find after installation. */
-const REQUIRED_CORE = ['ledger_domain/__init__.py', 'ledger_domain/cli.py', 'ledger_domain/core.py'];
 const REQUIRED_ASSETS = [
   'main.bean',
   'account/assets.bean',
@@ -104,20 +106,6 @@ function sourceState(dir, paths) {
 }
 
 /**
- * Read the Python project version without importing it.
- * @param {string} dir core checkout.
- * @returns {string | null} version string.
- */
-function pythonVersion(dir) {
-  try {
-    const text = readFileSync(path.join(dir, 'pyproject.toml'), 'utf8');
-    return text.match(/^version\s*=\s*"([^"]+)"/m)?.[1] ?? null;
-  } catch {
-    return null;
-  }
-}
-
-/**
  * Copy a directory with the shared skip rules.
  * @param {string} from source directory.
  * @param {string} to destination directory.
@@ -128,54 +116,25 @@ function copyTree(from, to) {
 }
 
 /**
- * Copy one optional file.
- * @param {string} from source file.
- * @param {string} to destination file.
- * @returns {void}
- */
-function copyFile(from, to) {
-  if (existsSync(from)) cpSync(from, to);
-}
-
-/**
  * Build the vendored tree under a staging directory.
  * @param {string} staging empty destination.
  * @returns {void}
  */
 function build(staging) {
-  if (!existsSync(path.join(coreSource, 'ledger_domain', '__init__.py'))) {
-    throw new Error(
-      `无法从 ${coreSource} 读取核心库；先检出 ledger-domain-core，或用 LEDGER_CORE_SRC 指定它的位置`,
-    );
-  }
   if (!existsSync(path.join(assetsSource, 'main.bean'))) {
     throw new Error(
       `无法从 ${assetsSource} 读取账本模板；先检出 ledger-domain-assets，或用 LEDGER_ASSETS_SRC 指定它的位置`,
     );
   }
-  mkdirSync(path.join(staging, 'core'), { recursive: true });
-  copyTree(path.join(coreSource, 'ledger_domain'), path.join(staging, 'core', 'ledger_domain'));
-  copyFile(path.join(coreSource, 'LICENSE'), path.join(staging, 'core', 'LICENSE'));
-  copyFile(path.join(coreSource, 'README.md'), path.join(staging, 'core', 'README.md'));
   mkdirSync(path.join(staging, 'assets'), { recursive: true });
   copyTree(assetsSource, path.join(staging, 'assets'));
 
-  const core = sourceState(coreSource, ['ledger_domain', 'pyproject.toml']);
   const assets = sourceState(assetsSource, ['main.bean', 'account', 'trans']);
-  const missing = [
-    ...REQUIRED_CORE.filter((relative) => !existsSync(path.join(staging, 'core', relative))),
-    ...REQUIRED_ASSETS.filter((relative) => !existsSync(path.join(staging, 'assets', relative))),
-  ];
+  const missing = REQUIRED_ASSETS.filter((relative) => !existsSync(path.join(staging, 'assets', relative)));
   if (missing.length > 0) throw new Error(`vendored tree is incomplete: ${missing.join(', ')}`);
 
   const manifest = {
     generatedAt: new Date().toISOString(),
-    core: {
-      version: pythonVersion(coreSource),
-      commit: core.commit,
-      describe: core.describe,
-      dirty: core.dirty,
-    },
     assets: {
       commit: assets.commit,
       describe: assets.describe,
@@ -252,15 +211,11 @@ try {
       rmSync(staging, { recursive: true, force: true });
     }
     const manifest = JSON.parse(readFileSync(path.join(vendorDir, 'manifest.json'), 'utf8'));
-    const core = manifest.core;
     const assets = manifest.assets;
-    const dirty = [core.dirty ? 'core' : null, assets.dirty ? 'assets' : null].filter(Boolean);
-    if (dirty.length > 0) {
-      console.warn(`警告：${dirty.join('、')} 工作区有未提交改动，发布包会包含它们`);
+    if (assets.dirty) {
+      console.warn('警告：assets 工作区有未提交改动，发布包会包含它们');
     }
-    console.log(
-      `vendor/ 已生成：core ${core.version ?? '?'} @ ${core.commit ?? 'nogit'}，assets @ ${assets.commit ?? 'nogit'}`,
-    );
+    console.log(`vendor/ 已生成：assets @ ${assets.commit ?? 'nogit'}`);
   }
 } catch (error) {
   console.error(`错误：${error instanceof Error ? error.message : String(error)}`);

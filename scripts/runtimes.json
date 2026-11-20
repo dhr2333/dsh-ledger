@@ -9,6 +9,10 @@
     "beanquery",
     "mcp"
   ],
+  "core": {
+    "package": "ledger-domain",
+    "version": "0.1.0"
+  },
   "targets": {
     "win32-x64": {
       "os": "win32",
