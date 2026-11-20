@@ -8,17 +8,23 @@
  *
  *   node scripts/smoke-runtime.mjs
  *   node scripts/smoke-runtime.mjs --target linux-x64
+ *   node scripts/smoke-runtime.mjs --target linux-x64 --from-tarball
+ *
+ * `--from-tarball` packs the runtime package with npm and unpacks that tarball
+ * first, so the smoke tests what users download: npm does not carry symlinks,
+ * which is how 0.3.1 shipped without `bin/python3`.
  *
  * Run each target on the matching operating system. Windows on ARM uses the
  * x64 runtime package and is covered by that emulation.
  */
 
-import { spawnSync } from 'node:child_process';
-import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { execFileSync, spawnSync } from 'node:child_process';
+import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { findBundledRuntime } from '../src/host/engine.js';
 import { runtimePython, venvProgram } from '../src/host/platform.js';
 
 const packageDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -27,6 +33,7 @@ const args = process.argv.slice(2);
 const targetIndex = args.indexOf('--target');
 const targetKey = targetIndex === -1 ? `${process.platform}-${process.arch}` : args[targetIndex + 1];
 const target = config.targets[targetKey];
+const fromTarball = args.includes('--from-tarball');
 
 /**
  * Print a message and exit non-zero.
@@ -47,8 +54,33 @@ const candidates = [
   path.join(packageDir, 'dist', 'packages', packageName),
   path.join(packageDir, 'dist', `runtime-${targetKey}`),
 ];
-const runtimeDir = candidates.find((candidate) => existsSync(path.join(candidate, 'manifest.json')));
+let runtimeDir = candidates.find((candidate) => existsSync(path.join(candidate, 'manifest.json')));
 if (runtimeDir === undefined) die('找不到构建产物；先运行 node scripts/build-runtime.mjs --target ' + targetKey);
+
+/** Temporary directory holding the packed artifact, when `--from-tarball` is used. */
+let artifactDir = null;
+if (fromTarball) {
+  const built = path.join(packageDir, 'dist', 'packages', packageName);
+  if (!existsSync(path.join(built, 'manifest.json'))) {
+    die(`npm pack 需要 dist/packages/${packageName}；先运行 node scripts/build-runtime.mjs --target ${targetKey} --pack`);
+  }
+  artifactDir = mkdtempSync(path.join(os.tmpdir(), `dsh-ledger-tarball-${targetKey}-`));
+  try {
+    execFileSync('npm', ['pack', '--pack-destination', artifactDir, built], { stdio: ['ignore', 'ignore', 'pipe'] });
+  } catch (error) {
+    die(`npm pack 失败：${error.stderr?.toString().trim() ?? error.message}`);
+  }
+  const tarball = readdirSync(artifactDir).find((name) => name.endsWith('.tgz'));
+  if (tarball === undefined) die('npm pack 没有产出 tarball');
+  const unpacked = path.join(artifactDir, 'unpacked');
+  mkdirSync(unpacked, { recursive: true });
+  execFileSync('tar', ['-xzf', path.join(artifactDir, tarball), '-C', unpacked], { stdio: 'inherit' });
+  runtimeDir = path.join(unpacked, 'package');
+  // The panel resolves the runtime the same way; a null here is the 0.3.1 bug.
+  const discovered = findBundledRuntime({ runtimePath: runtimeDir });
+  if (discovered === null) die('npm 产物里找不到可用运行时（findBundledRuntime 返回 null）');
+  console.log(`findBundledRuntime 命中：${discovered.python}`);
+}
 
 /**
  * Run one command and require a zero exit code.
@@ -147,4 +179,5 @@ try {
   console.log(`PASS ${targetKey}: bean-check and health both ok`);
 } finally {
   rmSync(temp, { recursive: true, force: true, maxRetries: 5, retryDelay: 200 });
+  if (artifactDir !== null) rmSync(artifactDir, { recursive: true, force: true, maxRetries: 5, retryDelay: 200 });
 }

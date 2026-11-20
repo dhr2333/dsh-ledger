@@ -9,7 +9,7 @@
  */
 
 import { spawn } from 'node:child_process';
-import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { copyFileSync, cpSync, existsSync, mkdirSync, readdirSync, readFileSync, realpathSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import os from 'node:os';
 import path from 'node:path';
@@ -149,6 +149,29 @@ async function resolveSystemPython(configured) {
 }
 
 /**
+ * Replace copied symlinks with the files they point at.
+ *
+ * python-build-standalone keeps `bin/python3` as a symlink, and `fs.cpSync`
+ * does not reliably dereference it (observed on Node 25 even with
+ * `dereference: true`). A copied runtime must not point back into the package
+ * directory, which pnpm and plugin upgrades are free to move or delete.
+ * @param {string} dir directory to rewrite in place.
+ * @returns {void}
+ */
+function materializeSymlinks(dir) {
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    const full = path.join(dir, entry.name);
+    if (entry.isDirectory()) materializeSymlinks(full);
+    else if (entry.isSymbolicLink()) {
+      const target = realpathSync(full);
+      rmSync(full, { force: true });
+      if (statSync(target).isDirectory()) cpSync(target, full, { recursive: true });
+      else copyFileSync(target, full);
+    }
+  }
+}
+
+/**
  * Copy the bundled runtime into the engine directory when it is not current.
  *
  * The copy makes the engine independent of the package directory, which pnpm
@@ -170,6 +193,7 @@ function syncRuntime(paths, bundled, logs) {
   }
   rmSync(paths.runtime, RM_OPTIONS);
   cpSync(bundled.pythonRoot, paths.runtime, { recursive: true, dereference: true });
+  materializeSymlinks(paths.runtime);
   logs.push(`$ runtime\n${bundled.dir} -> ${paths.runtime}`);
 }
 

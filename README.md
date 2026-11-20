@@ -126,7 +126,8 @@ ledger/
 
 - `npm run check` 做 bundle 静态检查。
 - `npm run vendor` 把账本模板 checkout 复制进 `vendor/`（`prepack` 自动执行）；`npm run vendor:check` 检查副本是否落后。
-- `npm run runtime:pack` 生成 `dist/packages/` 下的六个运行时包；先发布运行时包，再发布主包，版本必须对齐。
+- `npm run runtime:pack` 生成 `dist/packages/` 下的六个运行时包并做 tarball 产物校验；先发布运行时包，再发布主包，版本必须对齐。
+- `npm run runtime:verify` 只跑产物校验：用 `npm pack` 重新打包每个运行时包并解包，确认解释器（`bin/python3` 可能是被 npm 剥离的符号链接）与 wheelhouse 都在。
 - 发布前先更新同级的 core / assets，再 `npm publish`；`vendor/`、`dist/`、`.cache/` 不提交到 git。
 - CI 配置与本地等价命令见 [docs/CI.md](docs/CI.md)。
 

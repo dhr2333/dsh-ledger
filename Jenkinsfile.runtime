@@ -38,7 +38,7 @@ pipeline {
                     set -eu
                     node --version
                     python3 --version
-                    for file in index.js client.js src/options.js src/host/platform.js src/host/routes.js src/host/engine.js src/host/init.js scripts/vendor.mjs scripts/check-bundle.mjs scripts/build-runtime.mjs scripts/smoke-runtime.mjs; do
+                    for file in index.js client.js src/options.js src/host/platform.js src/host/routes.js src/host/engine.js src/host/init.js scripts/vendor.mjs scripts/check-bundle.mjs scripts/build-runtime.mjs scripts/check-pack.mjs scripts/smoke-runtime.mjs; do
                       node --check "$file"
                     done
                     node scripts/check-bundle.mjs
@@ -51,9 +51,10 @@ pipeline {
                 sh '''
                     set -eu
                     if [ "$TARGET" = "all" ]; then
-                      node scripts/build-runtime.mjs --all --pack
+                      npm run runtime:pack
                     else
                       node scripts/build-runtime.mjs --target "$TARGET" --pack
+                      node scripts/check-pack.mjs
                     fi
                 '''
             }
@@ -66,7 +67,7 @@ pipeline {
             steps {
                 sh '''
                     set -eu
-                    node scripts/smoke-runtime.mjs --target linux-x64
+                    node scripts/smoke-runtime.mjs --target linux-x64 --from-tarball
                 '''
             }
         }

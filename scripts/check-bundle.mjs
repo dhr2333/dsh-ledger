@@ -2,8 +2,9 @@
 // Run with: node scripts/check-bundle.mjs
 
 import assert from 'node:assert/strict';
-import { existsSync, readdirSync, statSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
+import os from 'node:os';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 
@@ -55,6 +56,38 @@ assert.equal(platform.runtimePackageName('win32', 'x64'), '@dhr2333/dsh-ledger-r
 assert.equal(platform.runtimePackageName('linux', 'arm64'), '@dhr2333/dsh-ledger-runtime-linux-arm64');
 assert.equal(platform.runtimePython('/r', 'win32'), path.join('/r', 'python.exe'));
 assert.equal(platform.runtimePython('/r', 'darwin'), path.join('/r', 'bin', 'python3'));
+
+// npm pack drops symlinks, so an installed runtime keeps only the versioned
+// binary. Resolution must still find it, and must prefer the conventional name
+// when the links are present.
+const fixture = mkdtempSync(path.join(os.tmpdir(), 'dsh-ledger-platform-'));
+try {
+  const bin = path.join(fixture, 'bin');
+  mkdirSync(bin, { recursive: true });
+  writeFileSync(path.join(bin, 'python3.13'), '');
+  writeFileSync(path.join(bin, 'python3.12'), '');
+  assert.equal(
+    platform.runtimePython(fixture, 'linux'),
+    path.join(bin, 'python3.13'),
+    'a runtime without symlinks must resolve the newest versioned binary',
+  );
+  writeFileSync(path.join(bin, 'python3'), '');
+  assert.equal(
+    platform.runtimePython(fixture, 'linux'),
+    path.join(bin, 'python3'),
+    'a developer build with symlinks keeps using bin/python3',
+  );
+  rmSync(path.join(bin, 'python3'));
+  rmSync(path.join(bin, 'python3.13'));
+  rmSync(path.join(bin, 'python3.12'));
+  assert.equal(
+    platform.runtimePython(fixture, 'linux'),
+    path.join(bin, 'python3'),
+    'an empty bin/ keeps the conventional path instead of throwing',
+  );
+} finally {
+  rmSync(fixture, { recursive: true, force: true });
+}
 
 for (const relative of [
   'index.js',

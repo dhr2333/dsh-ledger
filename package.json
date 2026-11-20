@@ -1,6 +1,6 @@
 {
   "name": "@dhr2333/dsh-ledger",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "type": "module",
   "description": "Local-first Beancount ledger panel for DSH (installs the beancount-guard core and ships the ledger template): AI proposes, you approve and reconcile.",
   "license": "MIT",
@@ -55,19 +55,20 @@
     }
   },
   "optionalDependencies": {
-    "@dhr2333/dsh-ledger-runtime-win32-x64": "0.3.1",
-    "@dhr2333/dsh-ledger-runtime-win32-arm64": "0.3.1",
-    "@dhr2333/dsh-ledger-runtime-darwin-x64": "0.3.1",
-    "@dhr2333/dsh-ledger-runtime-darwin-arm64": "0.3.1",
-    "@dhr2333/dsh-ledger-runtime-linux-x64": "0.3.1",
-    "@dhr2333/dsh-ledger-runtime-linux-arm64": "0.3.1"
+    "@dhr2333/dsh-ledger-runtime-win32-x64": "0.3.2",
+    "@dhr2333/dsh-ledger-runtime-win32-arm64": "0.3.2",
+    "@dhr2333/dsh-ledger-runtime-darwin-x64": "0.3.2",
+    "@dhr2333/dsh-ledger-runtime-darwin-arm64": "0.3.2",
+    "@dhr2333/dsh-ledger-runtime-linux-x64": "0.3.2",
+    "@dhr2333/dsh-ledger-runtime-linux-arm64": "0.3.2"
   },
   "scripts": {
     "check": "node scripts/check-bundle.mjs",
     "vendor": "node scripts/vendor.mjs",
     "vendor:check": "node scripts/vendor.mjs --check",
     "runtime:build": "node scripts/build-runtime.mjs --all",
-    "runtime:pack": "node scripts/build-runtime.mjs --all --pack",
+    "runtime:verify": "node scripts/check-pack.mjs",
+    "runtime:pack": "node scripts/build-runtime.mjs --all --pack && node scripts/check-pack.mjs",
     "runtime:smoke": "node scripts/smoke-runtime.mjs",
     "prepack": "node scripts/vendor.mjs"
   }

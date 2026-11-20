@@ -38,12 +38,15 @@ CI 不安装引擎、不访问账本、不写用户目录。
 2. 用 `pip download --only-binary=:all:` 拉取目标平台的离线 wheelhouse；
 3. 生成 `dist/packages/dsh-ledger-runtime-<os>-<arch>/`，包含 `python/`、`wheelhouse/`、`manifest.json`、`package.json`。
 
+`npm run runtime:pack` 在此之后自动执行 `scripts/check-pack.mjs`。它用 `npm pack` 重新打包每个运行时包、解包 tarball，再检查解释器与 wheelhouse：npm 不收录符号链接，python-build-standalone 的 `bin/python3` 正是符号链接，所以只检查构建目录会漏掉"安装包里没有 python3"（0.3.1 的发布事故）。`src/host/platform.js` 在 `bin/python3` 缺失时会回落到 `bin/python3.12`，`check-pack` 与 `check-bundle` 都会守住这一点。
+
 目标平台：`win32-x64`、`win32-arm64`（x64 运行时，Windows on ARM 模拟执行）、`darwin-x64`、`darwin-arm64`、`linux-x64`、`linux-arm64`。任何平台缺少 wheel 时构建直接失败，不允许带着空 wheelhouse 发布。
 
 发布顺序（版本必须与主包一致）：
 
 ```bash
-node scripts/build-runtime.mjs --all --pack
+npm run runtime:pack   # 构建六个运行时包并做 tarball 产物校验
+node scripts/smoke-runtime.mjs --target linux-x64 --from-tarball
 for key in win32-x64 win32-arm64 darwin-x64 darwin-arm64 linux-x64 linux-arm64; do
   npm publish "dist/packages/dsh-ledger-runtime-$key" --access public
 done
@@ -52,8 +55,8 @@ npm publish   # 主包最后发布
 
 发布前冒烟：
 
-- Linux：`node scripts/smoke-runtime.mjs --target linux-x64`（CI 自动执行）；
-- 其余平台：在对应系统上运行同一命令，并完成一次面板流程（安装引擎 → 建账 → 提交并批准草稿 → 对账），结果记入发布检查单；
+- Linux：`node scripts/smoke-runtime.mjs --target linux-x64 --from-tarball`（CI 自动执行；先 `npm pack` 再解包，测的是用户实际下载的产物）；
+- 其余平台：在对应系统上运行同一命令（同样加 `--from-tarball`），并完成一次面板流程（安装引擎 → 建账 → 提交并批准草稿 → 对账），结果记入发布检查单；
 - Windows x64 额外确认 PATH 中没有 `python3`，且 `%DSH_HOME%\ledger-engine\venv\Scripts\bean-check.exe` 存在。
 
 ## npm 发布
@@ -70,7 +73,7 @@ npm publish
 ## 本地等价命令
 
 ```bash
-for file in index.js client.js src/options.js src/host/platform.js src/host/routes.js src/host/engine.js src/host/init.js scripts/vendor.mjs scripts/check-bundle.mjs scripts/build-runtime.mjs scripts/smoke-runtime.mjs; do
+for file in index.js client.js src/options.js src/host/platform.js src/host/routes.js src/host/engine.js src/host/init.js scripts/vendor.mjs scripts/check-bundle.mjs scripts/build-runtime.mjs scripts/check-pack.mjs scripts/smoke-runtime.mjs; do
   node --check "$file"
 done
 node scripts/check-bundle.mjs
