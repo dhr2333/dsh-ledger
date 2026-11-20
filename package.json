@@ -2,7 +2,7 @@
   "name": "@dhr2333/dsh-ledger",
   "version": "0.2.3",
   "type": "module",
-  "description": "Local-first Beancount ledger panel for DSH (ships the Python core and ledger template): AI proposes, you approve and reconcile.",
+  "description": "Local-first Beancount ledger panel for DSH (installs the beancount-guard core and ships the ledger template): AI proposes, you approve and reconcile.",
   "license": "MIT",
   "author": "dhr2333",
   "repository": {
