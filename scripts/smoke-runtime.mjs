@@ -3,8 +3,8 @@
  * Smoke-test one built runtime on the machine it targets.
  *
  * It creates a throwaway venv from the bundled CPython, installs the offline
- * wheelhouse, imports every runtime dependency, copies the core, and validates
- * the ledger template with the venv's own bean-check.
+ * wheelhouse (including the pinned core), imports every runtime dependency, and
+ * validates the ledger template with the venv's own bean-check.
  *
  *   node scripts/smoke-runtime.mjs
  *   node scripts/smoke-runtime.mjs --target linux-x64
@@ -100,19 +100,21 @@ try {
     'beancount',
     'beanquery',
     'mcp',
+    `${config.core.package}==${config.core.version}`,
   ]);
   console.log('offline wheelhouse installed');
 
+  const coreModule = 'beancount_guard';
   const sitePackages = run(python, ['-c', 'import site; print(site.getsitepackages()[0])']).trim().split(/\r?\n/).pop() ?? '';
-  const coreSource = [
-    path.join(packageDir, '..', 'ledger-domain-core', 'ledger_domain'),
-    path.join(packageDir, 'vendor', 'core', 'ledger_domain'),
-  ].find((candidate) => existsSync(path.join(candidate, '__init__.py')));
-  if (coreSource === undefined) die('找不到 ledger_domain 源码');
-  cpSync(coreSource, path.join(sitePackages, 'ledger_domain'), { recursive: true });
+  if (!existsSync(path.join(sitePackages, coreModule, '__init__.py'))) {
+    die(`wheelhouse 里的核心没有装成 ${coreModule}`);
+  }
+  if (!existsSync(path.join(sitePackages, `${coreModule}-${config.core.version}.dist-info`))) {
+    die(`核心缺少 ${coreModule}-${config.core.version}.dist-info，pip 没有接管它`);
+  }
   const imported = run(python, [
     '-c',
-    'import beancount, beanquery, mcp, ledger_domain; print(getattr(beancount, "__version__", "?"))',
+    `import beancount, beanquery, mcp, ${coreModule}; print(getattr(beancount, "__version__", "?"))`,
   ]).trim();
   console.log(`imports ok (beancount ${imported})`);
 
@@ -127,7 +129,7 @@ try {
   run(venvProgram(venv, 'bean-check'), [path.join(ledger, 'main.bean')]);
   const health = run(python, [
     '-m',
-    'ledger_domain',
+    'beancount_guard',
     '--root',
     ledger,
     '--bean-check',
@@ -138,6 +140,10 @@ try {
   ]);
   const envelope = JSON.parse(health);
   if (envelope.ok !== true) die(`health 返回失败：${health}`);
+  if (envelope.value?.version !== config.core.version) {
+    die(`health 版本 ${envelope.value?.version} 与 wheelhouse 固定的 ${config.core.version} 不一致`);
+  }
+  if (!Number.isInteger(envelope.value?.protocol)) die(`health 没有返回 protocol：${health}`);
   console.log(`PASS ${targetKey}: bean-check and health both ok`);
 } finally {
   rmSync(temp, { recursive: true, force: true, maxRetries: 5, retryDelay: 200 });

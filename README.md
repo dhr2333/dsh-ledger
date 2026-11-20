@@ -4,9 +4,9 @@ DSH 账本面板的维护者参考与兜底说明。用户使用说明见 [docs/
 
 ## 仓库职责
 
-- 本仓库只做面板：注册「本地账本」入口、校验浏览器请求、调用 `python -m ledger_domain`、把返回的 JSON 投影成页面。
-- 账本规则在 [`ledger-domain-core`](https://github.com/dhr2333/ledger-domain-core)，模板在 [`ledger-domain-assets`](https://github.com/dhr2333/ledger-domain-assets)。
-- 发布包通过 `vendor/` 自带账本模板；核心库是独立 PyPI 包 `ledger-domain`，由运行时 wheelhouse 离线安装，面板不持有核心源码副本。
+- 本仓库只做面板：注册「本地账本」入口、校验浏览器请求、调用 `python -m beancount_guard`、把返回的 JSON 投影成页面。
+- 账本规则在 [`beancount-guard`](https://github.com/dhr2333/beancount-guard)，模板在 [`ledger-domain-assets`](https://github.com/dhr2333/ledger-domain-assets)。
+- 发布包通过 `vendor/` 自带账本模板；核心库是独立 PyPI 包 `beancount-guard`，由运行时 wheelhouse 离线安装，面板不持有核心源码副本。
 
 ## 安装
 
@@ -30,7 +30,7 @@ curl -fsSL https://raw.githubusercontent.com/dhr2333/dsh-ledger/main/scripts/ins
 
 它会：
 
-1. 把 `ledger-domain-core`、`ledger-domain-assets`、`dsh-ledger` 放到 `$DSH_HOME/ledger-domain-src/`；
+1. 把 `beancount-guard`、`ledger-domain-assets`、`dsh-ledger` 放到 `$DSH_HOME/ledger-domain-src/`；
 2. 用 `dsh plugin --profile web add` 把面板装进 profile；
 3. 把 `@dhr2333/dsh-ledger` 选进 `dsh.profile.bundles`；
 4. 刷新页面；没有 HMR 就重启 DSH。
@@ -46,18 +46,18 @@ curl -fsSL https://raw.githubusercontent.com/dhr2333/dsh-ledger/main/scripts/ins
 
 ## 引擎与路径
 
-- **托管引擎（默认）**：优先使用平台运行时包自带的 CPython 3.12，把它复制到 `$DSH_HOME/ledger-engine/python`，再建私有 venv，用离线 wheelhouse 安装 `beancount`、`beanquery`、`mcp` 和 `ledger-domain`（核心的固定基线）。
+- **托管引擎（默认）**：优先使用平台运行时包自带的 CPython 3.12，把它复制到 `$DSH_HOME/ledger-engine/python`，再建私有 venv，用离线 wheelhouse 安装 `beancount`、`beanquery`、`mcp` 和 `beancount-guard`（核心的固定基线）。
 - **系统 Python 兜底**：没有匹配的运行时包时，自动探测 `py -3` / `python` / `python3`（要求 3.11+、64 位），联网安装 wheel（核心装最新版，协议不兼容会拒绝）。
-- **外部引擎（开发机）**：配置 `pythonPath` 指向已有 venv；该 venv 里 `pip install ledger-domain` 即可，`corePath` 只在需要直接跑核心源码时设置。
+- **外部引擎（开发机）**：配置 `pythonPath` 指向已有 venv；该 venv 里 `pip install beancount-guard` 即可，`corePath` 只在需要直接跑核心源码时设置。
 
-核心库 / 模板的查找顺序：显式配置 → 环境变量 → 同级源码 checkout → `$DSH_HOME/ledger-domain-src` → `$DSH_HOME`。托管引擎不读 `corePath`：它通过 pip 拥有唯一一份 `ledger-domain`。
+核心库 / 模板的查找顺序：显式配置 → 环境变量 → 同级源码 checkout → `$DSH_HOME/ledger-domain-src` → `$DSH_HOME`。托管引擎不读 `corePath`：它通过 pip 拥有唯一一份 `beancount-guard`。
 
 ## 核心版本与更新
 
-核心有自己的发布线（PyPI `ledger-domain`），修复不必重新发插件：
+核心有自己的发布线（PyPI `beancount-guard`），修复不必重新发插件：
 
 - 面板打开时会检查一次 PyPI（12 小时缓存，2 秒超时，离线静默跳过），引擎状态里带 `core.version` / `core.latest`。
-- 有新版本时面板显示「升级核心」，点击后在引擎 venv 里 `pip install --upgrade ledger-domain`；安装后校验 `health` 的 `protocol`，超出面板支持窗口会自动回滚到随包基线并提示更新插件。
+- 有新版本时面板显示「升级核心」，点击后在引擎 venv 里 `pip install --upgrade beancount-guard`；安装后校验 `health` 的 `protocol`，超出面板支持窗口会自动回滚到随包基线并提示更新插件。
 - 「恢复随包版本」从运行时 wheelhouse 离线重装固定基线，不需要网络。
 - 镜像/私有索引：`pypiIndex` 用于版本检查（JSON API），pip 侧沿用 `PIP_INDEX_URL`。
 
@@ -68,7 +68,7 @@ curl -fsSL https://raw.githubusercontent.com/dhr2333/dsh-ledger/main/scripts/ins
 - id: ledger-domain
   config:
     root: "/path/to/ledger"          # 默认 $DSH_HOME/ledger
-    # corePath: "/path/to/ledger-domain-core"  # 仅开发：让外部引擎直接跑核心源码
+    # corePath: "/path/to/beancount-guard"  # 仅开发：让外部引擎直接跑核心源码
     templatePath: "/path/to/ledger-domain-assets"  # 留空自动发现
     # runtimePath: "/path/to/dsh-ledger-runtime-linux-x64"  # 显式指定运行时包（一般留空）
     # systemPython: "python3"        # 只在内置运行时缺失时用作兜底
@@ -87,10 +87,10 @@ curl -fsSL https://raw.githubusercontent.com/dhr2333/dsh-ledger/main/scripts/ins
 ## Core CLI
 
 ```bash
-python -m ledger_domain --root /path/to/ledger status
-python -m ledger_domain --root /path/to/ledger due
-python -m ledger_domain --root /path/to/ledger reconcile-preview
-python -m ledger_domain --root /path/to/ledger reconcile-commit
+python -m beancount_guard --root /path/to/ledger status
+python -m beancount_guard --root /path/to/ledger due
+python -m beancount_guard --root /path/to/ledger reconcile-preview
+python -m beancount_guard --root /path/to/ledger reconcile-commit
 ```
 
 stdout 固定为 `{"ok": true, "value": ...}` 或 `{"ok": false, "error": {code, message, details}}`。
@@ -100,7 +100,7 @@ stdout 固定为 `{"ok": true, "value": ...}` 或 `{"ok": false, "error": {code,
 ```text
 浏览器面板
   → POST /ledger-api/...（会话校验 + JSON 形状校验）
-  → spawn python -m ledger_domain ...（stdin JSON）
+  → spawn python -m beancount_guard ...（stdin JSON）
   → 核心库：解析 → 重算 → 影子树 bean-check → 文件锁 → 原子追加/替换
   → stdout {"ok": true, "value": {...}}
 ```
@@ -125,7 +125,7 @@ ledger/
 ## 开发与发布
 
 - `npm run check` 做 bundle 静态检查。
-- `npm run vendor` 把两个源码 checkout 复制进 `vendor/`（`prepack` 自动执行）；`npm run vendor:check` 检查副本是否落后。
+- `npm run vendor` 把账本模板 checkout 复制进 `vendor/`（`prepack` 自动执行）；`npm run vendor:check` 检查副本是否落后。
 - `npm run runtime:pack` 生成 `dist/packages/` 下的六个运行时包；先发布运行时包，再发布主包，版本必须对齐。
 - 发布前先更新同级的 core / assets，再 `npm publish`；`vendor/`、`dist/`、`.cache/` 不提交到 git。
 - CI 配置与本地等价命令见 [docs/CI.md](docs/CI.md)。

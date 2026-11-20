@@ -24,7 +24,7 @@ assert.ok(pkg.files?.includes('vendor'), 'package files must include vendor');
 // The core is a separate PyPI distribution; the runtime wheelhouse pins the
 // baseline so a first install works offline.
 const runtimes = await readJson('scripts/runtimes.json');
-assert.equal(runtimes.core?.package, 'ledger-domain', 'runtimes.json must pin the core package');
+assert.equal(runtimes.core?.package, 'beancount-guard', 'runtimes.json must pin the core package');
 assert.match(runtimes.core?.version ?? '', /^\d+\.\d+\.\d+/, 'runtimes.json must pin a core version');
 
 // Every supported platform gets an exact-version runtime package; npm installs
@@ -149,7 +149,7 @@ if (existsSync(packagesDir)) {
       `${key} core pin`,
     );
     assert.ok(
-      manifest.wheels.some((wheel) => wheel.file.startsWith('ledger_domain-')),
+      manifest.wheels.some((wheel) => wheel.file.startsWith('beancount_guard-')),
       `${key} wheelhouse must carry the core wheel`,
     );
   }

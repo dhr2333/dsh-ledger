@@ -3,7 +3,7 @@
  *
  * There are no ledger rules here. The Python project at ``corePath`` owns the
  * ledger; this bundle authenticates the panel, forwards its requests to
- * ``python -m ledger_domain`` and renders the returned JSON. It registers no
+ * ``python -m beancount_guard`` and renders the returned JSON. It registers no
  * agent tools: Agent adapters call the core directly, not through this panel.
  */
 

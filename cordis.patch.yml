@@ -1,14 +1,14 @@
 # dsh-ledger — 账本的 DSH 展示页
 #
 # 本插件不含账本规则：HTTP 路由只做浏览器会话校验、请求形状校验，
-# 然后执行 `python -m ledger_domain` 并回传 JSON。它不注册任何 Agent 工具。
+# 然后执行 `python -m beancount_guard` 并回传 JSON。它不注册任何 Agent 工具。
 #
 # 这里只放可移植的默认值，不要写死某台机器的路径：本文件会随插件一起
 # 安装到每个 profile。个人路径写在 profile 的 cordis.patch.yml 覆盖项里，
 # 那里的 id 与本行相同，优先级更高。
 #
 # root        —— 账本根目录（含 main.bean）；默认 $DSH_HOME/ledger
-# corePath    —— 核心库源码根，仅开发用；托管引擎通过 pip 安装 PyPI 包 ledger-domain
+# corePath    —— 核心库源码根，仅开发用；托管引擎通过 pip 安装 PyPI 包 beancount-guard
 # templatePath—— 账本模板根；留空时先找源码，再用包内 vendor/assets
 # engineDir   —— 托管引擎目录；默认 $DSH_HOME/ledger-engine
 # runtimePath —— 显式指定平台运行时包目录；留空时用 optionalDependencies 里的包

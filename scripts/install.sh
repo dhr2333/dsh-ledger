@@ -21,7 +21,9 @@
 
 set -euo pipefail
 
-CORE_REPO="https://github.com/dhr2333/ledger-domain-core.git"
+# The core lives at beancount-guard; the checkout is only used when the panel
+# runs against a source tree (external engine), not by the managed engine.
+CORE_REPO="https://github.com/dhr2333/beancount-guard.git"
 ASSETS_REPO="https://github.com/dhr2333/ledger-domain-assets.git"
 PLUGIN_REPO="https://github.com/dhr2333/dsh-ledger.git"
 
@@ -78,7 +80,7 @@ else
 fi
 
 if [[ -z "$DIR" ]]; then
-  if [[ -n "$REPO_ROOT" && -f "$REPO_ROOT/package.json" && -d "$(dirname -- "$REPO_ROOT")/ledger-domain-core" ]]; then
+  if [[ -n "$REPO_ROOT" && -f "$REPO_ROOT/package.json" && -d "$(dirname -- "$REPO_ROOT")/beancount-guard" ]]; then
     DIR="$(dirname -- "$REPO_ROOT")"
   else
     DIR="$DSH_HOME/ledger-domain-src"
@@ -126,7 +128,7 @@ clone_or_update() {
   fi
 }
 
-clone_or_update "ledger-domain-core" "$CORE_REPO"
+clone_or_update "beancount-guard" "$CORE_REPO"
 clone_or_update "ledger-domain-assets" "$ASSETS_REPO"
 clone_or_update "dsh-ledger" "$PLUGIN_REPO"
 

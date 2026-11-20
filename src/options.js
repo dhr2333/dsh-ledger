@@ -47,12 +47,12 @@ function firstMatching(candidates, marker) {
 function discoverCorePath(dshHome) {
   return firstMatching(
     [
-      process.env.DSH_LEDGER_CORE,
-      path.resolve(packageDir, '..', 'ledger-domain-core'),
-      path.join(dshHome, INSTALL_DIR, 'ledger-domain-core'),
-      path.join(dshHome, 'ledger-domain-core'),
+      process.env.DSH_BEANCOUNT_GUARD,
+      path.resolve(packageDir, '..', 'beancount-guard'),
+      path.join(dshHome, INSTALL_DIR, 'beancount-guard'),
+      path.join(dshHome, 'beancount-guard'),
     ],
-    (candidate) => path.join(candidate, 'ledger_domain', '__init__.py'),
+    (candidate) => path.join(candidate, 'beancount_guard', '__init__.py'),
   );
 }
 
@@ -191,7 +191,7 @@ export function readOptions(config) {
     runtimePath: text('runtimePath') === undefined ? '' : path.resolve(text('runtimePath')),
     systemPython: text('systemPython') ?? '',
     pythonPath,
-    pythonModule: text('pythonModule') ?? 'ledger_domain',
+    pythonModule: text('pythonModule') ?? 'beancount_guard',
     beanCheck: text('beanCheck') ?? '',
     beanQuery: text('beanQuery') ?? '',
     pypiIndex: text('pypiIndex') ?? process.env.DSH_LEDGER_PYPI_INDEX ?? '',

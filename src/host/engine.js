@@ -3,9 +3,9 @@
  *
  * The panel must not ask an ordinary user to install Python, Beancount or the
  * core library by hand. This module owns one private virtualenv under the DSH
- * home, provisions Beancount into it, copies the local core package into its
- * site-packages, and reports readiness. It also keeps the existing external
- * engine (a configured ledger venv) working for developer setups.
+ * home, provisions Beancount and the core distribution into it with pip, and
+ * reports readiness. It also keeps the existing external engine (a configured
+ * ledger venv) working for developer setups.
  */
 
 import { spawn } from 'node:child_process';
@@ -23,13 +23,13 @@ const RM_OPTIONS = { recursive: true, force: true, maxRetries: 5, retryDelay: 20
 /** Print `major.minor|bits` so the probe can reject old or 32-bit interpreters. */
 const PYTHON_PROBE = "import struct,sys;print(f\"{sys.version_info.major}.{sys.version_info.minor}|{struct.calcsize('P')*8}\")";
 /** The core is an independent PyPI distribution; the engine only installs it. */
-const CORE_PACKAGE = 'ledger-domain';
+const CORE_PACKAGE = 'beancount-guard';
 /** The CLI/MCP contract window this panel understands. */
 const CORE_PROTOCOL_MIN = 1;
 const CORE_PROTOCOL_MAX = 1;
 /** Read the installed core version and contract version in one probe. */
 const CORE_PROBE =
-  "import json,ledger_domain;print(json.dumps({'version':ledger_domain.__version__,'protocol':ledger_domain.PROTOCOL}))";
+  "import json,beancount_guard;print(json.dumps({'version':beancount_guard.__version__,'protocol':beancount_guard.PROTOCOL}))";
 const require = createRequire(import.meta.url);
 
 /**
@@ -311,7 +311,7 @@ async function probeManaged(options, paths, bundled) {
     };
   }
   const [imported, beanCheck, beanQuery, core] = await Promise.all([
-    runCommand(paths.python, ['-c', 'import beancount, beanquery, mcp, ledger_domain; print(getattr(beancount, "__version__", "?"))'], { timeoutMs: 30_000 }),
+    runCommand(paths.python, ['-c', 'import beancount, beanquery, mcp, beancount_guard; print(getattr(beancount, "__version__", "?"))'], { timeoutMs: 30_000 }),
     runCommand(paths.beanCheck, ['--version'], { timeoutMs: 30_000 }),
     runCommand(paths.beanQuery, ['--version'], { timeoutMs: 30_000 }),
     probeCore(paths),
@@ -564,7 +564,7 @@ export function runtimeFor(options) {
  * is otherwise left alone. The core is installed with pip from its own
  * distribution: the pinned wheel when a runtime package is present (offline),
  * otherwise the newest release from the index. The venv therefore owns one
- * `ledger-domain` installation that can be upgraded without a plugin release.
+ * `beancount-guard` installation that can be upgraded without a plugin release.
  * @param {object} options bridge options.
  * @param {{ force?: boolean }} [request] install request.
  * @returns {Promise<object>} resulting engine status plus a bounded log.
@@ -659,7 +659,7 @@ export async function installEngine(options, request = {}) {
     const imported = await step(
       'verify imports',
       paths.python,
-      ['-c', 'import beancount, beanquery, mcp, ledger_domain; print(getattr(beancount, "__version__", "?"))'],
+      ['-c', 'import beancount, beanquery, mcp, beancount_guard; print(getattr(beancount, "__version__", "?"))'],
       30_000,
     );
     const beanCheck = await step('verify bean-check', paths.beanCheck, ['--version'], 30_000);
@@ -720,22 +720,26 @@ function coreSpec(bundled) {
 }
 
 /**
- * Drop a hand-copied core (and any stale metadata) before pip takes ownership.
+ * Drop a hand-copied or pre-rename core (and any stale metadata) before pip
+ * takes ownership. `ledger_domain` is the previous import name, so an engine
+ * installed before the rename must lose it or it shadows `beancount_guard`.
  * @param {string} sitePackages venv site-packages directory.
  * @returns {string[]} removed distribution names.
  */
 function clearInstalledCore(sitePackages) {
   const removed = [];
-  rmSync(path.join(sitePackages, 'ledger_domain'), RM_OPTIONS);
-  try {
-    for (const name of readdirSync(sitePackages)) {
-      if (name.startsWith('ledger_domain-') && name.endsWith('.dist-info')) {
-        rmSync(path.join(sitePackages, name), RM_OPTIONS);
-        removed.push(name);
+  for (const module of ['ledger_domain', 'beancount_guard']) {
+    rmSync(path.join(sitePackages, module), RM_OPTIONS);
+    try {
+      for (const name of readdirSync(sitePackages)) {
+        if (name.startsWith(`${module}-`) && name.endsWith('.dist-info')) {
+          rmSync(path.join(sitePackages, name), RM_OPTIONS);
+          removed.push(name);
+        }
       }
+    } catch {
+      // A missing or unreadable site-packages cannot hold a legacy core anyway.
     }
-  } catch {
-    // A missing or unreadable site-packages cannot hold a legacy core anyway.
   }
   return removed;
 }

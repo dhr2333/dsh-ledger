@@ -3,7 +3,7 @@
  *
  * This file owns no ledger semantics. It authenticates the browser request,
  * validates its wire shape, and executes the Python core CLI at
- * ``python -m ledger_domain``. The core validates and writes; the bridge only
+ * ``python -m beancount_guard``. The core validates and writes; the bridge only
  * translates JSON envelopes.
  */
 

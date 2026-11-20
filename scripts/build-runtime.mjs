@@ -7,7 +7,7 @@
  * runtime into `$DSH_HOME/ledger-engine` and installs the wheels without
  * network access, so users never install Python themselves.
  *
- * The wheelhouse also carries the pinned `ledger-domain` core wheel: the core
+ * The wheelhouse also carries the pinned `beancount-guard` core wheel: the core
  * is an independent PyPI distribution, so the engine installs it with pip and
  * can upgrade it later without a new plugin release.
  *
@@ -143,9 +143,9 @@ function downloadWheels(target, wheelhouse) {
   }
   // The core is an independent PyPI distribution; the wheelhouse carries the
   // pinned baseline so a first install still works without network access.
-  if (!files.some((name) => name.startsWith('ledger_domain-') && name.endsWith('.whl'))) {
+  if (!files.some((name) => name.startsWith('beancount_guard-') && name.endsWith('.whl'))) {
     throw new Error(
-      `${target.os}-${target.cpu} 缺少 ledger_domain wheel；先发布 ${config.core.package}==${config.core.version} 到 PyPI`,
+      `${target.os}-${target.cpu} 缺少 beancount_guard wheel；先发布 ${config.core.package}==${config.core.version} 到 PyPI`,
     );
   }
   // `mcp` requires pywin32 on Windows; pip's cross-platform download cannot

@@ -8,7 +8,7 @@
  * ledger template next to the panel.
  *
  * The Python core is NOT vendored: it is an independent PyPI distribution
- * (`ledger-domain`) whose wheel ships inside each runtime package's wheelhouse.
+ * (`beancount-guard`) whose wheel ships inside each runtime package's wheelhouse.
  * A core fix therefore reaches users through PyPI, without a plugin release.
  *
  * Copies are generated, never committed:

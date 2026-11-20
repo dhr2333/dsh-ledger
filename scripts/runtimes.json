@@ -10,7 +10,7 @@
     "mcp"
   ],
   "core": {
-    "package": "ledger-domain",
+    "package": "beancount-guard",
     "version": "0.1.0"
   },
   "targets": {
