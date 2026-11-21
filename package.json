@@ -2,7 +2,7 @@
   "name": "@dhr2333/dsh-ledger",
   "version": "0.3.2",
   "type": "module",
-  "description": "Local-first Beancount ledger panel for DSH (installs the beancount-guard core and ships the ledger template): AI proposes, you approve and reconcile.",
+  "description": "本地、纯文本、复式的 DSH 账本面板（Beancount）：Agent 提案，你审批和对账。",
   "license": "MIT",
   "author": "dhr2333",
   "repository": {
@@ -20,7 +20,9 @@
     "beancount",
     "ledger",
     "reconciliation",
-    "bookkeeping"
+    "bookkeeping",
+    "plain-text-accounting",
+    "double-entry"
   ],
   "publishConfig": {
     "access": "public",

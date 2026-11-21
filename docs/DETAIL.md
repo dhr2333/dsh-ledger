@@ -2,9 +2,13 @@
 
 ## 它是什么
 
-`dsh-ledger` 是 DSH 的账本面板：Agent 读账单、生成待确认记录，你批准或驳回，到期核对余额。账本是本地纯文本 Beancount，可读、可备份、可带走。
+`dsh-ledger` 是 DSH 里的**本地复式账本**：账本只存在你自己的机器上，是标准的纯文本 Beancount；Agent 读账单、生成待确认记录，你批准或驳回，到期核对余额。
 
-交易写 `trans/collect.bean`，对账写 `trans/reconciliation.bean`，`main.bean` / `account/*.bean` 是账户与结构配置。没有服务、数据库或账号。
+- **本地**：没有服务、数据库或账号，账本只在你自己的目录里。
+- **纯文本**：`main.bean` / `account/*.bean` / `trans/*.bean` 可以直接读，任何 Beancount 工具都能打开，也能用 Git 备份。
+- **复式**：五类科目树、对账闭环、权益调整，每笔交易都是标准复式分录。
+
+交易写 `trans/collect.bean`，对账写 `trans/reconciliation.bean`，`main.bean` / `account/*.bean` 是账户与结构配置。
 
 ## 开始使用
 

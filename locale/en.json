@@ -1,7 +1,7 @@
 {
   "meta": {
     "title": "Ledger",
-    "description": "Agent proposes, you approve and reconcile; the ledger stays local plain text.",
+    "description": "Local, plain-text, double-entry ledger for DSH: agents propose, you approve and reconcile; readable, backup-friendly, portable.",
     "detail": "docs/DETAIL.md"
   }
 }

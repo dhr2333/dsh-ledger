@@ -1,7 +1,7 @@
 {
   "meta": {
     "title": "本地账本",
-    "description": "Agent 提案，你审批和对账；账本是本地纯文本。",
+    "description": "本地、纯文本、复式的 DSH 账本：Agent 提案，你审批和对账；可读、可备份、可带走。",
     "detail": "docs/DETAIL.md"
   }
 }

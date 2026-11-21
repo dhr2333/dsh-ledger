@@ -1,16 +1,20 @@
 # dsh-ledger
 
-DSH 账本面板的维护者参考与兜底说明。用户使用说明见 [docs/DETAIL.md](docs/DETAIL.md)；Agent 写入规则见账本根目录 `AGENTS.md`。
+**本地 · 纯文本 · 复式**——DSH 里的账本面板：账本是一本标准复式账，只存在你自己的机器上，是能直接读、能备份、能带走的纯文本 Beancount。Agent 读账单、生成待确认记录，你批准或驳回，到期核对余额。
 
-## 仓库职责
+- **本地**：没有服务、数据库或账号，账本只在你自己的目录里。
+- **纯文本**：账本真相只在 `.bean` 文件；任何编辑器、Fava、Git 都能直接打开。
+- **复式**：五类科目树、对账闭环、权益调整；每笔交易都是标准复式分录。
+- **审核**：待对账、待审核、补记；Agent 草稿只读，只能批准或驳回。
+- **对账**：只填实际余额；差额没分完记入权益调整；校验通过才写入，失败不改动账本。
+- **账户**：Assets / Liabilities / Equity / Income / Expenses 五类树，只有最末级资产/负债账户可记账、可对账。
+- `.ledger/` 只放草稿与审计，可删；账本真相只在 `.bean`。
 
-- 本仓库只做面板：注册「本地账本」入口、校验浏览器请求、调用 `python -m beancount_guard`、把返回的 JSON 投影成页面。
-- 账本规则在 [`beancount-guard`](https://github.com/dhr2333/beancount-guard)，模板在 [`ledger-domain-assets`](https://github.com/dhr2333/ledger-domain-assets)。
-- 发布包通过 `vendor/` 自带账本模板；核心库是独立 PyPI 包 `beancount-guard`，由运行时 wheelhouse 离线安装，面板不持有核心源码副本。
+完整用法见 [docs/DETAIL.md](docs/DETAIL.md)（随插件安装在面板内）。Agent 写入规则见账本根目录 `AGENTS.md`。
 
 ## 安装
 
-### 插件市场
+### 插件市场（推荐）
 
 ```bash
 dsh plugin --profile web add @dhr2333/dsh-ledger
@@ -18,9 +22,11 @@ dsh plugin --profile web add @dhr2333/dsh-ledger
 
 发布包自带账本模板和引擎运行时，不需要再检出其他仓库，也不需要安装 Python。首次安装引擎完全离线；默认账本目录是 `$DSH_HOME/ledger`。
 
+装好后打开「本地账本」，按面板提示点「安装 / 修复账本引擎」，再新建账本或打开已有 `main.bean` 的目录。
+
 支持六个平台：`win32-x64`、`win32-arm64`（x64 运行时，Windows on ARM 模拟执行）、`darwin-x64`、`darwin-arm64`、`linux-x64`、`linux-arm64`。没有匹配运行时包时回退到系统 Python 3.11+（64 位）。
 
-### 从源码安装
+### 从源码安装（开发 / 排障）
 
 需要 DSH、Python 3.11+、git、pnpm 和网络：
 
@@ -43,6 +49,12 @@ curl -fsSL https://raw.githubusercontent.com/dhr2333/dsh-ledger/main/scripts/ins
 | `--dry-run` | 只打印命令，不改文件 |
 
 插件发现源码时优先使用同级 checkout，所以改了 core / assets 立即生效；没有源码时才用包内副本。
+
+## 仓库职责
+
+- 本仓库只做面板：注册「本地账本」入口、校验浏览器请求、调用 `python -m beancount_guard`、把返回的 JSON 投影成页面。
+- 账本规则在 [`beancount-guard`](https://github.com/dhr2333/beancount-guard)，模板在 [`ledger-domain-assets`](https://github.com/dhr2333/ledger-domain-assets)。
+- 发布包通过 `vendor/` 自带账本模板；核心库是独立 PyPI 包 `beancount-guard`，由运行时 wheelhouse 离线安装，面板不持有核心源码副本。
 
 ## 引擎与路径
 
