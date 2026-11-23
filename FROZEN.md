@@ -8,7 +8,10 @@ The panel now exposes:
 - 账户五类树 + 右侧详情表单；默认隐藏已关闭/隐式，新增账户弹窗;
 - 资产/负债叶子显示当前余额（只读 `query-balances`；0 余额不显示）;
 - reconciliation preview/commit/update with allocations and directive preview;
-- draft review is read-only in the panel; Core keeps `update-draft` for other clients;
+- draft review lets a person edit the description and the unique funding account only; these two directly determine trust and are the lowest-cognitive-load judgments, while amounts, dates, categories and entry metadata stay read-only;
+- unclassified postings no longer block approval: the panel rewrites them to `Expenses:Uncategorized` / `Income:Uncategorized` and creates either account with `account-open` when missing;
+- entry metadata from Agent drafts (`time` / `uuid` / `status`) is shown read-only and rendered by Core into the ledger entry (requires core >= 0.1.2);
+- manual entry asks for a funding account only; the category falls back automatically;
 - account creation via `account-open`;
 - engine install includes `mcp`;
 - the market install ships a per-platform engine runtime (CPython 3.12 +
@@ -29,4 +32,4 @@ The panel now exposes:
 
 Still out: account close, BQL preset end-to-end test, month-end batch, reconcile revoke.
 
-Design source: local Obsidian note `本地账本系统设计基线` (v0.25).
+Design source: local Obsidian note `本地账本系统设计基线` (v0.26).

@@ -30,9 +30,12 @@ window.__ModuleLoader__.load({
       draftApproveAll: '/ledger-api/draft/approve-all',
       operationReject: '/ledger-api/operation/reject',
       approve: '/ledger-api/draft/approve',
+      draftUpdate: '/ledger-api/draft/update',
       reject: '/ledger-api/draft/reject',
     };
     const PERIODS = ['none', 'daily', 'weekly', 'monthly', 'quarterly', 'yearly'];
+    const FALLBACK_EXPENSE = 'Expenses:Uncategorized';
+    const FALLBACK_INCOME = 'Income:Uncategorized';
 
     const ZH = {
       title: '本地账本',
@@ -81,7 +84,7 @@ window.__ModuleLoader__.load({
       closedAccount: '账户已关闭，无法对账。',
       reviewTitle: '待审核草稿',
       pendingEmpty: '还没有待审核草稿。把最近一个月的账单交给账本工作区的 Agent。',
-      starterPrompt: '这是我最近一个月的支付宝/微信账单（附件）。帮我记成草稿：\n- 分类不确定的标出来，不要猜；\n- 不要直接写入，等我审核；\n- 金额/日期按账单原文。',
+      starterPrompt: '这是我最近一个月的支付宝/微信账单（附件）。帮我记成草稿：\n- 每条尽量带 metadata：time（账单有具体时间才带）、uuid（渠道交易号）、status（例如 WeChat - 已转账）；\n- 分类不确定就留空，不要猜；\n- 不要加标签，也不要新建分类科目；\n- 资产/负债账户不存在就提交新建账户审核；开立日晚于交易日期就提交开立日调整审核；不要为支出/收入分类做这两件事；\n- 不要直接写账本，等我审核；\n- 金额/日期按账单原文。',
       operationsTitle: '待你批准的账本变更',
       operationAccountOpen: '开户',
       operationAccountRedate: '修改开立日',
@@ -109,7 +112,19 @@ window.__ModuleLoader__.load({
       accountAdded: '已新增账户 {name}',
       accountCanonical: '账户名',
       accountOpenDate: '开立日期',
-      draftReadonlyHint: '待审核草稿在 DSH 中为只读；需要调整请驳回，让 Agent 重新提案。',
+      draftReadonlyHint: '草稿可改描述和资金账户；分类可留空，批准时按金额归入兜底账户；金额、日期请驳回重提。',
+      draftEditNarration: '描述',
+      draftChooseFunding: '更换资金账户',
+      draftFundingTitle: '选择资金账户',
+      draftSaveEdit: '保存修改',
+      draftSaved: '草稿已更新',
+      draftNarrationRequired: '商户和描述不能同时为空',
+      draftUnclassifiedFallback: '未分类会在批准时按金额归入 Expenses:Uncategorized / Income:Uncategorized。',
+      draftLedgerMetadata: '条目元数据（写入账本）',
+      fallbackCreated: '已创建兜底账户 {account}',
+      fallbackCreateFailed: '创建兜底账户失败',
+      fallbackAliasExpense: '未分类支出',
+      fallbackAliasIncome: '未分类收入',
       approving: '写入中…',
       reject: '驳回',
       rejecting: '驳回中…',
@@ -206,7 +221,7 @@ window.__ModuleLoader__.load({
       setupExists: '这个位置已经有账本了，刷新即可打开。',
       manualEntry: '补记',
       entryTitle: '补记一笔',
-      entryHint: '最佳实践：上传账单文件让 Agent 提案；其次：每天对账；最后才是按次补记。也可以直接在工作区对话里描述，Agent 会把草稿放进审核页。',
+      entryHint: '最佳实践：上传账单文件让 Agent 提案；其次：每天对账；最后才是按次补记。分类可以留空，批准时会归入兜底账户。',
       liabilityNegativeHint: '负债账户的余额正常为负数，例如 -1234.56。',
       entryType: '类型',
       entryExpense: '支出',
@@ -215,15 +230,15 @@ window.__ModuleLoader__.load({
       entryPayee: '商户 / 对方',
       entryAmount: '金额',
       entryCategory: '分类',
-      entrySource: '账户',
+      entrySource: '资金账户',
       entryNarration: '备注（可选）',
       entrySave: '保存草稿',
       entrySaving: '保存中…',
       entryCancel: '取消',
       entryQueued: '已加入审核队列：{payee} {amount} {currency}',
       entryInvalidAmount: '金额必须是正数，例如 38.00',
-      entryMissing: '请选择分类和账户',
-      entryNoAccounts: '还没有可用的账户；先到「账户」页设置别名或新建科目。',
+      entryMissing: '请选择资金账户',
+      entryNoAccounts: '还没有可用的资金账户；先到「账户」页新建或设置别名。',
       entrySameAccount: '分类和账户不能相同。',
       entryChooseCategory: '选择分类…',
       entryChooseSource: '选择账户…',
@@ -311,7 +326,7 @@ window.__ModuleLoader__.load({
       closedAccount: 'The account is closed and cannot be reconciled.',
       reviewTitle: 'Pending drafts',
       pendingEmpty: 'No drafts yet. Hand last month of bills to the agent in the ledger workspace.',
-      starterPrompt: "Here is last month's Alipay/WeChat statement (attached). Draft the entries for me:\n- Flag anything you are unsure about; do not guess.\n- Do not write directly; wait for my review.\n- Keep amounts and dates as they appear in the statement.",
+      starterPrompt: "Here is last month's Alipay/WeChat statement (attached). Draft the entries for me:\n- Include metadata when the statement has it: time, uuid (channel transaction id), status (for example WeChat - 已转账).\n- Leave the category empty if you are unsure; do not guess.\n- Do not add tags and do not create category accounts.\n- If an asset/liability account is missing, submit an account-open operation for review; if its open date is after the transaction date, submit an open-date adjustment for review. Do not do either for expense/income categories.\n- Do not write the ledger directly; wait for my review.\n- Keep amounts and dates as they appear in the statement.",
       operationsTitle: 'Ledger changes awaiting approval',
       operationAccountOpen: 'Open account',
       operationAccountRedate: 'Change open date',
@@ -339,7 +354,19 @@ window.__ModuleLoader__.load({
       accountAdded: 'Account {name} added',
       accountCanonical: 'Account name',
       accountOpenDate: 'Open date',
-      draftReadonlyHint: 'Pending drafts are read-only in DSH. Reject one if it needs changes, then let the agent propose again.',
+      draftReadonlyHint: 'Draft descriptions and the funding account are editable. Categories may stay empty and fall back on approval; reject the draft if the amount or date needs changes.',
+      draftEditNarration: 'Description',
+      draftChooseFunding: 'Change funding account',
+      draftFundingTitle: 'Choose funding account',
+      draftSaveEdit: 'Save changes',
+      draftSaved: 'Draft updated',
+      draftNarrationRequired: 'Payee and description cannot both be empty',
+      draftUnclassifiedFallback: 'Unclassified postings fall back to Expenses:Uncategorized / Income:Uncategorized on approval.',
+      draftLedgerMetadata: 'Entry metadata (written to the ledger)',
+      fallbackCreated: 'Created fallback account {account}',
+      fallbackCreateFailed: 'Could not create the fallback account',
+      fallbackAliasExpense: 'Uncategorized expense',
+      fallbackAliasIncome: 'Uncategorized income',
       approving: 'Writing…',
       reject: 'Reject',
       rejecting: 'Rejecting…',
@@ -436,7 +463,7 @@ window.__ModuleLoader__.load({
       setupExists: 'A ledger already exists here; refresh to open it.',
       manualEntry: 'Fallback entry',
       entryTitle: 'Add a fallback entry',
-      entryHint: 'Best: upload a statement file and let the agent propose entries; next: reconcile daily; use a fallback entry only for one-off gaps. You can also describe it in the workspace conversation and review the draft here.',
+      entryHint: 'Best: upload a statement file and let the agent propose entries; next: reconcile daily; use a fallback entry only for one-off gaps. Categories may stay empty and fall back on approval.',
       liabilityNegativeHint: 'Liability balances are normally negative, e.g. -1234.56.',
       entryType: 'Type',
       entryExpense: 'Expense',
@@ -445,15 +472,15 @@ window.__ModuleLoader__.load({
       entryPayee: 'Merchant / counterparty',
       entryAmount: 'Amount',
       entryCategory: 'Category',
-      entrySource: 'Account',
+      entrySource: 'Funding account',
       entryNarration: 'Note (optional)',
       entrySave: 'Save draft',
       entrySaving: 'Saving…',
       entryCancel: 'Cancel',
       entryQueued: 'Added to the review queue: {payee} {amount} {currency}',
       entryInvalidAmount: 'Enter a positive amount, for example 38.00',
-      entryMissing: 'Choose a category and an account',
-      entryNoAccounts: 'No usable account yet; set aliases or add accounts on the Accounts tab.',
+      entryMissing: 'Choose a funding account',
+      entryNoAccounts: 'No funding accounts yet. Create one or set an alias on the Accounts tab.',
       entrySameAccount: 'The category and the account must differ.',
       entryChooseCategory: 'Choose a category…',
       entryChooseSource: 'Choose an account…',
@@ -1125,6 +1152,18 @@ window.__ModuleLoader__.load({
       ].filter(Boolean).join(' · ');
     }
 
+    /** Read-only summary of the metadata that will be written to the ledger entry. */
+    function draftLedgerMetadata(t, draft) {
+      const metadata = draft?.metadata !== null && typeof draft?.metadata === 'object' ? draft.metadata : {};
+      const parts = [];
+      if (typeof metadata.time === 'string' && metadata.time.trim() !== '') parts.push(metadata.time.trim());
+      if (typeof metadata.status === 'string' && metadata.status.trim() !== '') parts.push(metadata.status.trim());
+      if (typeof metadata.uuid === 'string' && metadata.uuid.trim() !== '') {
+        parts.push(`uuid ${metadata.uuid.trim().slice(0, 8)}…`);
+      }
+      return parts.length === 0 ? '' : `${t('draftLedgerMetadata')} ${parts.join(' · ')}`;
+    }
+
     async function fetchJson(path, init) {
       const response = await fetch(path, {
         credentials: 'same-origin',
@@ -1200,12 +1239,13 @@ window.__ModuleLoader__.load({
       const [newAccount, setNewAccount] = React.useState({ account: 'Assets:Savings:Bank:', alias: '' });
       const [entryOpen, setEntryOpen] = React.useState(false);
       const [entryPicker, setEntryPicker] = React.useState(null);
+      const [draftEdits, setDraftEdits] = React.useState({});
+      const [fundingPicker, setFundingPicker] = React.useState(null);
       const [entry, setEntry] = React.useState({
         kind: 'expense',
         date: '',
         payee: '',
         amount: '',
-        category: '',
         source: '',
         narration: '',
       });
@@ -1342,14 +1382,6 @@ window.__ModuleLoader__.load({
       // open directive and cannot carry the alias/reconcile metadata the UI
       // would later want to attach.
       const entryAccounts = metadataAccounts;
-      const expenseCategories = React.useMemo(
-        () => entryAccounts.filter((account) => account.account.startsWith('Expenses:')),
-        [entryAccounts],
-      );
-      const incomeCategories = React.useMemo(
-        () => entryAccounts.filter((account) => account.account.startsWith('Income:')),
-        [entryAccounts],
-      );
       // Assets and liabilities use their parent paths as grouping only, so a
       // source account must be a leaf even if some parent was opened by hand.
       const assetSources = React.useMemo(
@@ -1359,6 +1391,10 @@ window.__ModuleLoader__.load({
       const liabilitySources = React.useMemo(
         () => entryAccounts.filter((account) => account.account.startsWith('Liabilities:') && !treeHasChildren(accounts, account.account)),
         [entryAccounts, accounts],
+      );
+      const fundingAccounts = React.useMemo(
+        () => [...assetSources, ...liabilitySources].sort((left, right) => left.name.localeCompare(right.name)),
+        [assetSources, liabilitySources],
       );
       const today = data?.today ?? setup?.today ?? '';
       const ledgerCurrency = data?.operatingCurrency ?? 'CNY';
@@ -1408,10 +1444,7 @@ window.__ModuleLoader__.load({
         { id: 'accounts', label: t('tabAccounts'), count: null },
       ];
 
-      const entryCategoryOptions = entry.kind === 'expense' ? expenseCategories : incomeCategories;
-      const entrySourceOptions = entry.kind === 'expense'
-        ? [...assetSources, ...liabilitySources].sort((left, right) => left.name.localeCompare(right.name))
-        : assetSources;
+      const entrySourceOptions = entry.kind === 'expense' ? fundingAccounts : assetSources;
 
       function inputFor(account) {
         return balanceInputs[account.account] ?? {
@@ -1604,13 +1637,165 @@ window.__ModuleLoader__.load({
         }, '');
       }
 
-      function approveDraft(draft) {
-        if (draft.postings.some((posting) => posting.account === null)) {
-          reportError(t('errorUnresolved'));
+      function accountExists(path) {
+        return accounts.some((account) => account.account === path);
+      }
+
+      function accountLabel(path) {
+        const match = accounts.find((account) => account.account === path);
+        return match === undefined ? path : match.name;
+      }
+
+      /** The unique asset/liability posting a person is allowed to switch. */
+      function fundingIndex(draft) {
+        const indexes = [];
+        draft.postings.forEach((posting, index) => {
+          if (typeof posting.account === 'string'
+            && (posting.account.startsWith('Assets:') || posting.account.startsWith('Liabilities:'))) {
+            indexes.push(index);
+          }
+        });
+        return indexes.length === 1 ? indexes[0] : -1;
+      }
+
+      function defaultDraftEdit(draft) {
+        const index = fundingIndex(draft);
+        return {
+          narration: draft.narration ?? '',
+          funding: index >= 0 ? draft.postings[index].account : '',
+        };
+      }
+
+      function draftEdit(draft) {
+        return draftEdits[draft.id] ?? defaultDraftEdit(draft);
+      }
+
+      function updateDraftEdit(draft, patch) {
+        setDraftEdits((previous) => ({
+          ...previous,
+          [draft.id]: { ...(previous[draft.id] ?? defaultDraftEdit(draft)), ...patch },
+        }));
+      }
+
+      function clearDraftEdit(draftId) {
+        setDraftEdits((previous) => {
+          const next = { ...previous };
+          delete next[draftId];
+          return next;
+        });
+      }
+
+      function fallbackPostingAccount(posting) {
+        return posting.amount.trim().startsWith('-') ? FALLBACK_INCOME : FALLBACK_EXPENSE;
+      }
+
+      function withFallbackPostings(draft) {
+        let changed = false;
+        const postings = draft.postings.map((posting) => {
+          if (posting.account !== null) {
+            return { account: posting.account, amount: posting.amount, currency: posting.currency };
+          }
+          changed = true;
+          return {
+            account: fallbackPostingAccount(posting),
+            amount: posting.amount,
+            currency: posting.currency,
+          };
+        });
+        return { postings, changed };
+      }
+
+      function earliestPendingDate() {
+        const dates = pendingDrafts
+          .map((draft) => draft.date)
+          .filter((date) => typeof date === 'string' && date !== '')
+          .sort();
+        const earliest = dates[0] ?? today;
+        return earliest > today ? today : earliest;
+      }
+
+      async function ensureFallbackAccounts(postings, ensured = new Set()) {
+        const required = new Map();
+        for (const posting of postings) {
+          if (posting.account !== FALLBACK_EXPENSE && posting.account !== FALLBACK_INCOME) continue;
+          if (accountExists(posting.account) || ensured.has(posting.account)) continue;
+          required.set(
+            posting.account,
+            posting.account === FALLBACK_EXPENSE ? t('fallbackAliasExpense') : t('fallbackAliasIncome'),
+          );
+        }
+        for (const [account, alias] of required) {
+          try {
+            await postJson(API.accountOpen, {
+              account,
+              currency: ledgerCurrency,
+              alias,
+              date: earliestPendingDate(),
+            });
+          } catch (failure) {
+            throw new Error(`${t('fallbackCreateFailed')}: ${describeFailure(t, failure)}`);
+          }
+          ensured.add(account);
+        }
+        return ensured;
+      }
+
+      async function applyFallback(draft, ensured = new Set()) {
+        const { postings, changed } = withFallbackPostings(draft);
+        if (!changed) return ensured;
+        await ensureFallbackAccounts(postings, ensured);
+        await postJson(API.draftUpdate, { id: draft.id, postings });
+        return ensured;
+      }
+
+      function saveDraft(draft) {
+        const edit = draftEdit(draft);
+        const narration = edit.narration.trim();
+        if (narration === '' && (draft.payee ?? '').trim() === '') {
+          reportError(t('draftNarrationRequired'));
           return;
         }
+        const index = fundingIndex(draft);
+        const postings = draft.postings.map((posting, at) => {
+          const next = posting.account === null
+            ? { suggested: posting.suggested ?? '', amount: posting.amount, currency: posting.currency }
+            : { account: posting.account, amount: posting.amount, currency: posting.currency };
+          if (at === index && edit.funding !== '' && edit.funding !== posting.account) {
+            next.account = edit.funding;
+          }
+          return next;
+        });
+        void runAction(`draft-save:${draft.id}`, async () => {
+          await postJson(API.draftUpdate, { id: draft.id, narration, postings });
+          clearDraftEdit(draft.id);
+          return t('draftSaved');
+        }, '');
+      }
+
+      function openFundingPicker(draft) {
+        setFundingPicker({ draftId: draft.id, query: '' });
+      }
+
+      function chooseFunding(account) {
+        const pick = fundingPicker;
+        if (pick === null) return;
+        const draft = pendingDrafts.find((item) => item.id === pick.draftId);
+        if (draft === undefined) {
+          setFundingPicker(null);
+          return;
+        }
+        setDraftEdits((previous) => ({
+          ...previous,
+          [draft.id]: { ...(previous[draft.id] ?? defaultDraftEdit(draft)), funding: account.account },
+        }));
+        setFundingPicker(null);
+      }
+
+      function approveDraft(draft) {
         void runAction(`approve:${draft.id}`, async () => {
+          await applyFallback(draft, new Set());
           const response = await postJson(API.approve, { id: draft.id });
+          clearDraftEdit(draft.id);
           return response.committed
             ? fill(t('approvedWritten'), { file: response.draft?.approved?.file ?? '' })
             : t('approvedExisting');
@@ -1650,10 +1835,21 @@ window.__ModuleLoader__.load({
 
       function approveAllDrafts() {
         void runAction('draft-approve-all', async () => {
+          const ensured = new Set();
+          let failed = 0;
+          for (const draft of pendingDrafts) {
+            if (!draft.postings.some((posting) => posting.account === null)) continue;
+            try {
+              await applyFallback(draft, ensured);
+            } catch {
+              failed += 1;
+            }
+          }
           const response = await postJson(API.draftApproveAll, {});
           const approved = response?.approved ?? 0;
           const skipped = (response?.skipped ?? []).length;
-          return fill(t('approvedAllDrafts'), { count: approved, skipped });
+          const done = fill(t('approvedAllDrafts'), { count: approved, skipped });
+          return failed > 0 ? `${done}；${fill(t('approveAllFailed'), { count: failed })}` : done;
         }, '');
       }
 
@@ -1960,7 +2156,7 @@ window.__ModuleLoader__.load({
 
       function openEntry() {
         setEntryPicker(null);
-        setEntry({ kind: 'expense', date: today, payee: '', amount: '', category: '', source: '', narration: '' });
+        setEntry({ kind: 'expense', date: today, payee: '', amount: '', source: '', narration: '' });
         setEntryOpen(true);
         setTab('review');
       }
@@ -1980,24 +2176,21 @@ window.__ModuleLoader__.load({
           reportError(t('entryInvalidAmount'));
           return;
         }
-        if (entry.category === '' || entry.source === '') {
+        if (entry.source === '') {
           reportError(t('entryMissing'));
           return;
         }
-        if (entry.category === entry.source) {
-          reportError(t('entrySameAccount'));
-          return;
-        }
-        const payee = entry.payee.trim() || entry.category;
+        const fallback = entry.kind === 'expense' ? FALLBACK_EXPENSE : FALLBACK_INCOME;
+        const payee = entry.payee.trim() || entry.narration.trim() || t('unresolved');
         const narration = entry.narration.trim() || payee;
         const postings = entry.kind === 'expense'
           ? [
-              { account: entry.category, amount, currency: ledgerCurrency },
+              { account: fallback, amount, currency: ledgerCurrency },
               { account: entry.source, amount: `-${amount}`, currency: ledgerCurrency },
             ]
           : [
               { account: entry.source, amount, currency: ledgerCurrency },
-              { account: entry.category, amount: `-${amount}`, currency: ledgerCurrency },
+              { account: fallback, amount: `-${amount}`, currency: ledgerCurrency },
             ];
         void runAction('entry', async () => {
           await postJson(API.draftSubmit, {
@@ -2439,11 +2632,20 @@ window.__ModuleLoader__.load({
       function renderReview() {
         const cards = pendingDrafts.map((draft) => {
           const postings = draft.postings;
-          const hasUnresolved = postings.some((posting) => posting.account === null);
+          const unresolvedCount = postings.filter((posting) => posting.account === null).length;
+          const edit = draftEdit(draft);
+          const index = fundingIndex(draft);
+          const funding = index >= 0 ? postings[index].account : '';
           const blocking = draft.issues.filter((issue) => {
-            if (issue.code === 'unresolved_account') return hasUnresolved;
+            if (issue.code === 'unresolved_account') {
+              const posting = typeof issue.postingIndex === 'number' ? postings[issue.postingIndex] : undefined;
+              return posting === undefined || posting.account !== null;
+            }
             return ['unbalanced', 'before_account_open', 'closed_account'].includes(issue.code);
           });
+          const changed = edit.narration !== (draft.narration ?? '')
+            || (index >= 0 && edit.funding !== funding);
+          const ledgerMetadata = draftLedgerMetadata(t, draft);
           return h(
             'div',
             { key: draft.id, style: S.card },
@@ -2455,19 +2657,17 @@ window.__ModuleLoader__.load({
                 { style: S.grow },
                 h('div', { style: S.name }, `${draft.date} · ${draft.payee || draft.narration}`),
                 draftMetaLine(t, draft) ? h('div', { style: S.canonical }, draftMetaLine(t, draft)) : null,
-                draft.narration && draft.narration !== draft.payee
-                  ? h('div', { style: { ...S.canonical, overflowWrap: 'anywhere' } }, draft.narration)
-                  : null,
+                ledgerMetadata ? h('div', { style: S.canonical }, ledgerMetadata) : null,
               ),
               h(Badge, { tone: 'pending' }, t('statusPending')),
             ),
             h(
               'ul',
               { style: S.postings },
-              postings.map((posting, index) =>
+              postings.map((posting, at) =>
                 h(
                   'li',
-                  { key: `${draft.id}-${index}`, style: S.posting },
+                  { key: `${draft.id}-${at}`, style: S.posting },
                   h(
                     'span',
                     { style: { ...S.value, display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' } },
@@ -2481,12 +2681,48 @@ window.__ModuleLoader__.load({
                 ),
               ),
             ),
+            unresolvedCount > 0 ? h('p', { style: S.hint }, t('draftUnclassifiedFallback')) : null,
+            h(
+              'div',
+              { style: S.row },
+              h(
+                Field,
+                { label: t('draftEditNarration') },
+                h('input', {
+                  style: { ...S.input, width: 280 },
+                  disabled: busy !== null,
+                  value: edit.narration,
+                  onChange: (event) => updateDraftEdit(draft, { narration: event.target.value }),
+                }),
+              ),
+              index >= 0
+                ? h(
+                    Field,
+                    { label: t('draftChooseFunding') },
+                    h(
+                      Button,
+                      { variant: 'outline', onClick: () => openFundingPicker(draft), disabled: busy !== null },
+                      accountLabel(edit.funding),
+                    ),
+                  )
+                : null,
+              h(
+                Button,
+                {
+                  variant: 'outline',
+                  onClick: () => saveDraft(draft),
+                  busy: busy === `draft-save:${draft.id}`,
+                  disabled: busy !== null || !changed,
+                },
+                busy === `draft-save:${draft.id}` ? t('saving') : t('draftSaveEdit'),
+              ),
+            ),
             blocking.length > 0
               ? h(
                   'div',
                   { style: { display: 'grid', gap: 2 } },
                   h('span', { style: S.label }, t('issues')),
-                  blocking.map((issue, index) => h('span', { key: index, style: { ...S.issue, ...S.issueBlocking } }, issueText(t, issue))),
+                  blocking.map((issue, at) => h('span', { key: at, style: { ...S.issue, ...S.issueBlocking } }, issueText(t, issue))),
                 )
               : null,
             h(
@@ -2514,7 +2750,7 @@ window.__ModuleLoader__.load({
                   variant: 'primary',
                   onClick: () => approveDraft(draft),
                   busy: busy === `approve:${draft.id}`,
-                  disabled: blocking.length > 0 || hasUnresolved || busy !== null,
+                  disabled: blocking.length > 0 || busy !== null,
                 },
                 busy === `approve:${draft.id}` ? t('approving') : t('approve'),
               ),
@@ -2554,6 +2790,7 @@ window.__ModuleLoader__.load({
           entryOpen ? renderEntryForm() : null,
           renderOperations(),
           pendingDrafts.length === 0 ? h('div', { style: S.empty }, t('pendingEmpty')) : h('div', { style: { display: 'grid', gap: 10 } }, cards),
+          fundingPicker !== null ? renderFundingPicker() : null,
         );
       }
 
@@ -3169,7 +3406,7 @@ window.__ModuleLoader__.load({
       }
 
       function renderEntryForm() {
-        const noAccounts = entryCategoryOptions.length === 0 || entrySourceOptions.length === 0;
+        const noAccounts = entrySourceOptions.length === 0;
         return h(
           'div',
           { style: S.card },
@@ -3187,7 +3424,7 @@ window.__ModuleLoader__.load({
                   style: S.select,
                   disabled: busy !== null,
                   value: entry.kind,
-                  onChange: (event) => { setEntryPicker(null); updateEntry({ kind: event.target.value, category: '', source: '' }); },
+                  onChange: (event) => { setEntryPicker(null); updateEntry({ kind: event.target.value, source: '' }); },
                 },
                 h('option', { value: 'expense' }, t('entryExpense')),
                 h('option', { value: 'income' }, t('entryIncome')),
@@ -3233,20 +3470,6 @@ window.__ModuleLoader__.load({
             { style: S.row },
             h(
               Field,
-              { label: t('entryCategory') },
-              h(
-                'button',
-                {
-                  type: 'button',
-                  style: { ...S.input, minWidth: 180, textAlign: 'left', cursor: 'pointer', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
-                  disabled: busy !== null,
-                  onClick: () => setEntryPicker({ field: 'category', query: '' }),
-                },
-                entry.category || t('entryChooseCategory'),
-              ),
-            ),
-            h(
-              Field,
               { label: t('entrySource') },
               h(
                 'button',
@@ -3286,16 +3509,14 @@ window.__ModuleLoader__.load({
       }
 
       function renderEntryPicker() {
-        const field = entryPicker.field;
-        const options = field === 'source' ? entrySourceOptions : entryCategoryOptions;
         const query = entryPicker.query.trim().toLowerCase();
         const filtered = query === ''
-          ? options
-          : options.filter((account) => `${account.name} ${account.account}`.toLowerCase().includes(query));
+          ? entrySourceOptions
+          : entrySourceOptions.filter((account) => `${account.name} ${account.account}`.toLowerCase().includes(query));
         return h(
           Modal,
           {
-            title: field === 'source' ? t('entrySource') : t('entryCategory'),
+            title: t('entrySource'),
             onClose: () => setEntryPicker(null),
             footer: [h(Button, { key: 'cancel', onClick: () => setEntryPicker(null) }, t('entryCancel'))],
           },
@@ -3320,9 +3541,50 @@ window.__ModuleLoader__.load({
                     type: 'button',
                     style: { ...S.input, display: 'grid', gap: 2, textAlign: 'left', cursor: 'pointer' },
                     onClick: () => {
-                      updateEntry({ [field]: account.name });
+                      updateEntry({ source: account.name });
                       setEntryPicker(null);
                     },
+                  },
+                  h('span', { style: S.name }, account.name),
+                  h('span', { style: S.canonical }, account.account),
+                )),
+          ),
+        );
+      }
+
+      function renderFundingPicker() {
+        const query = fundingPicker.query.trim().toLowerCase();
+        const filtered = query === ''
+          ? fundingAccounts
+          : fundingAccounts.filter((account) => `${account.name} ${account.account}`.toLowerCase().includes(query));
+        return h(
+          Modal,
+          {
+            title: t('draftFundingTitle'),
+            onClose: () => setFundingPicker(null),
+            footer: [h(Button, { key: 'cancel', onClick: () => setFundingPicker(null) }, t('entryCancel'))],
+          },
+          h('input', {
+            autoFocus: true,
+            style: S.input,
+            placeholder: t('searchAccounts'),
+            value: fundingPicker.query,
+            onChange: (event) => setFundingPicker((previous) => (
+              previous === null ? previous : { ...previous, query: event.target.value }
+            )),
+          }),
+          h(
+            'div',
+            { style: { display: 'grid', gap: 4, maxHeight: '52vh', overflow: 'auto' } },
+            filtered.length === 0
+              ? h('div', { style: S.empty }, t('noAccounts'))
+              : filtered.map((account) => h(
+                  'button',
+                  {
+                    key: account.account,
+                    type: 'button',
+                    style: { ...S.input, display: 'grid', gap: 2, textAlign: 'left', cursor: 'pointer' },
+                    onClick: () => chooseFunding(account),
                   },
                   h('span', { style: S.name }, account.name),
                   h('span', { style: S.canonical }, account.account),

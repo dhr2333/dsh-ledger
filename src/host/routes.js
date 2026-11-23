@@ -271,6 +271,25 @@ async function dispatch(ctx, options, req, res) {
     sendEnvelope(res, await runCore(options, 'approve-draft', [], payload));
     return;
   }
+  if (route === '/draft/update' && method === 'POST') {
+    const body = await readJson(req);
+    if (!body.ok) {
+      sendJson(res, body.status, { ok: false, error: body.error });
+      return;
+    }
+    const value = /** @type {Record<string, unknown>} */ (body.value);
+    const payload = {
+      id: requireString(value.id, 'id'),
+      actor: 'panel',
+    };
+    if (Object.hasOwn(value, 'narration')) {
+      if (typeof value.narration !== 'string') throw new Error('narration must be a string');
+      payload.narration = value.narration;
+    }
+    if (Array.isArray(value.postings)) payload.postings = value.postings;
+    sendEnvelope(res, await runCore(options, 'update-draft', [], payload));
+    return;
+  }
   if (route === '/operation/approve-all' && method === 'POST') {
     sendEnvelope(res, await runCore(options, 'op-approve-all', [], {}));
     return;
@@ -321,7 +340,7 @@ async function dispatch(ctx, options, req, res) {
     return;
   }
 
-  const known = new Set(['/engine', '/engine/install', '/engine/core-upgrade', '/engine/core-rollback', '/health', '/setup', '/init', '/bootstrap', '/balances', '/balance', '/reconcile/preview', '/reconcile/commit', '/reconcile/history', '/metadata', '/draft/submit', '/draft/approve', '/draft/reject', '/account/open', '/workspace', '/operation/approve', '/operation/reject', '/operation/approve-all', '/draft/approve-all']);
+  const known = new Set(['/engine', '/engine/install', '/engine/core-upgrade', '/engine/core-rollback', '/health', '/setup', '/init', '/bootstrap', '/balances', '/balance', '/reconcile/preview', '/reconcile/commit', '/reconcile/history', '/metadata', '/draft/submit', '/draft/approve', '/draft/update', '/draft/reject', '/account/open', '/workspace', '/operation/approve', '/operation/reject', '/operation/approve-all', '/draft/approve-all']);
   if (known.has(route)) {
     res.statusCode = 405;
     res.setHeader('allow', method === 'GET' ? 'POST' : 'GET');

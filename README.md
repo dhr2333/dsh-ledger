@@ -1,14 +1,14 @@
 # dsh-ledger
 
-**本地 · 纯文本 · 复式**——DSH 里的账本面板：账本是一本标准复式账，只存在你自己的机器上，是能直接读、能备份、能带走的纯文本 Beancount。Agent 读账单、生成待确认记录，你批准或驳回，到期核对余额。
+**本地 · 纯文本 · 复式**——DSH 里的账本面板：账本是一本标准复式账，只存在你自己的机器上，是能直接读、能备份、能带走的纯文本 Beancount。Agent 读账单、生成待确认记录；你只确认描述和资金账户，分类可以留空，到期核对余额。
 
 - **本地**：没有服务、数据库或账号，账本只在你自己的目录里。
 - **纯文本**：账本真相只在 `.bean` 文件；任何编辑器、Fava、Git 都能直接打开。
 - **复式**：五类科目树、对账闭环、权益调整；每笔交易都是标准复式分录。
-- **审核**：待对账、待审核、补记；Agent 草稿只读，只能批准或驳回。
+- **审核**：待对账、待审核、补记；草稿可改描述和资金账户，未分类不阻塞批准，批准时按金额归入 `Expenses:Uncategorized` / `Income:Uncategorized`。Agent 提供的 `time` / `uuid` / `status` 会写入条目 metadata。
+- **为什么只改两项**：资金账户决定余额能否对上现实，描述决定条目能否被认出——这两项必须由人判断，且认知负荷最低。金额/日期是账单事实，分类/标签是解释层，交给 Agent 与兜底处理；每多一个输入框，面板就从判断面退回录入面。
 - **对账**：只填实际余额；差额没分完记入权益调整；校验通过才写入，失败不改动账本。
-- **账户**：Assets / Liabilities / Equity / Income / Expenses 五类树，只有最末级资产/负债账户可记账、可对账。
-- `.ledger/` 只放草稿与审计，可删；账本真相只在 `.bean`。
+- **账户**：Assets / Liabilities / Equity / Income / Expenses 五类树，只有最末级资产/负债账户可记账、可对账；分类是可选解释层，真实资产/负债 + 兜底账户才是可信核心。
 
 完整用法见 [docs/DETAIL.md](docs/DETAIL.md)（随插件安装在面板内）。Agent 写入规则见账本根目录 `AGENTS.md`。
 
@@ -92,9 +92,9 @@ curl -fsSL https://raw.githubusercontent.com/dhr2333/dsh-ledger/main/scripts/ins
 
 ## HTTP 路由
 
-面板只注册 `/ledger-api/*` 二十三条路由：
+面板只注册 `/ledger-api/*` 二十四条路由：
 
-`engine` / `engine/install` / `engine/core-upgrade` / `engine/core-rollback` / `health` / `setup` / `init` / `bootstrap` / `balances` / `balance` / `reconcile/preview` / `reconcile/commit` / `reconcile/history` / `metadata` / `account/open` / `draft/submit` / `draft/approve` / `draft/approve-all` / `draft/reject` / `operation/approve` / `operation/approve-all` / `operation/reject` / `workspace`。
+`engine` / `engine/install` / `engine/core-upgrade` / `engine/core-rollback` / `health` / `setup` / `init` / `bootstrap` / `balances` / `balance` / `reconcile/preview` / `reconcile/commit` / `reconcile/history` / `metadata` / `account/open` / `draft/submit` / `draft/approve` / `draft/update` / `draft/approve-all` / `draft/reject` / `operation/approve` / `operation/approve-all` / `operation/reject` / `workspace`。
 
 ## Core CLI
 
@@ -147,6 +147,9 @@ ledger/
 
 - Core 是唯一写者；插件不含账本规则，不直接写文件。
 - Agent 只能提交草稿/结构提案，批准由人触发；同 OS 用户 + 全 shell 下仍可绕过 `AGENTS.md` 改文件。
+- 面板只编辑草稿的描述和资金账户；金额、日期、分类、标签、分录结构、条目 metadata 都不在面板内编辑。
+- 条目 metadata（`time` / `uuid` / `status`）由 Agent 在草稿中提供，由 Core 写入；只影响新条目，不回填历史。
+- 未分类草稿首次批准时会按需创建 `Expenses:Uncategorized` / `Income:Uncategorized` 兜底账户。
 - 默认单币种；不内置账单解析/导入；不做多用户、移动端、月结批次、对账撤销。
 - 对账漂移不主动告警；市场安装不依赖系统 Python，源码安装与缺失运行时包时仍走系统 Python。
 
