@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 使用说明
+    url: https://github.com/dhr2333/dsh-ledger/blob/main/docs/DETAIL.md
+    about: 先看功能与边界，确认不是预期行为
+  - name: 账本核心问题
+    url: https://github.com/dhr2333/beancount-guard/issues
+    about: 账本语义、写入门禁、CLI / MCP 报错请提到核心仓库

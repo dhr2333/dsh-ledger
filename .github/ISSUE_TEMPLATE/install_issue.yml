@@ -1,0 +1,70 @@
+name: 安装问题
+description: 插件安装或账本引擎初始化失败
+title: "[install] "
+labels: ["type:fix"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        安装问题优先于功能请求处理。请先尝试「安装 / 修复账本引擎」一次，再提交。
+        **不要上传包含真实姓名、卡号或账号的账单原文。**
+  - type: dropdown
+    id: platform
+    attributes:
+      label: 平台
+      options:
+        - linux-x64
+        - linux-arm64
+        - darwin-x64
+        - darwin-arm64
+        - win32-x64
+        - win32-arm64
+        - 其他
+    validations:
+      required: true
+  - type: dropdown
+    id: source
+    attributes:
+      label: 安装方式
+      options:
+        - DSH 插件市场
+        - 源码安装（pnpm / npm link）
+        - 其他
+    validations:
+      required: true
+  - type: textarea
+    id: error
+    attributes:
+      label: 报错信息或错误码
+      description: 面板提示、终端输出；`ledger_not_writable` / `ledger_encoding_error` 这类错误码直接贴
+      render: shell
+    validations:
+      required: true
+  - type: dropdown
+    id: offline
+    attributes:
+      label: 是否在无外网环境
+      options:
+        - 有网络
+        - 断网 / 内网
+        - 不确定
+    validations:
+      required: true
+  - type: dropdown
+    id: residue
+    attributes:
+      label: 是否残留旧引擎目录
+      description: 例如 $DSH_HOME/ledger-engine 或账本目录下的 .venv
+      options:
+        - 没有残留
+        - 有残留
+        - 不确定
+    validations:
+      required: true
+  - type: textarea
+    id: notes
+    attributes:
+      label: 补充说明
+      description: 路径中是否有中文、空格、网盘同步目录；是否系统 Python 参与
+    validations:
+      required: false
