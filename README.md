@@ -6,7 +6,7 @@
 - **纯文本**：账本真相只在 `.bean` 文件；任何编辑器、Fava、Git 都能直接打开。
 - **复式**：五类科目树、对账闭环、权益调整；每笔交易都是标准复式分录。
 - **审核**：待对账、待审核、补记；草稿可改描述和资金账户，未分类不阻塞批准，批准时按金额归入 `Expenses:Uncategorized` / `Income:Uncategorized`。Agent 提供的 `time` / `uuid` / `status` 会写入条目 metadata。
-- **批次**：Agent 一次导入是一个批次；审核页按批次汇总条数、跳过、覆盖校验、异常与涉及的资金账户，可整批批准/驳回；已批准批次可整批冲销（追加反向交易，不删除历史）。
+- **批次**：Agent 一次导入是一个批次；审核页按批次汇总条数、跳过、行数核对与异常，可整批批准/驳回；已批准批次可整批冲销（追加反向交易，不删除历史）。
 - **为什么只改两项**：资金账户决定余额能否对上现实，描述决定条目能否被认出——这两项必须由人判断，且认知负荷最低。金额/日期是账单事实，分类/标签是解释层，交给 Agent 与兜底处理；每多一个输入框，面板就从判断面退回录入面。
 - **对账**：只填实际余额；差额没分完记入权益调整；校验通过才写入，失败不改动账本。
 - **账户**：Assets / Liabilities / Equity / Income / Expenses 五类树，只有最末级资产/负债账户可记账、可对账；分类是可选解释层，真实资产/负债 + 兜底账户才是可信核心。
@@ -99,7 +99,7 @@ curl -fsSL https://raw.githubusercontent.com/dhr2333/dsh-ledger/main/scripts/ins
 
 ## Agent 工具
 
-插件注册四个**只提案**工具：`ledger_context` / `ledger_propose_batch` / `ledger_submit_operations` / `ledger_queue`。它们只能提交草稿与结构操作，不能批准或驳回；批准只在面板里。批次契约见账本根目录 `AGENTS.md`。
+插件注册六个**只提案**工具：`ledger_context` / `ledger_declare_sources` / `ledger_import_status` / `ledger_propose_batch` / `ledger_submit_operations` / `ledger_queue`。前两个管附件清单：解析前登记本次会话的全部账单，回复前核对哪一份还没有批次。它们只能提交草稿与结构操作，不能批准或驳回；批准只在面板里。批次契约见账本根目录 `AGENTS.md`。
 
 ## Core CLI
 

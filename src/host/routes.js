@@ -33,8 +33,10 @@ export function registerRoutes(ctx, options) {
   const route = {
     kind: 'prefix',
     path: API_PREFIX,
-    handler: async (req, res) => {
-      if (rejectUntrusted(ctx, req, res)) return;
+    // The panel reads and writes one person's ledger: never anonymous.
+    auth: 'required',
+    handler: async (req, res, peer) => {
+      if (rejectUntrusted(ctx, req, res, peer)) return;
       try {
         await dispatch(ctx, options, req, res);
       } catch (error) {
@@ -607,14 +609,28 @@ async function sendEngineAction(res, action) {
 
 /**
  * Reject a request that does not carry the same browser trust the GUI has.
+ *
+ * Two generations of the fence exist. Before DSH 0.2.2-rc.2 the panel had to
+ * call `connection.requestRejection` itself; that method is gone, and the web
+ * server now admits every route before its handler runs (`auth` defaults to
+ * `required`) and passes the admitted Peer to the handler. Detecting which one
+ * is mounted keeps this bridge working on both without re-running admission
+ * that already happened.
  * @param {import('@deepseek-ai/cordis').Context} ctx Host context.
  * @param {import('node:http').IncomingMessage} req request.
  * @param {import('node:http').ServerResponse} res response.
+ * @param {{ id?: string } | undefined} [peer] Peer the web server admitted.
  * @returns {boolean} true when the request was rejected.
  */
-function rejectUntrusted(ctx, req, res) {
+function rejectUntrusted(ctx, req, res, peer) {
   const connection = ctx.get('connection');
   if (connection === undefined) return false;
+  if (typeof connection.requestRejection !== 'function') {
+    if (peer !== undefined) return false;
+    res.statusCode = 401;
+    res.end();
+    return true;
+  }
   try {
     const rejection = connection.requestRejection(req);
     if (rejection === undefined) return false;

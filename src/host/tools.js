@@ -25,7 +25,7 @@ const SOURCE_SCHEMA = {
     fileName: { type: 'string' },
     fileHash: { type: 'string', description: 'sha256 of the source file, e.g. sha256:...' },
   },
-  required: ['ref'],
+  required: ['ref', 'rows'],
 };
 
 const SKIPPED_SCHEMA = {
@@ -36,12 +36,20 @@ const SKIPPED_SCHEMA = {
     additionalProperties: false,
     properties: {
       index: { type: 'integer', description: '0-based row index in the source' },
-      reason: { type: 'string', description: 'why the row was skipped' },
+      reasonCode: {
+        type: 'string',
+        enum: ['closed', 'exact_refund', 'zero_amount', 'internal_transfer', 'interest', 'duplicate_source'],
+        description: 'why the row produced no draft (closed set; companions are enforced by Core)',
+      },
+      reason: { type: 'string', description: 'human note; required when reasonCode is absent' },
+      refundOf: { type: 'integer', description: 'row index of the original order, required for exact_refund' },
+      refundOfUuid: { type: 'string', description: 'channel transaction id of the original order' },
+      duplicateOf: { type: 'string', description: 'batch or file that already recorded this row' },
       date: { type: 'string' },
       payee: { type: 'string' },
       amount: { type: 'string' },
     },
-    required: ['index', 'reason'],
+    required: ['index'],
   },
 };
 
@@ -51,13 +59,18 @@ const DRAFT_SOURCE_SCHEMA = {
   properties: {
     kind: { type: 'string', description: 'ai | quickpath | manual | import | external' },
     ref: { type: 'string', description: 'bill or batch reference' },
+    index: {
+      type: 'integer',
+      description:
+        '0-based row index this draft owns in the source; together with skipped[].index it must cover 0..rows-1 exactly once',
+    },
     evidence: {
       type: 'object',
       additionalProperties: true,
-      description:
-        'the original bill row as column -> value (e.g. 交易时间 / 交易对方 / 商品说明 / 支付方式 / 交易状态); Core stores it in full and the panel shows it in the "only issues" review filter',
+      description: 'original bill row as column -> value; stored in full and shown in review, never written to the ledger',
     },
   },
+  required: ['index'],
 };
 
 /** Register the ledger tools on the host tools service. */
@@ -90,7 +103,7 @@ export function registerTools(ctx, options) {
 
   register(
     'ledger_context',
-    'Read the configured local ledger: root, today, currency, accounts (canonical path, alias, open date, reconcile period), queue counts and the batch contract. Call this before proposing anything.',
+    'Read the ledger root, currency, accounts and pending counts. Call before proposing.',
     { type: 'object', additionalProperties: false, properties: {} },
     async () => {
       const envelope = await runCore(options, 'bootstrap');
@@ -117,19 +130,80 @@ export function registerTools(ctx, options) {
           batches: (value.batches ?? []).length,
         },
         contract: {
-          drafts: 'Each draft: {date, payee, narration, metadata?, source?, postings[]}. Always attach source.evidence with the original bill row (column -> value, e.g. 交易时间 / 交易对方 / 商品说明 / 支付方式 / 交易状态); Core stores it in full and the panel shows it in the "only issues" review filter. A posting is {account|suggested, role?: "category"|"funding", fallback?: "expense"|"income", amount, currency}.',
-          unclassified: 'When the category is uncertain leave account null, set suggested to the bill label and role "category"; the panel falls back to Expenses:Uncategorized / Income:Uncategorized.',
-          funding: 'A funding posting must resolve to exactly one existing Assets/Liabilities account. Missing: submit account-open; do not invent one. Ambiguous (several cards of one bank, or the bill names only the bank): do not guess, do not open a duplicate bank account, do not fall back; leave account null, set suggested to the bill label with role "funding", and report the candidate accounts to the human. One card = one leaf account: with several cards of one bank, put the last four digits in both the path and the alias (e.g. Assets:Savings:Bank:BOC0814, alias "中国银行 0814").',
-          refunds: 'A partial refund is a negative expense: use role "category" and fallback "expense". An exact reversal of a closed order is skipped, not recorded.',
-          approval: 'Tools only enqueue. Never call approve/reject; the human does that in the panel.',
+          boundary:
+            'You only propose. Approval, rejection and voiding happen in the panel; never edit .bean files or .ledger/.',
+          workflow:
+            'Declare EVERY attachment with ledger_declare_sources before parsing; one batch per file; call ledger_import_status before your final reply. uncoveredCount > 0 means a whole bill was dropped.',
+          coverage:
+            'Coverage is a row-index bijection: source.rows and every drafts[].source.index are required; drafts[].source.index + skipped[].index must cover 0..rows-1 exactly once. Core rejects duplicates, gaps and out-of-range indexes.',
+          reference:
+            'The full write contract is AGENTS.md at the ledger root: funding account rules, skipped reasonCodes, refunds, internal transfers, metadata and documents. Read it before proposing.',
         },
       };
     },
   );
 
   register(
+    'ledger_declare_sources',
+    'Declare every attachment of this session before parsing; returns sources still waiting for a batch. Records a checklist only.',
+    {
+      type: 'object',
+      additionalProperties: false,
+      properties: {
+        sources: {
+          type: 'array',
+          description: 'all files of this session; re-declaring the same file is idempotent',
+          items: {
+            type: 'object',
+            additionalProperties: false,
+            properties: {
+              fileName: { type: 'string' },
+              fileHash: { type: 'string', description: 'sha256 of the attachment, e.g. sha256:...' },
+              rows: { type: 'integer', description: 'row count of the bill, excluding headers' },
+              ref: { type: 'string', description: 'human-readable bill name' },
+              channel: { type: 'string', description: 'alipay | wechat | bank | other' },
+            },
+          },
+        },
+      },
+      required: ['sources'],
+    },
+    async (args) => {
+      const envelope = await runCore(options, 'declare-sources', [], { sources: args.sources });
+      if (!envelope.ok) return { ok: false, error: envelope.error };
+      const value = envelope.value ?? {};
+      return {
+        ok: true,
+        declaredCount: value.declaredCount ?? 0,
+        uncoveredCount: value.uncoveredCount ?? 0,
+        sources: value.sources ?? [],
+        uncovered: value.uncovered ?? [],
+      };
+    },
+  );
+
+  register(
+    'ledger_import_status',
+    'List declared sources that still have no batch. Call before your final reply; read-only.',
+    { type: 'object', additionalProperties: false, properties: {} },
+    async () => {
+      const envelope = await runCore(options, 'import-status');
+      if (!envelope.ok) return { ok: false, error: envelope.error };
+      const value = envelope.value ?? {};
+      return {
+        ok: true,
+        declaredCount: value.declaredCount ?? 0,
+        uncoveredCount: value.uncoveredCount ?? 0,
+        uncovered: value.uncovered ?? [],
+        undeclared: value.undeclared ?? [],
+        sources: value.sources ?? [],
+      };
+    },
+  );
+
+  register(
     'ledger_queue',
-    'Read the pending draft queue and pending structure operations. Use it to confirm what is waiting for human approval; it never approves anything.',
+    'Read pending drafts and structure operations. Read-only; it never approves.',
     {
       type: 'object',
       additionalProperties: false,
@@ -171,7 +245,7 @@ export function registerTools(ctx, options) {
 
   register(
     'ledger_propose_batch',
-    'Submit one import batch: source metadata, skipped rows, drafts and optional structure operations. Returns a batch id plus per-draft results. Duplicate uuids are reported per item. This only enqueues; a human approves in the panel.',
+    'Submit one import batch (source, skipped rows, drafts, optional operations). Enqueues only; a human approves in the panel.',
     {
       type: 'object',
       additionalProperties: false,
@@ -188,7 +262,7 @@ export function registerTools(ctx, options) {
         skipped: SKIPPED_SCHEMA,
         drafts: {
           type: 'array',
-          description: 'draft objects; see ledger_context.contract',
+          description: 'draft objects; see AGENTS.md',
           items: {
             type: 'object',
             additionalProperties: true,
@@ -243,7 +317,7 @@ export function registerTools(ctx, options) {
 
   register(
     'ledger_submit_operations',
-    'Submit structure operations (account-open, account-redate, account-metadata, balance) to the review queue. Use it when a batch needs a new bank/card account or an earlier account open date. This only enqueues; a human approves.',
+    'Submit standalone structure operations (account-open / account-redate / account-metadata / balance). Enqueues only.',
     {
       type: 'object',
       additionalProperties: false,

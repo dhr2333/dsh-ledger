@@ -40,6 +40,10 @@ window.__ModuleLoader__.load({
     const PERIODS = ['none', 'daily', 'weekly', 'monthly', 'quarterly', 'yearly'];
     const FALLBACK_EXPENSE = 'Expenses:Uncategorized';
     const FALLBACK_INCOME = 'Income:Uncategorized';
+    // Money can also enter or leave the ledger through the equity adjustment
+    // account: reconciliation pads to it, and a person may book an entry
+    // against it directly.
+    const ADJUSTMENT_ACCOUNT = 'Equity:Adjustments';
 
     const ZH = {
       title: '本地账本',
@@ -88,7 +92,7 @@ window.__ModuleLoader__.load({
       closedAccount: '账户已关闭，无法对账。',
       reviewTitle: '待审核草稿',
       pendingEmpty: '还没有待审核草稿。把最近一个月的账单交给账本工作区的 Agent。',
-      starterPrompt: '这是我最近一个月的支付宝/微信账单（附件）。帮我记成草稿：\n- 每条尽量带 metadata：time（账单有具体时间才带）、uuid（渠道交易号）、status（例如 WeChat - 已转账）；\n- 分类不确定就留空，不要猜；\n- 不要加标签，也不要新建分类科目；\n- 资产/负债账户不存在就提交新建账户审核；开立日晚于交易日期就提交开立日调整审核；不要为支出/收入分类做这两件事；\n- 不要直接写账本，等我审核；\n- 金额/日期按账单原文。',
+      starterPrompt: '这是我最近一个月的支付宝/微信账单（附件）。先登记本次全部附件，再按账单原文帮我记成待审核草稿；只提案，不要直接写账本。',
       operationsTitle: '待你批准的账本变更',
       operationAccountOpen: '开户',
       operationAccountRedate: '修改开立日',
@@ -116,16 +120,16 @@ window.__ModuleLoader__.load({
       accountAdded: '已新增账户 {name}',
       accountCanonical: '账户名',
       accountOpenDate: '开立日期',
-      draftReadonlyHint: '草稿可改描述和资金账户；分类可留空，批准时按金额归入兜底账户；金额、日期请驳回重提。',
+      draftDetails: '详情',
+      draftWrites: '写入',
+      draftClickToEdit: '点击修改',
       draftEditNarration: '描述',
-      draftChooseFunding: '更换资金账户',
+      draftChangeAccount: '换账户',
       draftFundingTitle: '选择资金账户',
-      draftSaveEdit: '保存修改',
-      draftSaved: '草稿已更新',
+      draftCancel: '取消',
+      draftRejectConfirm: '确认驳回',
+      draftNoFunding: '没有资金分录',
       draftNarrationRequired: '商户和描述不能同时为空',
-      draftUnclassifiedFallback: '未分类会在批准时按金额归入 Expenses:Uncategorized / Income:Uncategorized。',
-      draftFundingUnresolved: '资金账户未解析：{account}。先批准开户/开立日调整，或在这里改选一个已有账户。',
-      draftFundingRepairHint: '这条草稿没有资金分录。选择资金账户后保存，另一侧分录会写为 Expenses:Uncategorized / Income:Uncategorized。',
       draftChooseFundingMissing: '选择资金账户',
       fundingUnresolved: '资金账户未解析',
       operationReason: '提案理由',
@@ -148,12 +152,10 @@ window.__ModuleLoader__.load({
       batchStatusEmpty: '无草稿',
       batchDuplicates: '重复 {duplicates} · 失败 {failed}',
       batchFilteredHint: '筛选状态下只能逐条批准；清除搜索或“只看异常”后可整批处理。',
-      batchBlocked: '其中 {count} 条被阻塞，展开可见原因。',
-      batchClaimed: '账单声明净额 {net}',
-      batchCoverage: '覆盖 {covered}/{rows} ✓',
-      batchCoverageBad: '覆盖 {covered}/{rows}',
+      batchBlocked: '阻塞 {count}',
+      batchRows: '{covered}/{rows} 行已处理',
+      batchRowsHint: '每行都有草稿或跳过记录；Core 在提交时校验',
       batchCounts: '待审 {pending} · 已批 {approved} · 已驳 {rejected}',
-      batchTotals: '支出 {expense} · 冲减 {credit} · 收入 {income} · 资金净流出 {outflow}',
       batchSkipped: '跳过 {count} 行',
       batchExpand: '展开 {count} 条',
       batchCollapse: '收起',
@@ -166,19 +168,12 @@ window.__ModuleLoader__.load({
       batchVoidCancel: '取消',
       batchVoided: '已追加 {count} 条冲销分录',
       batchApproved: '本批入账 {approved} 笔，跳过 {skipped} 笔，失败 {failed} 笔',
-      batchAccounts: '本批涉及 {count} 个资金账户',
-      batchNoPeriod: '未设周期',
-      batchDue: '待对账',
-      batchUnreconciled: '未对账',
-      batchGoAccounts: '去账户页',
-      batchGoReconcile: '去对账',
       draftSearchPlaceholder: '搜索日期/商户/描述',
       draftOnlyIssues: '只看异常',
       draftMatchCount: '匹配 {count} 条',
       draftNoMatch: '没有匹配的草稿',
-      draftSourceRow: '原始账单行',
+      draftSourceRow: '账单原文（{count} 项）',
       draftSourceRowHint: '来自账单原文，仅供核对；不会写入账本。',
-      draftLedgerMetadata: '条目元数据（写入账本）',
       fallbackCreated: '已创建兜底账户 {account}',
       fallbackCreateFailed: '创建兜底账户失败',
       fallbackAliasExpense: '未分类支出',
@@ -190,13 +185,6 @@ window.__ModuleLoader__.load({
       rejectReasonPlaceholder: '例如：不是我的消费',
       issues: '校验问题',
       unresolved: '未分类',
-      confidence: '置信度',
-      source: '来源',
-      sourceAi: 'Agent',
-      sourceQuickpath: '别名匹配',
-      sourceManual: '手动',
-      sourceImport: '导入',
-      sourceExternal: '外部',
       statusPending: '待审核',
       accountsTitle: '账户',
       searchAccounts: '搜索账户或别名',
@@ -308,8 +296,8 @@ window.__ModuleLoader__.load({
       closed: '已关闭',
       currency: '币种',
       issueUnresolved: '第 {number} 条分录的账户未分类',
-      issueFunding: '第 {number} 条分录的资金账户未解析',
-      issueNoRealAccount: '这笔交易没有资产/负债分录',
+      issueFunding: '第 {number} 条分录的资金账户未解析：{account}',
+      issueNoRealAccount: '这笔交易没有资产/负债分录，也没有权益调整分录',
       issueUnbalanced: '分录不平衡，差额：{differences}',
       issueBeforeOpen: '第 {number} 条分录：{account} 在交易日期之后才开立',
       issueClosed: '第 {number} 条分录：{account} 在交易日期已关闭',
@@ -386,7 +374,7 @@ window.__ModuleLoader__.load({
       closedAccount: 'The account is closed and cannot be reconciled.',
       reviewTitle: 'Pending drafts',
       pendingEmpty: 'No drafts yet. Hand last month of bills to the agent in the ledger workspace.',
-      starterPrompt: "Here is last month's Alipay/WeChat statement (attached). Draft the entries for me:\n- Include metadata when the statement has it: time, uuid (channel transaction id), status (for example WeChat - 已转账).\n- Leave the category empty if you are unsure; do not guess.\n- Do not add tags and do not create category accounts.\n- If an asset/liability account is missing, submit an account-open operation for review; if its open date is after the transaction date, submit an open-date adjustment for review. Do not do either for expense/income categories.\n- Do not write the ledger directly; wait for my review.\n- Keep amounts and dates as they appear in the statement.",
+      starterPrompt: "Here is last month's Alipay/WeChat statement (attached). Declare every attachment first, then draft the entries from the statement; propose only, do not write the ledger.",
       operationsTitle: 'Ledger changes awaiting approval',
       operationAccountOpen: 'Open account',
       operationAccountRedate: 'Change open date',
@@ -414,16 +402,16 @@ window.__ModuleLoader__.load({
       accountAdded: 'Account {name} added',
       accountCanonical: 'Account name',
       accountOpenDate: 'Open date',
-      draftReadonlyHint: 'Draft descriptions and the funding account are editable. Categories may stay empty and fall back on approval; reject the draft if the amount or date needs changes.',
+      draftDetails: 'Details',
+      draftWrites: 'Writes',
+      draftClickToEdit: 'Click to edit',
       draftEditNarration: 'Description',
-      draftChooseFunding: 'Change funding account',
+      draftChangeAccount: 'Change',
       draftFundingTitle: 'Choose funding account',
-      draftSaveEdit: 'Save changes',
-      draftSaved: 'Draft updated',
+      draftCancel: 'Cancel',
+      draftRejectConfirm: 'Confirm reject',
+      draftNoFunding: 'No funding posting',
       draftNarrationRequired: 'Payee and description cannot both be empty',
-      draftUnclassifiedFallback: 'Unclassified postings fall back to Expenses:Uncategorized / Income:Uncategorized on approval.',
-      draftFundingUnresolved: 'Funding account is not resolved: {account}. Approve the account open/date change first, or pick an existing account here.',
-      draftFundingRepairHint: 'This draft has no funding posting. Pick a funding account and save; the other posting is written as Expenses:Uncategorized / Income:Uncategorized.',
       draftChooseFundingMissing: 'Choose funding account',
       fundingUnresolved: 'Funding account unresolved',
       operationReason: 'Proposed because',
@@ -446,12 +434,10 @@ window.__ModuleLoader__.load({
       batchStatusEmpty: 'No drafts',
       batchDuplicates: 'duplicates {duplicates} · failed {failed}',
       batchFilteredHint: 'Filtering limits approval to individual drafts; clear the search or issue filter to approve the batch.',
-      batchBlocked: '{count} drafts are blocked; expand to see why.',
-      batchClaimed: 'Bill-declared net {net}',
-      batchCoverage: 'Covered {covered}/{rows} ✓',
-      batchCoverageBad: 'Covered {covered}/{rows}',
+      batchBlocked: 'Blocked {count}',
+      batchRows: '{covered}/{rows} rows accounted for',
+      batchRowsHint: 'Every row has a draft or a skip entry; Core verifies this on submit',
       batchCounts: 'Pending {pending} · Approved {approved} · Rejected {rejected}',
-      batchTotals: 'Expense {expense} · Credit {credit} · Income {income} · Net outflow {outflow}',
       batchSkipped: 'Skipped {count} rows',
       batchExpand: 'Show {count}',
       batchCollapse: 'Collapse',
@@ -464,19 +450,12 @@ window.__ModuleLoader__.load({
       batchVoidCancel: 'Cancel',
       batchVoided: 'Appended {count} reversing entries',
       batchApproved: 'Posted {approved}, skipped {skipped}, failed {failed}',
-      batchAccounts: 'This batch touches {count} funding accounts',
-      batchNoPeriod: 'No period',
-      batchDue: 'Due',
-      batchUnreconciled: 'Unreconciled',
-      batchGoAccounts: 'Accounts',
-      batchGoReconcile: 'Reconcile',
       draftSearchPlaceholder: 'Search date/payee/description',
       draftOnlyIssues: 'Only issues',
       draftMatchCount: '{count} matched',
       draftNoMatch: 'No matching drafts',
-      draftSourceRow: 'Original bill row',
+      draftSourceRow: 'Original bill row ({count})',
       draftSourceRowHint: 'From the bill itself, for reference only; not written to the ledger.',
-      draftLedgerMetadata: 'Entry metadata (written to the ledger)',
       fallbackCreated: 'Created fallback account {account}',
       fallbackCreateFailed: 'Could not create the fallback account',
       fallbackAliasExpense: 'Uncategorized expense',
@@ -488,13 +467,6 @@ window.__ModuleLoader__.load({
       rejectReasonPlaceholder: 'For example: not my purchase',
       issues: 'Issues',
       unresolved: 'Unclassified',
-      confidence: 'Confidence',
-      source: 'Source',
-      sourceAi: 'Agent',
-      sourceQuickpath: 'Alias match',
-      sourceManual: 'Manual',
-      sourceImport: 'Import',
-      sourceExternal: 'External',
       statusPending: 'Pending',
       accountsTitle: 'Accounts',
       searchAccounts: 'Search account or alias',
@@ -606,8 +578,8 @@ window.__ModuleLoader__.load({
       closed: 'Closed',
       currency: 'Currency',
       issueUnresolved: 'Posting {number} has no account',
-      issueFunding: 'Posting {number} has an unresolved funding account',
-      issueNoRealAccount: 'The transaction has no asset or liability posting',
+      issueFunding: 'Posting {number} has an unresolved funding account: {account}',
+      issueNoRealAccount: 'The transaction has no asset, liability or equity adjustment posting',
       issueUnbalanced: 'Postings are unbalanced by {differences}',
       issueBeforeOpen: 'Posting {number}: {account} opens after the transaction date',
       issueClosed: 'Posting {number}: {account} is closed on the transaction date',
@@ -731,6 +703,17 @@ window.__ModuleLoader__.load({
       },
       buttonDanger: { borderColor: 'var(--dsw-alias-state-error-primary)', color: 'var(--dsw-alias-state-error-primary)' },
       buttonDisabled: { opacity: 0.5, cursor: 'not-allowed' },
+      textButton: {
+        appearance: 'none',
+        border: 0,
+        background: 'transparent',
+        padding: 0,
+        font: 'inherit',
+        fontSize: 11,
+        color: 'var(--dsw-alias-brand-primary)',
+        cursor: 'pointer',
+        textDecoration: 'underline',
+      },
       input: {
         boxSizing: 'border-box',
         border: '1px solid var(--dsw-alias-border-l2)',
@@ -784,14 +767,6 @@ window.__ModuleLoader__.load({
       tableScroll: { overflowX: 'auto' },
       postings: { display: 'grid', gap: 4, margin: 0, padding: '8px 0 0', listStyle: 'none' },
       posting: { display: 'flex', gap: 10, justifyContent: 'space-between', alignItems: 'baseline', fontSize: 12 },
-      sourceBlock: {
-        border: '1px dashed var(--dsw-alias-border-l2)',
-        borderRadius: 8,
-        padding: '8px 10px',
-        display: 'grid',
-        gap: 5,
-        background: 'var(--dsw-alias-bg-layer-2)',
-      },
       sourceGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '2px 14px' },
       sourceField: { fontSize: 12, lineHeight: 1.6, color: 'var(--dsw-alias-label-primary)', overflowWrap: 'anywhere' },
       sourceKey: { color: 'var(--dsw-alias-label-secondary)', marginRight: 8 },
@@ -1261,38 +1236,6 @@ window.__ModuleLoader__.load({
       return operation.summary ?? '';
     }
 
-    /** Readable name for one draft source, empty when unknown. */
-    function sourceName(t, kind) {
-      const keys = {
-        ai: 'sourceAi',
-        quickpath: 'sourceQuickpath',
-        manual: 'sourceManual',
-        import: 'sourceImport',
-        external: 'sourceExternal',
-      };
-      return keys[kind] ? t(keys[kind]) : '';
-    }
-
-    /** Source and confidence line for a draft card, empty when neither exists. */
-    function draftMetaLine(t, draft) {
-      return [
-        sourceName(t, draft.source?.kind) ? `${t('source')}: ${sourceName(t, draft.source?.kind)}` : '',
-        typeof draft.confidence === 'number' ? `${t('confidence')}: ${Math.round(draft.confidence * 100)}%` : '',
-      ].filter(Boolean).join(' · ');
-    }
-
-    /** Read-only summary of the metadata that will be written to the ledger entry. */
-    function draftLedgerMetadata(t, draft) {
-      const metadata = draft?.metadata !== null && typeof draft?.metadata === 'object' ? draft.metadata : {};
-      const parts = [];
-      if (typeof metadata.time === 'string' && metadata.time.trim() !== '') parts.push(metadata.time.trim());
-      if (typeof metadata.status === 'string' && metadata.status.trim() !== '') parts.push(metadata.status.trim());
-      if (typeof metadata.uuid === 'string' && metadata.uuid.trim() !== '') {
-        parts.push(`uuid ${metadata.uuid.trim().slice(0, 8)}…`);
-      }
-      return parts.length === 0 ? '' : `${t('draftLedgerMetadata')} ${parts.join(' · ')}`;
-    }
-
     /** Render one evidence value as compact, bounded text. */
     function evidenceText(value) {
       if (typeof value === 'string') return value.trim();
@@ -1395,7 +1338,11 @@ window.__ModuleLoader__.load({
       const [entryOpen, setEntryOpen] = React.useState(false);
       const [entryPicker, setEntryPicker] = React.useState(null);
       const [draftEdits, setDraftEdits] = React.useState({});
+      const [savingDraft, setSavingDraft] = React.useState(null);
       const [fundingPicker, setFundingPicker] = React.useState(null);
+      const [narrationEditing, setNarrationEditing] = React.useState(null);
+      const [rejectOpen, setRejectOpen] = React.useState(null);
+      const [expandedDetail, setExpandedDetail] = React.useState({});
       const [entry, setEntry] = React.useState({
         kind: 'expense',
         date: '',
@@ -1407,6 +1354,11 @@ window.__ModuleLoader__.load({
       const generation = React.useRef(0);
       const busyRef = React.useRef(null);
       const alertRef = React.useRef(null);
+      // Escape must exit without saving: the blur that follows would otherwise
+      // read the still-typed value. One draft is edited at a time, so a single
+      // marker is enough.
+      const skipDraftSaveRef = React.useRef(null);
+      const draftSaveRef = React.useRef(null);
 
       const load = React.useCallback(async () => {
         const request = ++generation.current;
@@ -1547,9 +1499,15 @@ window.__ModuleLoader__.load({
         () => entryAccounts.filter((account) => account.account.startsWith('Liabilities:') && !treeHasChildren(accounts, account.account)),
         [entryAccounts, accounts],
       );
+      // The adjustment account is a money leg only when it is opened explicitly;
+      // every other equity account stays a category.
+      const adjustmentSources = React.useMemo(
+        () => entryAccounts.filter((account) => account.account === ADJUSTMENT_ACCOUNT),
+        [entryAccounts],
+      );
       const fundingAccounts = React.useMemo(
-        () => [...assetSources, ...liabilitySources].sort((left, right) => left.name.localeCompare(right.name)),
-        [assetSources, liabilitySources],
+        () => [...assetSources, ...liabilitySources, ...adjustmentSources].sort((left, right) => left.name.localeCompare(right.name)),
+        [assetSources, liabilitySources, adjustmentSources],
       );
       const today = data?.today ?? setup?.today ?? '';
       const ledgerCurrency = data?.operatingCurrency ?? 'CNY';
@@ -1599,7 +1557,9 @@ window.__ModuleLoader__.load({
         { id: 'accounts', label: t('tabAccounts'), count: null },
       ];
 
-      const entrySourceOptions = entry.kind === 'expense' ? fundingAccounts : assetSources;
+      const entrySourceOptions = entry.kind === 'expense'
+        ? fundingAccounts
+        : [...assetSources, ...adjustmentSources].sort((left, right) => left.name.localeCompare(right.name));
 
       function inputFor(account) {
         return balanceInputs[account.account] ?? {
@@ -1805,7 +1765,7 @@ window.__ModuleLoader__.load({
       function postingRole(posting) {
         if (posting.role === 'category' || posting.role === 'funding') return posting.role;
         const name = posting.account ?? posting.suggested ?? '';
-        return name.startsWith('Assets:') || name.startsWith('Liabilities:') ? 'funding' : 'category';
+        return name === ADJUSTMENT_ACCOUNT || name.startsWith('Assets:') || name.startsWith('Liabilities:') ? 'funding' : 'category';
       }
 
       function isFundingPosting(posting) {
@@ -1875,6 +1835,7 @@ window.__ModuleLoader__.load({
 
       function clearDraftEdit(draftId) {
         setDraftEdits((previous) => {
+          if (!Object.hasOwn(previous, draftId)) return previous;
           const next = { ...previous };
           delete next[draftId];
           return next;
@@ -1961,56 +1922,142 @@ window.__ModuleLoader__.load({
         return ensured;
       }
 
-      function saveDraft(draft) {
-        const edit = draftEdit(draft);
-        const narration = edit.narration.trim();
-        if (narration === '' && (draft.payee ?? '').trim() === '') {
-          reportError(t('draftNarrationRequired'));
-          return;
-        }
+      /** Whether the pending local edit differs from the server draft. */
+      function draftEditChanged(draft, edit) {
         const index = fundingIndex(draft);
-        if (!draft.postings.some((posting) => isFundingPosting(posting))) {
-          const postings = repairFundingPostings(draft, (edit.funding ?? '').trim());
+        const funding = index >= 0 ? (draft.postings[index].account ?? '') : '';
+        return edit.narration.trim() !== (draft.narration ?? '')
+          || (edit.funding ?? '') !== (funding ?? '');
+      }
+
+      /** Replace one draft in place after an update, without reloading the panel. */
+      function applyDraftUpdate(updated) {
+        setData((previous) => {
+          if (previous === null || !Array.isArray(previous.pendingDrafts)) return previous;
+          return {
+            ...previous,
+            pendingDrafts: previous.pendingDrafts.map((draft) => (
+              draft.id === updated.id ? { ...draft, ...updated } : draft
+            )),
+          };
+        });
+      }
+
+      /**
+       * Auto-save one draft edit. Saves are serialized and rebased on the
+       * previous response, so a blur that lands while another save is running
+       * can never overwrite a newer value with an older draft snapshot.
+       */
+      async function saveDraftEdit(draft, override) {
+        if (skipDraftSaveRef.current === draft.id) {
+          skipDraftSaveRef.current = null;
+          clearDraftEdit(draft.id);
+          return { ok: true, draft };
+        }
+        let base = draft;
+        const pending = draftSaveRef.current;
+        if (pending !== null) {
+          try {
+            const previous = await pending.promise;
+            // Only rebase on a response for the same draft; another draft's
+            // postings must never leak into this update.
+            if (previous?.ok === true && pending.id === draft.id) base = previous.draft;
+          } catch {
+            // The failed save already reported itself; keep the original base.
+          }
+        }
+        const edit = override ?? draftEdit(base);
+        const narration = edit.narration.trim();
+        if (narration === '' && (base.payee ?? '').trim() === '') {
+          reportError(t('draftNarrationRequired'));
+          return { ok: false, draft: base };
+        }
+        if (!draftEditChanged(base, edit)) {
+          clearDraftEdit(draft.id);
+          return { ok: true, draft: base };
+        }
+        const index = fundingIndex(base);
+        const currentFunding = index >= 0 ? (base.postings[index].account ?? '') : '';
+        const fundingChanged = (edit.funding ?? '') !== currentFunding && (edit.funding ?? '') !== '';
+        const withoutFunding = !base.postings.some((posting) => isFundingPosting(posting));
+        let postings = null;
+        if (fundingChanged && withoutFunding) {
+          postings = repairFundingPostings(base, edit.funding.trim());
           if (postings === null) {
             reportError(t('draftChooseFundingMissing'));
-            return;
+            return { ok: false, draft: base };
           }
-          void runAction(`draft-save:${draft.id}`, async () => {
-            await ensureFallbackAccounts(postings, new Set());
-            await postJson(API.draftUpdate, { id: draft.id, narration, postings });
-            clearDraftEdit(draft.id);
-            return t('draftSaved');
-          }, '');
-          return;
+        } else if (fundingChanged) {
+          postings = base.postings.map((posting, at) => {
+            const next = posting.account === null
+              ? {
+                  suggested: posting.suggested ?? '',
+                  role: postingRole(posting),
+                  amount: posting.amount,
+                  currency: posting.currency,
+                }
+              : {
+                  account: posting.account,
+                  amount: posting.amount,
+                  currency: posting.currency,
+                  ...(posting.role ? { role: posting.role } : {}),
+                };
+            if (posting.fallback) next.fallback = posting.fallback;
+            if (at === index) {
+              next.account = edit.funding;
+              delete next.suggested;
+              next.role = 'funding';
+              delete next.fallback;
+            }
+            return next;
+          });
         }
-        const postings = draft.postings.map((posting, at) => {
-          const next = posting.account === null
-            ? {
-                suggested: posting.suggested ?? '',
-                role: postingRole(posting),
-                amount: posting.amount,
-                currency: posting.currency,
-              }
-            : {
-                account: posting.account,
-                amount: posting.amount,
-                currency: posting.currency,
-                ...(posting.role ? { role: posting.role } : {}),
-              };
-          if (posting.fallback) next.fallback = posting.fallback;
-          if (at === index && typeof edit.funding === 'string' && edit.funding !== '' && edit.funding !== posting.account) {
-            next.account = edit.funding;
-            delete next.suggested;
-            next.role = 'funding';
-            delete next.fallback;
+        setSavingDraft(draft.id);
+        const request = (async () => {
+          try {
+            if (postings !== null && withoutFunding) {
+              await ensureFallbackAccounts(postings, new Set());
+            }
+            const payload = postings === null
+              ? { id: draft.id, narration }
+              : { id: draft.id, narration, postings };
+            const response = await postJson(API.draftUpdate, payload);
+            const updated = response?.draft ?? { ...base, narration, ...(postings === null ? {} : { postings }) };
+            applyDraftUpdate(updated);
+            clearDraftEdit(draft.id);
+            setNarrationEditing((current) => (current === draft.id ? null : current));
+            return { ok: true, draft: updated };
+          } catch (failure) {
+            // The draft may have been approved or rejected while the request
+            // was in flight; dropping the local edit is the correct outcome.
+            if (failure.code === 'draft_not_pending') {
+              clearDraftEdit(draft.id);
+              return { ok: true, draft: base };
+            }
+            reportError(describeFailure(t, failure));
+            return { ok: false, draft: base };
+          } finally {
+            setSavingDraft(null);
           }
-          return next;
-        });
-        void runAction(`draft-save:${draft.id}`, async () => {
-          await postJson(API.draftUpdate, { id: draft.id, narration, postings });
-          clearDraftEdit(draft.id);
-          return t('draftSaved');
-        }, '');
+        })();
+        draftSaveRef.current = { id: draft.id, promise: request };
+        return request;
+      }
+
+      /**
+       * Save every pending edit, then hand back the fresh drafts. Approval
+       * needs this: the fallback rewrite must run on postings that include the
+       * just-saved funding account, not on a stale snapshot.
+       */
+      async function flushDraftEdits(ids) {
+        const targets = pendingDrafts.filter((draft) => ids.includes(draft.id));
+        const fresh = new Map();
+        for (const draft of targets) {
+          const result = await saveDraftEdit(draft);
+          if (!result.ok) return false;
+          fresh.set(draft.id, result.draft);
+        }
+        return fresh;
       }
 
       /**
@@ -2041,22 +2088,32 @@ window.__ModuleLoader__.load({
           setFundingPicker(null);
           return;
         }
+        const nextEdit = { ...(draftEdits[draft.id] ?? defaultDraftEdit(draft)), funding: account.account };
         setDraftEdits((previous) => ({
           ...previous,
           [draft.id]: { ...(previous[draft.id] ?? defaultDraftEdit(draft)), funding: account.account },
         }));
         setFundingPicker(null);
+        // Choosing an account is an explicit commit: save immediately instead
+        // of making the person press a separate save button.
+        void saveDraftEdit(draft, nextEdit);
       }
 
       function approveDraft(draft) {
-        void runAction(`approve:${draft.id}`, async () => {
-          await applyFallback(draft, new Set());
-          const response = await postJson(API.approve, { id: draft.id });
-          clearDraftEdit(draft.id);
-          return response.committed
-            ? fill(t('approvedWritten'), { file: response.draft?.approved?.file ?? '' })
-            : t('approvedExisting');
-        }, '');
+        if (busy !== null) return;
+        void (async () => {
+          const fresh = await flushDraftEdits([draft.id]);
+          if (fresh === false) return;
+          const target = fresh.get(draft.id) ?? draft;
+          void runAction(`approve:${draft.id}`, async () => {
+            await applyFallback(target, new Set());
+            const response = await postJson(API.approve, { id: draft.id });
+            clearDraftEdit(draft.id);
+            return response.committed
+              ? fill(t('approvedWritten'), { file: response.draft?.approved?.file ?? '' })
+              : t('approvedExisting');
+          }, '');
+        })();
       }
 
       function rejectDraft(draft) {
@@ -2071,24 +2128,31 @@ window.__ModuleLoader__.load({
       }
 
       function approveBatch(group) {
-        void runAction(`batch-approve:${group.key}`, async () => {
-          const ensured = new Set();
-          let fallbackFailed = 0;
-          for (const draft of batchDrafts(group)) {
-            try {
-              await applyFallback(draft, ensured);
-            } catch {
-              fallbackFailed += 1;
+        if (busy !== null) return;
+        const ids = batchDrafts(group).map((draft) => draft.id);
+        void (async () => {
+          const fresh = await flushDraftEdits(ids);
+          if (fresh === false) return;
+          const targets = batchDrafts(group).map((draft) => fresh.get(draft.id) ?? draft);
+          void runAction(`batch-approve:${group.key}`, async () => {
+            const ensured = new Set();
+            let fallbackFailed = 0;
+            for (const draft of targets) {
+              try {
+                await applyFallback(draft, ensured);
+              } catch {
+                fallbackFailed += 1;
+              }
             }
-          }
-          const body = group.batch !== null ? { batch: group.batch.id } : { ref: group.ref };
-          const response = await postJson(API.draftApproveBatch, body);
-          const result = response?.result ?? {};
-          const approved = result.approved ?? 0;
-          const skipped = (result.skipped ?? []).length;
-          const failed = (result.failed ?? []).length + fallbackFailed;
-          return fill(t('batchApproved'), { approved, skipped, failed });
-        }, '');
+            const body = group.batch !== null ? { batch: group.batch.id } : { ref: group.ref };
+            const response = await postJson(API.draftApproveBatch, body);
+            const result = response?.result ?? {};
+            const approved = result.approved ?? 0;
+            const skipped = (result.skipped ?? []).length;
+            const failed = (result.failed ?? []).length + fallbackFailed;
+            return fill(t('batchApproved'), { approved, skipped, failed });
+          }, '');
+        })();
       }
 
       function rejectBatch(group) {
@@ -2144,23 +2208,30 @@ window.__ModuleLoader__.load({
       }
 
       function approveAllDrafts() {
-        void runAction('draft-approve-all', async () => {
-          const ensured = new Set();
-          let failed = 0;
-          for (const draft of pendingDrafts) {
-            if (!draft.postings.some((posting) => posting.account === null)) continue;
-            try {
-              await applyFallback(draft, ensured);
-            } catch {
-              failed += 1;
+        if (busy !== null) return;
+        const ids = pendingDrafts.map((draft) => draft.id);
+        void (async () => {
+          const fresh = await flushDraftEdits(ids);
+          if (fresh === false) return;
+          const targets = pendingDrafts.map((draft) => fresh.get(draft.id) ?? draft);
+          void runAction('draft-approve-all', async () => {
+            const ensured = new Set();
+            let failed = 0;
+            for (const draft of targets) {
+              if (!draft.postings.some((posting) => posting.account === null)) continue;
+              try {
+                await applyFallback(draft, ensured);
+              } catch {
+                failed += 1;
+              }
             }
-          }
-          const response = await postJson(API.draftApproveAll, {});
-          const approved = response?.approved ?? 0;
-          const skipped = (response?.skipped ?? []).length;
-          const done = fill(t('approvedAllDrafts'), { count: approved, skipped });
-          return failed > 0 ? `${done}；${fill(t('approveAllFailed'), { count: failed })}` : done;
-        }, '');
+            const response = await postJson(API.draftApproveAll, {});
+            const approved = response?.approved ?? 0;
+            const skipped = (response?.skipped ?? []).length;
+            const done = fill(t('approvedAllDrafts'), { count: approved, skipped });
+            return failed > 0 ? `${done}；${fill(t('approveAllFailed'), { count: failed })}` : done;
+          }, '');
+        })();
       }
 
       function expandAccountAncestors(path) {
@@ -3005,150 +3076,261 @@ window.__ModuleLoader__.load({
         const postings = draft.postings;
         const edit = draftEdit(draft);
         const index = fundingIndex(draft);
-        const funding = index >= 0 ? postings[index].account : '';
-        const fundingPosting = index >= 0 ? postings[index] : null;
         const hasFunding = postings.some((posting) => isFundingPosting(posting));
         const blocking = blockingIssues(draft);
-        const unclassified = postings.filter((posting) => posting.account === null && !isFundingPosting(posting)).length;
-        const changed = edit.narration !== (draft.narration ?? '')
-          || (edit.funding ?? '') !== (funding ?? '');
-        const ledgerMetadata = draftLedgerMetadata(t, draft);
-        // 原始账单行只在「只看异常」时展示：人在这里核对描述与资金账户。
-        const sourceRow = draftOnlyIssues ? draftSourceRow(draft) : [];
+        const saving = savingDraft === draft.id;
+        // 暂存的资金账户要立刻显示，否则选完账户卡面毫无变化。
+        const fundingAccount = (edit.funding ?? '').trim();
+        // 资金未解析已由资金分录行的红字与选择入口承担；
+        // 问题区只留卡面推不出来的阻塞项，避免同一事实出现两次。
+        const issueList = blocking.filter((issue) => issue.code !== 'funding_unresolved');
+        const issueCount = issueList.length + (hasFunding ? 0 : 1);
+        const metadata = draft?.metadata !== null && typeof draft?.metadata === 'object' ? draft.metadata : {};
+        const writeLine = [
+          typeof metadata.time === 'string' ? metadata.time.trim() : '',
+          typeof metadata.status === 'string' ? metadata.status.trim() : '',
+        ].filter(Boolean).join(' · ');
+        const sourceRow = draftSourceRow(draft);
+        // 搜索时临时露出匹配文本，避免「搜到了却看不到匹配依据」。
+        const searchLine = draftQuery.trim() === ''
+          ? ''
+          : [draft.payee ?? '', draft.narration ?? ''].filter((part) => part.trim() !== '').join(' · ');
+        const textButton = (label, onClick) => h(
+          'button',
+          {
+            type: 'button',
+            style: { ...S.textButton, opacity: busy !== null ? 0.5 : 1, cursor: busy !== null ? 'not-allowed' : 'pointer' },
+            disabled: busy !== null,
+            onClick,
+          },
+          label,
+        );
+        // Text is the edit entry: no separate "edit" or "change" button. A
+        // dashed underline is the only affordance, so the default layer keeps
+        // its judgment-only shape.
+        const editableText = (label, title, onClick, tone) => h(
+          'button',
+          {
+            type: 'button',
+            style: {
+              ...S.textButton,
+              fontSize: 13,
+              color: 'inherit',
+              textDecoration: 'none',
+              borderBottom: '1px dashed var(--dsw-alias-border-l2)',
+              textAlign: 'left',
+              opacity: busy !== null ? 0.5 : 1,
+              cursor: busy !== null ? 'not-allowed' : 'pointer',
+              ...tone,
+            },
+            title,
+            disabled: busy !== null,
+            onClick,
+          },
+          label,
+        );
+        const fundingButton = () => textButton(
+          fundingAccount !== '' ? t('draftChangeAccount') : t('draftChooseFundingMissing'),
+          () => openFundingPicker(draft),
+        );
+        const detailRow = (label, value) => h(
+          'div',
+          { style: { display: 'grid', gridTemplateColumns: '88px 1fr', gap: 8, alignItems: 'baseline' } },
+          h('span', { style: S.label }, label),
+          h('span', { style: S.value }, value),
+        );
+        const rejecting = rejectOpen === draft.id;
+        const detailOpen = expandedDetail[draft.id] ?? draftOnlyIssues;
         return h(
           'div',
           { key: draft.id, style: S.card },
           h(
             'div',
-            { style: S.spread },
-            h(
-              'div',
-              { style: S.grow },
-              h('div', { style: S.name }, `${draft.date} · ${draft.payee || draft.narration}`),
-              draftMetaLine(t, draft) ? h('div', { style: S.canonical }, draftMetaLine(t, draft)) : null,
-              ledgerMetadata ? h('div', { style: S.canonical }, ledgerMetadata) : null,
-            ),
-            h(Badge, { tone: 'pending' }, t('statusPending')),
+            { style: { ...S.name, display: 'flex', gap: 8, alignItems: 'baseline', minWidth: 0 } },
+            h('span', { style: { flex: 'none' } }, draft.date),
+            (draft.payee ?? '').trim() !== ''
+              ? h(
+                  'span',
+                  {
+                    style: { ...S.canonical, fontWeight: 400, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0 },
+                    title: draft.payee,
+                  },
+                  draft.payee,
+                )
+              : null,
           ),
+          searchLine !== '' ? h('div', { style: S.canonical }, searchLine) : null,
           h(
             'ul',
             { style: S.postings },
-            postings.map((posting, at) =>
-              h(
+            postings.map((posting, at) => {
+              const isFunding = isFundingPosting(posting);
+              const editable = isFunding && index === at;
+              const account = posting.account ?? (isFunding ? fundingAccount || null : null);
+              const label = account !== null
+                ? accountLabel(account)
+                : isFunding
+                  ? `${t('fundingUnresolved')}: ${posting.suggested || '—'}`
+                  : t('unresolved');
+              return h(
                 'li',
                 { key: `${draft.id}-${at}`, style: S.posting },
                 h(
                   'span',
                   { style: { ...S.value, display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' } },
-                  h(
-                    'span',
-                    null,
-                    posting.account ?? `${isFundingPosting(posting) ? t('fundingUnresolved') : t('unresolved')}: ${posting.suggested || '—'}`,
-                  ),
-                  posting.fallback ? h('span', { style: S.canonical }, `→ ${posting.fallback === 'expense' ? FALLBACK_EXPENSE : FALLBACK_INCOME}`) : null,
+                  editable
+                    ? editableText(
+                        label,
+                        account !== null ? t('draftChangeAccount') : t('draftChooseFundingMissing'),
+                        () => openFundingPicker(draft),
+                        account === null ? S.issueBlocking : null,
+                      )
+                    : h('span', { title: account ?? undefined, style: isFunding && account === null ? S.issueBlocking : null }, label),
+                  posting.account === null && !isFunding
+                    ? h('span', { style: S.canonical }, `→ ${accountLabel(fallbackPostingAccount(posting))}`)
+                    : null,
                 ),
                 h('span', { style: S.mono }, formatMoney(posting.amount, posting.currency)),
-              ),
-            ),
+              );
+            }),
           ),
-          unclassified > 0 ? h('p', { style: S.hint }, t('draftUnclassifiedFallback')) : null,
-          !hasFunding ? h('p', { style: S.hint }, t('draftFundingRepairHint')) : null,
-          fundingPosting !== null && fundingPosting.account === null
-            ? h('p', { style: { ...S.hint, ...S.issueBlocking } }, fill(t('draftFundingUnresolved'), { account: fundingPosting.suggested || '—' }))
-            : null,
-          sourceRow.length > 0
-            ? h(
-                'div',
-                { style: S.sourceBlock },
-                h('span', { style: S.label }, t('draftSourceRow')),
-                h(
-                  'div',
-                  { style: S.sourceGrid },
-                  sourceRow.map(([key, value], at) =>
-                    h('div', { key: `${draft.id}-source-${at}`, style: S.sourceField }, h('span', { style: S.sourceKey }, key), value),
-                  ),
-                ),
-                h('span', { style: S.hint }, t('draftSourceRowHint')),
-              )
-            : null,
-          h(
-            'div',
-            { style: S.row },
-            h(
-              Field,
-              { label: t('draftEditNarration') },
-              h('input', {
-                style: { ...S.input, width: 280 },
-                disabled: busy !== null,
-                value: edit.narration,
-                onChange: (event) => updateDraftEdit(draft, { narration: event.target.value }),
-              }),
-            ),
-            index >= 0 || !hasFunding
-              ? h(
-                  Field,
-                  { label: t('draftChooseFunding') },
-                  h(
-                    Button,
-                    { variant: 'outline', onClick: () => openFundingPicker(draft), disabled: busy !== null },
-                    (edit.funding ?? '') === '' ? t('draftChooseFundingMissing') : accountLabel(edit.funding),
-                  ),
-                )
-              : null,
-            h(
-              Button,
-              {
-                variant: 'outline',
-                onClick: () => saveDraft(draft),
-                busy: busy === `draft-save:${draft.id}`,
-                disabled: busy !== null || !changed,
-              },
-              busy === `draft-save:${draft.id}` ? t('saving') : t('draftSaveEdit'),
-            ),
-          ),
-          blocking.length > 0
+          issueCount > 0
             ? h(
                 'div',
                 { style: { display: 'grid', gap: 2 } },
-                h('span', { style: S.label }, t('issues')),
-                blocking.map((issue, at) => h('span', { key: at, style: { ...S.issue, ...S.issueBlocking } }, issueText(t, issue))),
+                issueCount > 1 ? h('span', { style: S.label }, t('issues')) : null,
+                issueList.map((issue, at) => {
+                  const fixFunding = issue.code === 'no_real_account' && !hasFunding;
+                  return h(
+                    'span',
+                    { key: at, style: { ...S.issue, ...S.issueBlocking } },
+                    issueText(t, issue),
+                    fixFunding ? ' ' : null,
+                    fixFunding ? fundingButton() : null,
+                  );
+                }),
+                !hasFunding && !issueList.some((issue) => issue.code === 'no_real_account')
+                  ? h(
+                      'span',
+                      { style: { ...S.issue, ...S.issueBlocking } },
+                      fundingAccount !== '' ? accountLabel(fundingAccount) : t('draftNoFunding'),
+                      ' ',
+                      fundingButton(),
+                    )
+                  : null,
               )
             : null,
           h(
-            'div',
-            { style: S.spread },
+            'details',
+            {
+              open: detailOpen,
+              onToggle: (event) => {
+                const open = event.currentTarget.open;
+                setExpandedDetail((previous) => ({ ...previous, [draft.id]: open }));
+              },
+            },
+            h('summary', { style: S.summary, title: t('draftSourceRowHint') }, `${detailOpen ? '▾' : '▸'} ${t('draftDetails')}`),
             h(
               'div',
-              { style: S.row },
-              h(
-                'input',
-                {
+              { style: { display: 'grid', gap: 4, marginTop: 6 } },
+              detailRow(
+                t('draftEditNarration'),
+                narrationEditing === draft.id
+                  ? h('input', {
+                      style: { ...S.input, width: '100%' },
+                      autoFocus: true,
+                      maxLength: 500,
+                      disabled: busy !== null,
+                      value: edit.narration,
+                      onChange: (event) => updateDraftEdit(draft, { narration: event.target.value }),
+                      onBlur: (event) => {
+                        const narration = event.target.value;
+                        setNarrationEditing(null);
+                        void saveDraftEdit(draft, { ...draftEdit(draft), narration });
+                      },
+                      onKeyDown: (event) => {
+                        if (event.key === 'Enter') {
+                          event.preventDefault();
+                          event.currentTarget.blur();
+                        }
+                        if (event.key === 'Escape') {
+                          event.preventDefault();
+                          skipDraftSaveRef.current = draft.id;
+                          event.currentTarget.blur();
+                        }
+                      },
+                    })
+                  : editableText(
+                      edit.narration || '—',
+                      t('draftClickToEdit'),
+                      () => {
+                        skipDraftSaveRef.current = null;
+                        setNarrationEditing(draft.id);
+                      },
+                      null,
+                    ),
+              ),
+              writeLine !== '' ? detailRow(t('draftWrites'), writeLine) : null,
+              sourceRow.length > 0
+                ? h(
+                    'div',
+                    { style: { display: 'grid', gap: 4, marginTop: 4 } },
+                    h('span', { style: S.label }, fill(t('draftSourceRow'), { count: sourceRow.length })),
+                    h(
+                      'div',
+                      { style: S.sourceGrid },
+                      sourceRow.map(([key, value], at) =>
+                        h('div', { key: `${draft.id}-source-${at}`, style: S.sourceField }, h('span', { style: S.sourceKey }, key), value),
+                      ),
+                    ),
+                  )
+                : null,
+            ),
+          ),
+          h(
+            'div',
+            { style: { ...S.row, justifyContent: 'flex-end' } },
+            !rejecting && saving ? h('span', { style: S.hint }, t('saving')) : null,
+            rejecting
+              ? h('input', {
                   style: { ...S.input, width: 220 },
                   placeholder: t('rejectReasonPlaceholder'),
                   'aria-label': t('rejectReason'),
                   disabled: busy !== null,
+                  autoFocus: true,
                   value: rejectReasons[draft.id] ?? '',
                   onChange: (event) => setRejectReasons((previous) => ({ ...previous, [draft.id]: event.target.value })),
-                },
-              ),
-              h(Button, { variant: 'danger', onClick: () => rejectDraft(draft), busy: busy === `reject:${draft.id}`, disabled: busy !== null }, busy === `reject:${draft.id}` ? t('rejecting') : t('reject')),
-            ),
-            h(
-              Button,
-              {
-                variant: 'primary',
-                onClick: () => approveDraft(draft),
-                busy: busy === `approve:${draft.id}`,
-                disabled: blocking.length > 0 || busy !== null,
-              },
-              busy === `approve:${draft.id}` ? t('approving') : t('approve'),
-            ),
+                })
+              : h(Button, { variant: 'danger', onClick: () => setRejectOpen(draft.id), disabled: busy !== null }, t('reject')),
+            rejecting
+              ? h(
+                  Button,
+                  {
+                    variant: 'danger',
+                    onClick: () => {
+                      setRejectOpen(null);
+                      rejectDraft(draft);
+                    },
+                    busy: busy === `reject:${draft.id}`,
+                    disabled: busy !== null,
+                  },
+                  busy === `reject:${draft.id}` ? t('rejecting') : t('draftRejectConfirm'),
+                )
+              : null,
+            rejecting
+              ? h(Button, { variant: 'outline', onClick: () => setRejectOpen(null), disabled: busy !== null }, t('draftCancel'))
+              : h(
+                  Button,
+                  {
+                    variant: 'primary',
+                    onClick: () => approveDraft(draft),
+                    busy: busy === `approve:${draft.id}`,
+                    disabled: blocking.length > 0 || busy !== null || saving,
+                  },
+                  busy === `approve:${draft.id}` ? t('approving') : t('approve'),
+                ),
           ),
         );
-      }
-
-      function accountInfo(account) {
-        return accounts.find((item) => item.account === account) ?? null;
       }
 
       function batchStatusLabel(status) {
@@ -3217,25 +3399,16 @@ window.__ModuleLoader__.load({
         const expanded = batchExpanded[group.key] ?? drafts.length <= 3;
         const sourceRef = batch?.source?.ref ?? group.ref ?? t('manualGroup');
         const coverage = batch?.coverage ?? null;
-        const totals = batch?.totals ?? null;
         const skipped = Array.isArray(batch?.skipped) ? batch.skipped : [];
-        const batchAccounts = Array.isArray(batch?.accounts) ? batch.accounts : [];
-        const reconcileRows = batchAccounts
-          .map((entry) => {
-            const account = accountInfo(entry.account);
-            return {
-              account: entry.account,
-              name: entry.name,
-              period: account?.period ?? null,
-              status: account?.status ?? null,
-              unreconciled: account?.unreconciled === true,
-            };
-          })
-          .filter((entry) => entry.period === null || entry.unreconciled || entry.status === 'due' || entry.status === 'overdue');
         const isVoiding = batchVoidConfirm === group.key;
         const filtering = draftQuery.trim() !== '' || draftOnlyIssues;
         const blockedCount = drafts.filter((draft) => blockingIssues(draft).length > 0).length;
-        const showReconcile = (counts.approved ?? 0) > 0 || status === 'approved';
+        // Row coverage is the batch's trust signal: every source row has an
+        // owner. It is a fact, not a decision, so it stays in the counts line
+        // instead of a green badge that competes with the batch status.
+        const coverageText = coverage !== null && Number.isFinite(coverage.rows)
+          ? fill(t('batchRows'), { covered: coverage.covered ?? 0, rows: coverage.rows })
+          : '';
         return h(
           'div',
           { key: group.key, style: S.card },
@@ -3249,9 +3422,7 @@ window.__ModuleLoader__.load({
                 'div',
                 { style: { ...S.name, display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' } },
                 sourceRef,
-                h(Badge, { tone: batchStatusTone(status) }, batchStatusLabel(status)),
-                coverage !== null && coverage.ok === true ? h(Badge, { tone: 'approved' }, fill(t('batchCoverage'), { covered: coverage.covered, rows: coverage.rows })) : null,
-                coverage !== null && coverage.ok === false ? h(Badge, { tone: 'overdue' }, fill(t('batchCoverageBad'), { covered: coverage.covered, rows: coverage.rows })) : null,
+                status !== 'pending' ? h(Badge, { tone: batchStatusTone(status) }, batchStatusLabel(status)) : null,
               ),
               h(
                 'div',
@@ -3267,23 +3438,24 @@ window.__ModuleLoader__.load({
                       failed: batch.counts.failed ?? 0,
                     })}`
                   : '',
+                blockedCount > 0
+                  ? h(
+                      'span',
+                      { style: { color: 'var(--dsw-alias-state-error-primary)' } },
+                      ` · ${fill(t('batchBlocked'), { count: blockedCount })}`,
+                    )
+                  : null,
+                coverageText !== ''
+                  ? h(
+                      'span',
+                      {
+                        style: coverage.ok === false ? { color: 'var(--dsw-alias-state-error-primary)' } : null,
+                        title: t('batchRowsHint'),
+                      },
+                      ` · ${coverageText}`,
+                    )
+                  : null,
               ),
-              blockedCount > 0
-                ? h('div', { style: { ...S.canonical, color: 'var(--dsw-alias-state-error-primary)' } }, fill(t('batchBlocked'), { count: blockedCount }))
-                : null,
-              batch?.claimed
-                ? h('div', { style: S.canonical }, fill(t('batchClaimed'), {
-                    net: formatMoney(batch.claimed.net, batch.claimed.currency ?? ledgerCurrency),
-                  }))
-                : null,
-              totals
-                ? h('div', { style: S.canonical }, fill(t('batchTotals'), {
-                    expense: formatMoney(totals.expense, ledgerCurrency),
-                    credit: formatMoney(totals.credit, ledgerCurrency),
-                    income: formatMoney(totals.income, ledgerCurrency),
-                    outflow: formatMoney(totals.netOutflow ?? String(-Number(totals.funding)), ledgerCurrency),
-                  }))
-                : null,
             ),
             drafts.length > 0
               ? h(
@@ -3307,30 +3479,6 @@ window.__ModuleLoader__.load({
                       { key: `${group.key}-skip-${at}`, style: S.posting },
                       h('span', null, `${row.date ?? ''} ${row.payee ?? ''} · ${row.reason}`),
                       row.amount ? h('span', { style: S.mono }, row.amount) : null,
-                    ),
-                  ),
-                ),
-              )
-            : null,
-          showReconcile && reconcileRows.length > 0
-            ? h(
-                'div',
-                { style: { ...S.alert, ...S.alertInfo, marginTop: 8, display: 'grid', gap: 6 } },
-                h('span', { style: S.label }, fill(t('batchAccounts'), { count: reconcileRows.length })),
-                h(
-                  'div',
-                  { style: { display: 'flex', gap: 8, flexWrap: 'wrap' } },
-                  reconcileRows.map((row) =>
-                    h(
-                      'span',
-                      { key: `${group.key}-account-${row.account}`, style: { display: 'flex', gap: 6, alignItems: 'center' } },
-                      h('span', { style: S.canonical }, row.name),
-                      row.period === null
-                        ? h(Badge, { tone: 'scheduled' }, t('batchNoPeriod'))
-                        : h(Badge, { tone: row.status === 'overdue' ? 'overdue' : 'due' }, row.unreconciled ? t('batchUnreconciled') : t('batchDue')),
-                      row.period === null
-                        ? h(Button, { variant: 'outline', onClick: () => { setTab('accounts'); selectAccountNow(row.account); }, disabled: busy !== null }, t('batchGoAccounts'))
-                        : h(Button, { variant: 'outline', onClick: () => { const target = document.getElementById('ledger-reconcile'); if (target !== null) target.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, disabled: busy !== null }, t('batchGoReconcile')),
                     ),
                   ),
                 ),
@@ -3431,10 +3579,11 @@ window.__ModuleLoader__.load({
                   h('input', { type: 'checkbox', checked: draftOnlyIssues, onChange: (event) => setDraftOnlyIssues(event.target.checked) }),
                   t('draftOnlyIssues'),
                 ),
-                h('span', { style: S.canonical }, fill(t('draftMatchCount'), { count: visible.length })),
+                query !== '' || draftOnlyIssues
+                  ? h('span', { style: S.canonical }, fill(t('draftMatchCount'), { count: visible.length }))
+                  : null,
               )
             : null,
-          pendingDrafts.length > 0 ? h('p', { style: S.hint }, t('draftReadonlyHint')) : null,
           entryOpen ? renderEntryForm() : null,
           renderOperations(),
           pendingDrafts.length === 0 && !hasBatches

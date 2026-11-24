@@ -11,7 +11,7 @@
   ],
   "core": {
     "package": "beancount-guard",
-    "version": "0.1.2"
+    "version": "0.1.1"
   },
   "targets": {
     "win32-x64": {
