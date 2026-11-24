@@ -6,7 +6,7 @@
 - **纯文本**：账本真相只在 `.bean` 文件；任何编辑器、Fava、Git 都能直接打开。
 - **复式**：五类科目树、对账闭环、权益调整；每笔交易都是标准复式分录。
 - **审核**：待对账、待审核、补记；草稿可改描述和资金账户，未分类不阻塞批准，批准时按金额归入 `Expenses:Uncategorized` / `Income:Uncategorized`。Agent 提供的 `time` / `uuid` / `status` 会写入条目 metadata。
-- **批次**：Agent 一次导入是一个批次；审核页按批次汇总条数、跳过、行数核对与异常，可整批批准/驳回；已批准批次可整批冲销（追加反向交易，不删除历史）。
+- **批次**：Agent 一次导入是一个批次；审核页按批次汇总条数、跳过、行数核对与异常，可整批批准/驳回。
 - **为什么只改两项**：资金账户决定余额能否对上现实，描述决定条目能否被认出——这两项必须由人判断，且认知负荷最低。金额/日期是账单事实，分类/标签是解释层，交给 Agent 与兜底处理；每多一个输入框，面板就从判断面退回录入面。
 - **对账**：只填实际余额；差额没分完记入权益调整；校验通过才写入，失败不改动账本。
 - **账户**：Assets / Liabilities / Equity / Income / Expenses 五类树，只有最末级资产/负债账户可记账、可对账；分类是可选解释层，真实资产/负债 + 兜底账户才是可信核心。
@@ -93,9 +93,9 @@ curl -fsSL https://raw.githubusercontent.com/dhr2333/dsh-ledger/main/scripts/ins
 
 ## HTTP 路由
 
-面板只注册 `/ledger-api/*` 二十八条路由：
+面板只注册 `/ledger-api/*` 二十七条路由：
 
-`engine` / `engine/install` / `engine/core-upgrade` / `engine/core-rollback` / `health` / `setup` / `init` / `bootstrap` / `balances` / `balance` / `reconcile/preview` / `reconcile/commit` / `reconcile/history` / `metadata` / `account/open` / `draft/submit` / `draft/approve` / `draft/update` / `draft/approve-all` / `draft/reject` / `draft/approve-batch` / `batch/reject` / `batch/void` / `batches` / `operation/approve` / `operation/approve-all` / `operation/reject` / `workspace`。
+`engine` / `engine/install` / `engine/core-upgrade` / `engine/core-rollback` / `health` / `setup` / `init` / `bootstrap` / `balances` / `balance` / `reconcile/preview` / `reconcile/commit` / `reconcile/history` / `metadata` / `account/open` / `draft/submit` / `draft/approve` / `draft/update` / `draft/approve-all` / `draft/reject` / `draft/approve-batch` / `batch/reject` / `batches` / `operation/approve` / `operation/approve-all` / `operation/reject` / `workspace`。
 
 ## Agent 工具
 
@@ -156,8 +156,8 @@ ledger/
 ## 边界
 
 - Core 是唯一写者；插件不含账本规则，不直接写文件。
-- Agent 只能提交草稿/结构提案，批准与冲销由人触发；同 OS 用户 + 全 shell 下仍可绕过 `AGENTS.md` 改文件。
-- 批次只做整批批准/驳回/冲销；单条更正留给后续 `transaction-void`。冲销追加反向交易，不删除已写入条目。
+- Agent 只能提交草稿/结构提案，批准由人触发；同 OS 用户 + 全 shell 下仍可绕过 `AGENTS.md` 改文件。
+- 批次只做整批批准/驳回；已入账条目的更正留给后续 `transaction-void`。面板不提供冲销入口，需要整批作废时用 Core CLI `void-batch`（追加反向交易，不删除已写入条目）。
 - 面板只编辑草稿的描述和资金账户；金额、日期、分类、标签、分录结构、条目 metadata 都不在面板内编辑。
 - 条目 metadata（`time` / `uuid` / `status`）由 Agent 在草稿中提供，由 Core 写入；只影响新条目，不回填历史。
 - 未分类草稿首次批准时会按需创建 `Expenses:Uncategorized` / `Income:Uncategorized` 兜底账户。

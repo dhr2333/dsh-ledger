@@ -35,7 +35,6 @@ window.__ModuleLoader__.load({
       batches: '/ledger-api/batches',
       draftApproveBatch: '/ledger-api/draft/approve-batch',
       batchReject: '/ledger-api/batch/reject',
-      batchVoid: '/ledger-api/batch/void',
     };
     const PERIODS = ['none', 'daily', 'weekly', 'monthly', 'quarterly', 'yearly'];
     const FALLBACK_EXPENSE = 'Expenses:Uncategorized';
@@ -162,10 +161,6 @@ window.__ModuleLoader__.load({
       batchReject: '驳回本批',
       batchRejectReason: '整批驳回',
       batchRejected: '已驳回 {count} 条草稿',
-      batchVoid: '冲销本批',
-      batchVoidConfirm: '确认冲销 {count} 条',
-      batchVoidCancel: '取消',
-      batchVoided: '已追加 {count} 条冲销分录',
       batchApproved: '本批入账 {approved} 笔，跳过 {skipped} 笔，失败 {failed} 笔',
       draftSearchPlaceholder: '搜索日期/商户/描述',
       draftOnlyIssues: '只看异常',
@@ -443,10 +438,6 @@ window.__ModuleLoader__.load({
       batchReject: 'Reject batch',
       batchRejectReason: 'Whole batch rejected',
       batchRejected: 'Rejected {count} drafts',
-      batchVoid: 'Void batch',
-      batchVoidConfirm: 'Confirm void of {count}',
-      batchVoidCancel: 'Cancel',
-      batchVoided: 'Appended {count} reversing entries',
       batchApproved: 'Posted {approved}, skipped {skipped}, failed {failed}',
       draftSearchPlaceholder: 'Search date/payee/description',
       draftOnlyIssues: 'Only issues',
@@ -1321,7 +1312,6 @@ window.__ModuleLoader__.load({
       const [draftQuery, setDraftQuery] = React.useState('');
       const [draftOnlyIssues, setDraftOnlyIssues] = React.useState(false);
       const [batchExpanded, setBatchExpanded] = React.useState({});
-      const [batchVoidConfirm, setBatchVoidConfirm] = React.useState(null);
       const [accountQuery, setAccountQuery] = React.useState('');
       const [accountSelected, setAccountSelected] = React.useState(null);
       const [accountExpanded, setAccountExpanded] = React.useState({});
@@ -2162,15 +2152,6 @@ window.__ModuleLoader__.load({
             reason: t('batchRejectReason'),
           });
           return fill(t('batchRejected'), { count: response?.result?.rejected ?? 0 });
-        }, '');
-      }
-
-      function voidBatch(group) {
-        if (group.batch === null) return;
-        void runAction(`batch-void:${group.key}`, async () => {
-          const response = await postJson(API.batchVoid, { id: group.batch.id });
-          setBatchVoidConfirm(null);
-          return fill(t('batchVoided'), { count: response?.result?.voided ?? 0 });
         }, '');
       }
 
@@ -3388,21 +3369,10 @@ window.__ModuleLoader__.load({
           }
           ensure('manual', () => ({ key: 'manual', batch: null, ref: null, drafts: [] })).drafts.push(draft);
         }
-        // Recently approved, voided or duplicate-only batches have no pending
-        // drafts; keep a few cards visible so the human can reconcile or void.
-        if (drafts.length === pendingDrafts.length) {
-          for (const batch of summaries) {
-            ensure(`batch:${batch.id}`, () => ({ key: `batch:${batch.id}`, batch, ref: null, drafts: [] }));
-          }
-        }
-        groups.sort((left, right) => {
-          const rank = (group) => (group.drafts.length > 0 ? 0 : 1);
-          if (rank(left) !== rank(right)) return rank(left) - rank(right);
-          return (right.batch?.createdAt ?? '').localeCompare(left.batch?.createdAt ?? '');
-        });
-        const pendingGroups = groups.filter((group) => group.drafts.length > 0);
-        const recentGroups = groups.filter((group) => group.drafts.length === 0).slice(0, 5);
-        return [...pendingGroups, ...recentGroups];
+        // Only batches with pending drafts belong on the review page. Fully
+        // processed batches are receipts, not work; they stay in .ledger/batches.
+        groups.sort((left, right) => (right.batch?.createdAt ?? '').localeCompare(left.batch?.createdAt ?? ''));
+        return groups.filter((group) => group.drafts.length > 0);
       }
 
       function renderBatchCard(group) {
@@ -3414,7 +3384,6 @@ window.__ModuleLoader__.load({
         const sourceRef = batch?.source?.ref ?? group.ref ?? t('manualGroup');
         const coverage = batch?.coverage ?? null;
         const skipped = Array.isArray(batch?.skipped) ? batch.skipped : [];
-        const isVoiding = batchVoidConfirm === group.key;
         const filtering = draftQuery.trim() !== '' || draftOnlyIssues;
         const blockedCount = drafts.filter((draft) => blockingIssues(draft).length > 0).length;
         // Row coverage is the batch's trust signal: every source row has an
@@ -3515,16 +3484,6 @@ window.__ModuleLoader__.load({
                   t('batchReject'),
                 )
               : null,
-            batch !== null && (counts.approved ?? 0) > 0 && (counts.pending ?? 0) === 0 && status !== 'voided'
-              ? (isVoiding
-                  ? h(
-                      'span',
-                      { style: { display: 'flex', gap: 8, alignItems: 'center' } },
-                      h(Button, { variant: 'danger', onClick: () => voidBatch(group), busy: busy === `batch-void:${group.key}`, disabled: busy !== null }, fill(t('batchVoidConfirm'), { count: counts.approved })),
-                      h(Button, { variant: 'outline', onClick: () => setBatchVoidConfirm(null), disabled: busy !== null }, t('batchVoidCancel')),
-                    )
-                  : h(Button, { variant: 'outline', onClick: () => setBatchVoidConfirm(group.key), disabled: busy !== null }, t('batchVoid')))
-              : null,
           ),
           filtering && drafts.length > 0
             ? h('p', { style: S.hint }, t('batchFilteredHint'))
@@ -3546,7 +3505,6 @@ window.__ModuleLoader__.load({
           return true;
         });
         const groups = batchGroups(visible);
-        const hasBatches = (data?.batches ?? []).length > 0;
         return h(
           'section',
           { style: S.panel },
@@ -3600,7 +3558,7 @@ window.__ModuleLoader__.load({
             : null,
           entryOpen ? renderEntryForm() : null,
           renderOperations(),
-          pendingDrafts.length === 0 && !hasBatches
+          pendingDrafts.length === 0
             ? h('div', { style: S.empty }, t('pendingEmpty'))
             : null,
           visible.length === 0 && pendingDrafts.length > 0

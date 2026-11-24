@@ -131,7 +131,7 @@ export function registerTools(ctx, options) {
         },
         contract: {
           boundary:
-            'You only propose. Approval, rejection and voiding happen in the panel; never edit .bean files or .ledger/.',
+            'You only propose. Approval and rejection happen in the panel; never edit .bean files or .ledger/.',
           workflow:
             'Declare EVERY attachment with ledger_declare_sources before parsing; one batch per file; call ledger_import_status before your final reply. uncoveredCount > 0 means a whole bill was dropped.',
           coverage:

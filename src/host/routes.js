@@ -376,17 +376,7 @@ async function dispatch(ctx, options, req, res) {
     sendEnvelope(res, await runCore(options, 'reject-batch', args, {}));
     return;
   }
-  if (route === '/batch/void' && method === 'POST') {
-    const body = await readJson(req);
-    if (!body.ok) {
-      sendJson(res, body.status, { ok: false, error: body.error });
-      return;
-    }
-    const value = /** @type {Record<string, unknown>} */ (body.value);
-    sendEnvelope(res, await runCore(options, 'void-batch', ['--batch', requireString(value.id, 'id')], {}));
-    return;
-  }
-  const known = new Set(['/engine', '/engine/install', '/engine/core-upgrade', '/engine/core-rollback', '/health', '/setup', '/init', '/bootstrap', '/balances', '/balance', '/reconcile/preview', '/reconcile/commit', '/reconcile/history', '/metadata', '/draft/submit', '/draft/approve', '/draft/update', '/draft/reject', '/account/open', '/workspace', '/operation/approve', '/operation/reject', '/operation/approve-all', '/draft/approve-all', '/batches', '/draft/approve-batch', '/batch/reject', '/batch/void']);
+  const known = new Set(['/engine', '/engine/install', '/engine/core-upgrade', '/engine/core-rollback', '/health', '/setup', '/init', '/bootstrap', '/balances', '/balance', '/reconcile/preview', '/reconcile/commit', '/reconcile/history', '/metadata', '/draft/submit', '/draft/approve', '/draft/update', '/draft/reject', '/account/open', '/workspace', '/operation/approve', '/operation/reject', '/operation/approve-all', '/draft/approve-all', '/batches', '/draft/approve-batch', '/batch/reject']);
   if (known.has(route)) {
     res.statusCode = 405;
     res.setHeader('allow', method === 'GET' ? 'POST' : 'GET');

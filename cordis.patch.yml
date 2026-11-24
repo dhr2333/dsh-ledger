@@ -2,7 +2,7 @@
 #
 # 本插件不含账本规则：HTTP 路由只做浏览器会话校验、请求形状校验，
 # 然后执行 `python -m beancount_guard` 并回传 JSON。它注册只提案的
-# `ledger_*` Agent 工具；批准、驳回、冲销只在面板里发生。
+# `ledger_*` Agent 工具；批准、驳回只在面板里发生。
 #
 # 这里只放可移植的默认值，不要写死某台机器的路径：本文件会随插件一起
 # 安装到每个 profile。个人路径写在 profile 的 cordis.patch.yml 覆盖项里，

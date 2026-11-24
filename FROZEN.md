@@ -12,7 +12,7 @@ The panel now exposes:
 - unclassified postings no longer block approval: the panel rewrites them to `Expenses:Uncategorized` / `Income:Uncategorized` and creates either account with `account-open` when missing;
 - entry metadata from Agent drafts (`time` / `uuid` / `status`) is rendered by Core into the ledger entry (requires core >= 0.1.2);
 - manual entry asks for a funding account only (an asset, a liability, or `Equity:Adjustments` when the entry is an explicit adjustment); the category falls back automatically;
-- import batches: a batch card shows source, status, counts, row coverage, skipped rows and batch actions; the human can approve/reject a whole batch and void an approved batch with appended reversing entries;
+- import batches: a batch card shows source, status, counts, row coverage, skipped rows and batch actions; the human can approve/reject a whole batch (whole-batch void stays available through the Core CLI only);
 - Agent tools: `ledger_context` / `ledger_declare_sources` / `ledger_import_status` / `ledger_propose_batch` / `ledger_submit_operations` / `ledger_queue` are proposal-only; they never approve, reject or void;
 - Batch coverage is a row-index bijection: `source.rows` and every `drafts[].source.index` are required, and `drafts[].source.index` + `skipped[].index` must cover `0..rows-1` exactly once; `skipped[].reasonCode` is a closed set;
 - draft postings carry `role` (`category` / `funding`) and `fallback` (`expense` / `income`); an unresolved funding account blocks approval and is never rewritten to `Uncategorized`;
@@ -36,6 +36,6 @@ The panel now exposes:
   core's legacy `init` is not called;
 - manual entry is downgraded to a secondary 补记 entry in the review view.
 
-Still out: account close, BQL preset end-to-end test, month-end batch, reconcile revoke, single-entry `transaction-void` (batch void exists), batch partial void.
+Still out: account close, BQL preset end-to-end test, month-end batch, reconcile revoke, single-entry `transaction-void` (batch void is CLI-only), batch partial void.
 
 Design source: local Obsidian note `本地账本系统设计基线` (v0.26).
