@@ -121,7 +121,6 @@ window.__ModuleLoader__.load({
       accountCanonical: '账户名',
       accountOpenDate: '开立日期',
       draftDetails: '详情',
-      draftWrites: '写入',
       draftClickToEdit: '点击修改',
       draftEditNarration: '描述',
       draftChangeAccount: '换账户',
@@ -403,7 +402,6 @@ window.__ModuleLoader__.load({
       accountCanonical: 'Account name',
       accountOpenDate: 'Open date',
       draftDetails: 'Details',
-      draftWrites: 'Writes',
       draftClickToEdit: 'Click to edit',
       draftEditNarration: 'Description',
       draftChangeAccount: 'Change',
@@ -767,7 +765,7 @@ window.__ModuleLoader__.load({
       tableScroll: { overflowX: 'auto' },
       postings: { display: 'grid', gap: 4, margin: 0, padding: '8px 0 0', listStyle: 'none' },
       posting: { display: 'flex', gap: 10, justifyContent: 'space-between', alignItems: 'baseline', fontSize: 12 },
-      sourceGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '2px 14px' },
+      sourceGrid: { display: 'grid', gap: 2 },
       sourceField: { fontSize: 12, lineHeight: 1.6, color: 'var(--dsw-alias-label-primary)', overflowWrap: 'anywhere' },
       sourceKey: { color: 'var(--dsw-alias-label-secondary)', marginRight: 8 },
       issue: { fontSize: 12, lineHeight: 1.55, color: 'var(--dsw-alias-state-warn-primary)' },
@@ -1252,10 +1250,11 @@ window.__ModuleLoader__.load({
     function draftSourceRow(draft) {
       const evidence = draft?.source?.evidence;
       if (evidence === null || typeof evidence !== 'object' || Array.isArray(evidence)) return [];
+      // Evidence is already size-capped by Core; show every field and the full
+      // value so a long description or an extra column is never silently lost.
       return Object.entries(evidence)
-        .map(([key, value]) => [key, evidenceText(value).slice(0, 300)])
-        .filter(([, value]) => value !== '')
-        .slice(0, 24);
+        .map(([key, value]) => [key, evidenceText(value)])
+        .filter(([, value]) => value !== '');
     }
 
     async function fetchJson(path, init) {
@@ -3085,16 +3084,7 @@ window.__ModuleLoader__.load({
         // 问题区只留卡面推不出来的阻塞项，避免同一事实出现两次。
         const issueList = blocking.filter((issue) => issue.code !== 'funding_unresolved');
         const issueCount = issueList.length + (hasFunding ? 0 : 1);
-        const metadata = draft?.metadata !== null && typeof draft?.metadata === 'object' ? draft.metadata : {};
-        const writeLine = [
-          typeof metadata.time === 'string' ? metadata.time.trim() : '',
-          typeof metadata.status === 'string' ? metadata.status.trim() : '',
-        ].filter(Boolean).join(' · ');
         const sourceRow = draftSourceRow(draft);
-        // 搜索时临时露出匹配文本，避免「搜到了却看不到匹配依据」。
-        const searchLine = draftQuery.trim() === ''
-          ? ''
-          : [draft.payee ?? '', draft.narration ?? ''].filter((part) => part.trim() !== '').join(' · ');
         const textButton = (label, onClick) => h(
           'button',
           {
@@ -3133,12 +3123,6 @@ window.__ModuleLoader__.load({
           fundingAccount !== '' ? t('draftChangeAccount') : t('draftChooseFundingMissing'),
           () => openFundingPicker(draft),
         );
-        const detailRow = (label, value) => h(
-          'div',
-          { style: { display: 'grid', gridTemplateColumns: '88px 1fr', gap: 8, alignItems: 'baseline' } },
-          h('span', { style: S.label }, label),
-          h('span', { style: S.value }, value),
-        );
         const rejecting = rejectOpen === draft.id;
         const detailOpen = expandedDetail[draft.id] ?? draftOnlyIssues;
         return h(
@@ -3152,14 +3136,86 @@ window.__ModuleLoader__.load({
               ? h(
                   'span',
                   {
-                    style: { ...S.canonical, fontWeight: 400, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0 },
+                    style: { ...S.canonical, fontWeight: 400, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: '0 1 auto', minWidth: 0 },
                     title: draft.payee,
                   },
                   draft.payee,
                 )
               : null,
+            narrationEditing === draft.id
+              ? h('input', {
+                  style: {
+                    flex: '1 1 120px',
+                    minWidth: 0,
+                    boxSizing: 'border-box',
+                    border: 0,
+                    borderBottom: '1px solid var(--dsw-alias-brand-primary)',
+                    background: 'transparent',
+                    color: 'var(--dsw-alias-label-primary)',
+                    fontFamily: 'inherit',
+                    fontSize: 12,
+                    lineHeight: 1.6,
+                    padding: '0 2px',
+                    outline: 'none',
+                  },
+                  autoFocus: true,
+                  maxLength: 500,
+                  disabled: busy !== null,
+                  'aria-label': t('draftEditNarration'),
+                  value: edit.narration,
+                  onChange: (event) => updateDraftEdit(draft, { narration: event.target.value }),
+                  onBlur: (event) => {
+                    const narration = event.target.value;
+                    setNarrationEditing(null);
+                    void saveDraftEdit(draft, { ...draftEdit(draft), narration });
+                  },
+                  onKeyDown: (event) => {
+                    if (event.key === 'Enter') {
+                      event.preventDefault();
+                      event.currentTarget.blur();
+                    }
+                    if (event.key === 'Escape') {
+                      event.preventDefault();
+                      skipDraftSaveRef.current = draft.id;
+                      event.currentTarget.blur();
+                    }
+                  },
+                })
+              : h(
+                  'button',
+                  {
+                    type: 'button',
+                    style: {
+                      appearance: 'none',
+                      border: 0,
+                      background: 'transparent',
+                      padding: 0,
+                      margin: 0,
+                      fontFamily: 'inherit',
+                      fontSize: 11,
+                      fontWeight: 400,
+                      lineHeight: 1.6,
+                      color: 'var(--dsw-alias-label-secondary)',
+                      textAlign: 'left',
+                      borderBottom: '1px dashed var(--dsw-alias-border-l2)',
+                      whiteSpace: 'nowrap',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      flex: '1 1 0',
+                      minWidth: 0,
+                      cursor: busy !== null ? 'not-allowed' : 'pointer',
+                      opacity: busy !== null ? 0.5 : 1,
+                    },
+                    title: edit.narration || t('draftClickToEdit'),
+                    disabled: busy !== null,
+                    onClick: () => {
+                      skipDraftSaveRef.current = null;
+                      setNarrationEditing(draft.id);
+                    },
+                  },
+                  edit.narration || '—',
+                ),
           ),
-          searchLine !== '' ? h('div', { style: S.canonical }, searchLine) : null,
           h(
             'ul',
             { style: S.postings },
@@ -3220,73 +3276,31 @@ window.__ModuleLoader__.load({
                   : null,
               )
             : null,
-          h(
-            'details',
-            {
-              open: detailOpen,
-              onToggle: (event) => {
-                const open = event.currentTarget.open;
-                setExpandedDetail((previous) => ({ ...previous, [draft.id]: open }));
-              },
-            },
-            h('summary', { style: S.summary, title: t('draftSourceRowHint') }, `${detailOpen ? '▾' : '▸'} ${t('draftDetails')}`),
-            h(
-              'div',
-              { style: { display: 'grid', gap: 4, marginTop: 6 } },
-              detailRow(
-                t('draftEditNarration'),
-                narrationEditing === draft.id
-                  ? h('input', {
-                      style: { ...S.input, width: '100%' },
-                      autoFocus: true,
-                      maxLength: 500,
-                      disabled: busy !== null,
-                      value: edit.narration,
-                      onChange: (event) => updateDraftEdit(draft, { narration: event.target.value }),
-                      onBlur: (event) => {
-                        const narration = event.target.value;
-                        setNarrationEditing(null);
-                        void saveDraftEdit(draft, { ...draftEdit(draft), narration });
-                      },
-                      onKeyDown: (event) => {
-                        if (event.key === 'Enter') {
-                          event.preventDefault();
-                          event.currentTarget.blur();
-                        }
-                        if (event.key === 'Escape') {
-                          event.preventDefault();
-                          skipDraftSaveRef.current = draft.id;
-                          event.currentTarget.blur();
-                        }
-                      },
-                    })
-                  : editableText(
-                      edit.narration || '—',
-                      t('draftClickToEdit'),
-                      () => {
-                        skipDraftSaveRef.current = null;
-                        setNarrationEditing(draft.id);
-                      },
-                      null,
-                    ),
-              ),
-              writeLine !== '' ? detailRow(t('draftWrites'), writeLine) : null,
-              sourceRow.length > 0
-                ? h(
+          sourceRow.length > 0
+            ? h(
+                'details',
+                {
+                  open: detailOpen,
+                  onToggle: (event) => {
+                    const open = event.currentTarget.open;
+                    setExpandedDetail((previous) => ({ ...previous, [draft.id]: open }));
+                  },
+                },
+                h('summary', { style: S.summary, title: t('draftSourceRowHint') }, `${detailOpen ? '▾' : '▸'} ${t('draftDetails')}`),
+                h(
+                  'div',
+                  { style: { display: 'grid', gap: 4, marginTop: 6 } },
+                  h('span', { style: S.label }, fill(t('draftSourceRow'), { count: sourceRow.length })),
+                  h(
                     'div',
-                    { style: { display: 'grid', gap: 4, marginTop: 4 } },
-                    h('span', { style: S.label }, fill(t('draftSourceRow'), { count: sourceRow.length })),
-                    h(
-                      'div',
-                      { style: S.sourceGrid },
-                      sourceRow.map(([key, value], at) =>
-                        h('div', { key: `${draft.id}-source-${at}`, style: S.sourceField }, h('span', { style: S.sourceKey }, key), value),
-                      ),
+                    { style: S.sourceGrid },
+                    sourceRow.map(([key, value], at) =>
+                      h('div', { key: `${draft.id}-source-${at}`, style: S.sourceField }, h('span', { style: S.sourceKey }, key), value),
                     ),
-                  )
-                : null,
-            ),
-          ),
+                  ),
+                ),
+              )
+            : null,
           h(
             'div',
             { style: { ...S.row, justifyContent: 'flex-end' } },
