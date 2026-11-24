@@ -32,6 +32,10 @@ window.__ModuleLoader__.load({
       approve: '/ledger-api/draft/approve',
       draftUpdate: '/ledger-api/draft/update',
       reject: '/ledger-api/draft/reject',
+      batches: '/ledger-api/batches',
+      draftApproveBatch: '/ledger-api/draft/approve-batch',
+      batchReject: '/ledger-api/batch/reject',
+      batchVoid: '/ledger-api/batch/void',
     };
     const PERIODS = ['none', 'daily', 'weekly', 'monthly', 'quarterly', 'yearly'];
     const FALLBACK_EXPENSE = 'Expenses:Uncategorized';
@@ -120,6 +124,60 @@ window.__ModuleLoader__.load({
       draftSaved: '草稿已更新',
       draftNarrationRequired: '商户和描述不能同时为空',
       draftUnclassifiedFallback: '未分类会在批准时按金额归入 Expenses:Uncategorized / Income:Uncategorized。',
+      draftFundingUnresolved: '资金账户未解析：{account}。先批准开户/开立日调整，或在这里改选一个已有账户。',
+      draftFundingRepairHint: '这条草稿没有资金分录。选择资金账户后保存，另一侧分录会写为 Expenses:Uncategorized / Income:Uncategorized。',
+      draftChooseFundingMissing: '选择资金账户',
+      fundingUnresolved: '资金账户未解析',
+      operationReason: '提案理由',
+      operationApprovedUnblocked: '已应用该变更，解除 {count} 条草稿阻塞',
+      opAccount: '账户',
+      opAlias: '别名',
+      opOpenDate: '开立日',
+      opCurrencies: '币种',
+      opPeriod: '对账周期',
+      opTargetDate: '目标日期',
+      opScope: '范围',
+      opAllAccounts: '全部账户',
+      opAccounts: '账户',
+      opAmount: '金额',
+      opUnblocks: '批准后将解除 {count} 条草稿的阻塞',
+      manualGroup: '手动补记',
+      batchStatusApproved: '已批准',
+      batchStatusRejected: '已驳回',
+      batchStatusVoided: '已冲销',
+      batchStatusEmpty: '无草稿',
+      batchDuplicates: '重复 {duplicates} · 失败 {failed}',
+      batchFilteredHint: '筛选状态下只能逐条批准；清除搜索或“只看异常”后可整批处理。',
+      batchBlocked: '其中 {count} 条被阻塞，展开可见原因。',
+      batchClaimed: '账单声明净额 {net}',
+      batchCoverage: '覆盖 {covered}/{rows} ✓',
+      batchCoverageBad: '覆盖 {covered}/{rows}',
+      batchCounts: '待审 {pending} · 已批 {approved} · 已驳 {rejected}',
+      batchTotals: '支出 {expense} · 冲减 {credit} · 收入 {income} · 资金净流出 {outflow}',
+      batchSkipped: '跳过 {count} 行',
+      batchExpand: '展开 {count} 条',
+      batchCollapse: '收起',
+      batchApprove: '批准本批（{count}）',
+      batchReject: '驳回本批',
+      batchRejectReason: '整批驳回',
+      batchRejected: '已驳回 {count} 条草稿',
+      batchVoid: '冲销本批',
+      batchVoidConfirm: '确认冲销 {count} 条',
+      batchVoidCancel: '取消',
+      batchVoided: '已追加 {count} 条冲销分录',
+      batchApproved: '本批入账 {approved} 笔，跳过 {skipped} 笔，失败 {failed} 笔',
+      batchAccounts: '本批涉及 {count} 个资金账户',
+      batchNoPeriod: '未设周期',
+      batchDue: '待对账',
+      batchUnreconciled: '未对账',
+      batchGoAccounts: '去账户页',
+      batchGoReconcile: '去对账',
+      draftSearchPlaceholder: '搜索日期/商户/描述',
+      draftOnlyIssues: '只看异常',
+      draftMatchCount: '匹配 {count} 条',
+      draftNoMatch: '没有匹配的草稿',
+      draftSourceRow: '原始账单行',
+      draftSourceRowHint: '来自账单原文，仅供核对；不会写入账本。',
       draftLedgerMetadata: '条目元数据（写入账本）',
       fallbackCreated: '已创建兜底账户 {account}',
       fallbackCreateFailed: '创建兜底账户失败',
@@ -250,6 +308,8 @@ window.__ModuleLoader__.load({
       closed: '已关闭',
       currency: '币种',
       issueUnresolved: '第 {number} 条分录的账户未分类',
+      issueFunding: '第 {number} 条分录的资金账户未解析',
+      issueNoRealAccount: '这笔交易没有资产/负债分录',
       issueUnbalanced: '分录不平衡，差额：{differences}',
       issueBeforeOpen: '第 {number} 条分录：{account} 在交易日期之后才开立',
       issueClosed: '第 {number} 条分录：{account} 在交易日期已关闭',
@@ -362,6 +422,60 @@ window.__ModuleLoader__.load({
       draftSaved: 'Draft updated',
       draftNarrationRequired: 'Payee and description cannot both be empty',
       draftUnclassifiedFallback: 'Unclassified postings fall back to Expenses:Uncategorized / Income:Uncategorized on approval.',
+      draftFundingUnresolved: 'Funding account is not resolved: {account}. Approve the account open/date change first, or pick an existing account here.',
+      draftFundingRepairHint: 'This draft has no funding posting. Pick a funding account and save; the other posting is written as Expenses:Uncategorized / Income:Uncategorized.',
+      draftChooseFundingMissing: 'Choose funding account',
+      fundingUnresolved: 'Funding account unresolved',
+      operationReason: 'Proposed because',
+      operationApprovedUnblocked: 'Change applied; unblocked {count} drafts',
+      opAccount: 'Account',
+      opAlias: 'Alias',
+      opOpenDate: 'Open date',
+      opCurrencies: 'Currencies',
+      opPeriod: 'Period',
+      opTargetDate: 'Target date',
+      opScope: 'Scope',
+      opAllAccounts: 'All accounts',
+      opAccounts: 'Accounts',
+      opAmount: 'Amount',
+      opUnblocks: 'Approving unblocks {count} drafts',
+      manualGroup: 'Manual entries',
+      batchStatusApproved: 'Approved',
+      batchStatusRejected: 'Rejected',
+      batchStatusVoided: 'Voided',
+      batchStatusEmpty: 'No drafts',
+      batchDuplicates: 'duplicates {duplicates} · failed {failed}',
+      batchFilteredHint: 'Filtering limits approval to individual drafts; clear the search or issue filter to approve the batch.',
+      batchBlocked: '{count} drafts are blocked; expand to see why.',
+      batchClaimed: 'Bill-declared net {net}',
+      batchCoverage: 'Covered {covered}/{rows} ✓',
+      batchCoverageBad: 'Covered {covered}/{rows}',
+      batchCounts: 'Pending {pending} · Approved {approved} · Rejected {rejected}',
+      batchTotals: 'Expense {expense} · Credit {credit} · Income {income} · Net outflow {outflow}',
+      batchSkipped: 'Skipped {count} rows',
+      batchExpand: 'Show {count}',
+      batchCollapse: 'Collapse',
+      batchApprove: 'Approve batch ({count})',
+      batchReject: 'Reject batch',
+      batchRejectReason: 'Whole batch rejected',
+      batchRejected: 'Rejected {count} drafts',
+      batchVoid: 'Void batch',
+      batchVoidConfirm: 'Confirm void of {count}',
+      batchVoidCancel: 'Cancel',
+      batchVoided: 'Appended {count} reversing entries',
+      batchApproved: 'Posted {approved}, skipped {skipped}, failed {failed}',
+      batchAccounts: 'This batch touches {count} funding accounts',
+      batchNoPeriod: 'No period',
+      batchDue: 'Due',
+      batchUnreconciled: 'Unreconciled',
+      batchGoAccounts: 'Accounts',
+      batchGoReconcile: 'Reconcile',
+      draftSearchPlaceholder: 'Search date/payee/description',
+      draftOnlyIssues: 'Only issues',
+      draftMatchCount: '{count} matched',
+      draftNoMatch: 'No matching drafts',
+      draftSourceRow: 'Original bill row',
+      draftSourceRowHint: 'From the bill itself, for reference only; not written to the ledger.',
       draftLedgerMetadata: 'Entry metadata (written to the ledger)',
       fallbackCreated: 'Created fallback account {account}',
       fallbackCreateFailed: 'Could not create the fallback account',
@@ -492,6 +606,8 @@ window.__ModuleLoader__.load({
       closed: 'Closed',
       currency: 'Currency',
       issueUnresolved: 'Posting {number} has no account',
+      issueFunding: 'Posting {number} has an unresolved funding account',
+      issueNoRealAccount: 'The transaction has no asset or liability posting',
       issueUnbalanced: 'Postings are unbalanced by {differences}',
       issueBeforeOpen: 'Posting {number}: {account} opens after the transaction date',
       issueClosed: 'Posting {number}: {account} is closed on the transaction date',
@@ -668,6 +784,17 @@ window.__ModuleLoader__.load({
       tableScroll: { overflowX: 'auto' },
       postings: { display: 'grid', gap: 4, margin: 0, padding: '8px 0 0', listStyle: 'none' },
       posting: { display: 'flex', gap: 10, justifyContent: 'space-between', alignItems: 'baseline', fontSize: 12 },
+      sourceBlock: {
+        border: '1px dashed var(--dsw-alias-border-l2)',
+        borderRadius: 8,
+        padding: '8px 10px',
+        display: 'grid',
+        gap: 5,
+        background: 'var(--dsw-alias-bg-layer-2)',
+      },
+      sourceGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '2px 14px' },
+      sourceField: { fontSize: 12, lineHeight: 1.6, color: 'var(--dsw-alias-label-primary)', overflowWrap: 'anywhere' },
+      sourceKey: { color: 'var(--dsw-alias-label-secondary)', marginRight: 8 },
       issue: { fontSize: 12, lineHeight: 1.55, color: 'var(--dsw-alias-state-warn-primary)' },
       issueBlocking: { color: 'var(--dsw-alias-state-error-primary)' },
       details: { borderTop: '1px solid var(--dsw-alias-border-l1)', paddingTop: 8 },
@@ -1053,6 +1180,8 @@ window.__ModuleLoader__.load({
     function issueText(t, issue) {
       const keys = {
         unresolved_account: 'issueUnresolved',
+        funding_unresolved: 'issueFunding',
+        no_real_account: 'issueNoRealAccount',
         unbalanced: 'issueUnbalanced',
         before_account_open: 'issueBeforeOpen',
         closed_account: 'issueClosed',
@@ -1164,6 +1293,28 @@ window.__ModuleLoader__.load({
       return parts.length === 0 ? '' : `${t('draftLedgerMetadata')} ${parts.join(' · ')}`;
     }
 
+    /** Render one evidence value as compact, bounded text. */
+    function evidenceText(value) {
+      if (typeof value === 'string') return value.trim();
+      if (typeof value === 'number' || typeof value === 'boolean') return String(value);
+      if (value === null || value === undefined) return '';
+      try {
+        return JSON.stringify(value);
+      } catch {
+        return '';
+      }
+    }
+
+    /** Original bill row carried in source.evidence, as key/value pairs. */
+    function draftSourceRow(draft) {
+      const evidence = draft?.source?.evidence;
+      if (evidence === null || typeof evidence !== 'object' || Array.isArray(evidence)) return [];
+      return Object.entries(evidence)
+        .map(([key, value]) => [key, evidenceText(value).slice(0, 300)])
+        .filter(([, value]) => value !== '')
+        .slice(0, 24);
+    }
+
     async function fetchJson(path, init) {
       const response = await fetch(path, {
         credentials: 'same-origin',
@@ -1225,6 +1376,10 @@ window.__ModuleLoader__.load({
       const [reconEditor, setReconEditor] = React.useState(null);
       const [reconAccountPicker, setReconAccountPicker] = React.useState(null);
       const [rejectReasons, setRejectReasons] = React.useState({});
+      const [draftQuery, setDraftQuery] = React.useState('');
+      const [draftOnlyIssues, setDraftOnlyIssues] = React.useState(false);
+      const [batchExpanded, setBatchExpanded] = React.useState({});
+      const [batchVoidConfirm, setBatchVoidConfirm] = React.useState(null);
       const [accountQuery, setAccountQuery] = React.useState('');
       const [accountSelected, setAccountSelected] = React.useState(null);
       const [accountExpanded, setAccountExpanded] = React.useState({});
@@ -1646,16 +1801,57 @@ window.__ModuleLoader__.load({
         return match === undefined ? path : match.name;
       }
 
+      /** One posting is either a category or the money account; legacy drafts infer it. */
+      function postingRole(posting) {
+        if (posting.role === 'category' || posting.role === 'funding') return posting.role;
+        const name = posting.account ?? posting.suggested ?? '';
+        return name.startsWith('Assets:') || name.startsWith('Liabilities:') ? 'funding' : 'category';
+      }
+
+      function isFundingPosting(posting) {
+        return postingRole(posting) === 'funding';
+      }
+
       /** The unique asset/liability posting a person is allowed to switch. */
       function fundingIndex(draft) {
         const indexes = [];
         draft.postings.forEach((posting, index) => {
-          if (typeof posting.account === 'string'
-            && (posting.account.startsWith('Assets:') || posting.account.startsWith('Liabilities:'))) {
-            indexes.push(index);
-          }
+          if (isFundingPosting(posting)) indexes.push(index);
         });
         return indexes.length === 1 ? indexes[0] : -1;
+      }
+
+      /**
+       * When a draft has no funding posting, the money leg is the single positive
+       * posting (statement imports keep the asset/liability side positive); fall
+       * back to the last posting so the picker always has somewhere to write.
+       */
+      function fundingCandidateIndex(draft) {
+        const postings = draft.postings;
+        if (postings.length === 0) return -1;
+        const positive = postings
+          .map((posting, index) => ({ posting, index }))
+          .filter(({ posting }) => Number(posting.amount) > 0);
+        return positive.length === 1 ? positive[0].index : postings.length - 1;
+      }
+
+      /** Category root left over after the user picks the funding account. */
+      function uncategorizedAccount(posting) {
+        const account = posting.account ?? '';
+        if (account.startsWith('Expenses:')) return FALLBACK_EXPENSE;
+        if (account.startsWith('Income:')) return FALLBACK_INCOME;
+        return fallbackPostingAccount(posting);
+      }
+
+      /** Blocking issues ignore an unclassified category, never an unresolved funding. */
+      function blockingIssues(draft) {
+        return draft.issues.filter((issue) => {
+          if (issue.code === 'unresolved_account') {
+            const posting = typeof issue.postingIndex === 'number' ? draft.postings[issue.postingIndex] : undefined;
+            return posting === undefined || posting.account !== null;
+          }
+          return ['funding_unresolved', 'no_real_account', 'unbalanced', 'before_account_open', 'closed_account'].includes(issue.code);
+        });
       }
 
       function defaultDraftEdit(draft) {
@@ -1686,6 +1882,8 @@ window.__ModuleLoader__.load({
       }
 
       function fallbackPostingAccount(posting) {
+        if (posting.fallback === 'expense') return FALLBACK_EXPENSE;
+        if (posting.fallback === 'income') return FALLBACK_INCOME;
         return posting.amount.trim().startsWith('-') ? FALLBACK_INCOME : FALLBACK_EXPENSE;
       }
 
@@ -1693,11 +1891,26 @@ window.__ModuleLoader__.load({
         let changed = false;
         const postings = draft.postings.map((posting) => {
           if (posting.account !== null) {
-            return { account: posting.account, amount: posting.amount, currency: posting.currency };
+            return {
+              account: posting.account,
+              amount: posting.amount,
+              currency: posting.currency,
+              ...(posting.role ? { role: posting.role } : {}),
+            };
+          }
+          if (isFundingPosting(posting)) {
+            // A funding account is never fabricated: keep it unresolved and blocking.
+            return {
+              suggested: posting.suggested ?? '',
+              role: 'funding',
+              amount: posting.amount,
+              currency: posting.currency,
+            };
           }
           changed = true;
           return {
             account: fallbackPostingAccount(posting),
+            role: 'category',
             amount: posting.amount,
             currency: posting.currency,
           };
@@ -1756,12 +1969,40 @@ window.__ModuleLoader__.load({
           return;
         }
         const index = fundingIndex(draft);
+        if (!draft.postings.some((posting) => isFundingPosting(posting))) {
+          const postings = repairFundingPostings(draft, (edit.funding ?? '').trim());
+          if (postings === null) {
+            reportError(t('draftChooseFundingMissing'));
+            return;
+          }
+          void runAction(`draft-save:${draft.id}`, async () => {
+            await ensureFallbackAccounts(postings, new Set());
+            await postJson(API.draftUpdate, { id: draft.id, narration, postings });
+            clearDraftEdit(draft.id);
+            return t('draftSaved');
+          }, '');
+          return;
+        }
         const postings = draft.postings.map((posting, at) => {
           const next = posting.account === null
-            ? { suggested: posting.suggested ?? '', amount: posting.amount, currency: posting.currency }
-            : { account: posting.account, amount: posting.amount, currency: posting.currency };
-          if (at === index && edit.funding !== '' && edit.funding !== posting.account) {
+            ? {
+                suggested: posting.suggested ?? '',
+                role: postingRole(posting),
+                amount: posting.amount,
+                currency: posting.currency,
+              }
+            : {
+                account: posting.account,
+                amount: posting.amount,
+                currency: posting.currency,
+                ...(posting.role ? { role: posting.role } : {}),
+              };
+          if (posting.fallback) next.fallback = posting.fallback;
+          if (at === index && typeof edit.funding === 'string' && edit.funding !== '' && edit.funding !== posting.account) {
             next.account = edit.funding;
+            delete next.suggested;
+            next.role = 'funding';
+            delete next.fallback;
           }
           return next;
         });
@@ -1770,6 +2011,22 @@ window.__ModuleLoader__.load({
           clearDraftEdit(draft.id);
           return t('draftSaved');
         }, '');
+      }
+
+      /**
+       * A draft without a money leg: write the chosen account onto the money
+       * posting and fold every other posting onto its Uncategorized fallback.
+       */
+      function repairFundingPostings(draft, funding) {
+        if (funding === '') return null;
+        const target = fundingCandidateIndex(draft);
+        if (target < 0) return null;
+        return draft.postings.map((posting, at) => {
+          if (at === target) {
+            return { account: funding, role: 'funding', amount: posting.amount, currency: posting.currency };
+          }
+          return { account: uncategorizedAccount(posting), role: 'category', amount: posting.amount, currency: posting.currency };
+        });
       }
 
       function openFundingPicker(draft) {
@@ -1809,10 +2066,58 @@ window.__ModuleLoader__.load({
         }, '');
       }
 
+      function batchDrafts(group) {
+        return group.drafts;
+      }
+
+      function approveBatch(group) {
+        void runAction(`batch-approve:${group.key}`, async () => {
+          const ensured = new Set();
+          let fallbackFailed = 0;
+          for (const draft of batchDrafts(group)) {
+            try {
+              await applyFallback(draft, ensured);
+            } catch {
+              fallbackFailed += 1;
+            }
+          }
+          const body = group.batch !== null ? { batch: group.batch.id } : { ref: group.ref };
+          const response = await postJson(API.draftApproveBatch, body);
+          const result = response?.result ?? {};
+          const approved = result.approved ?? 0;
+          const skipped = (result.skipped ?? []).length;
+          const failed = (result.failed ?? []).length + fallbackFailed;
+          return fill(t('batchApproved'), { approved, skipped, failed });
+        }, '');
+      }
+
+      function rejectBatch(group) {
+        if (group.batch === null) return;
+        void runAction(`batch-reject:${group.key}`, async () => {
+          const response = await postJson(API.batchReject, {
+            id: group.batch.id,
+            reason: t('batchRejectReason'),
+          });
+          return fill(t('batchRejected'), { count: response?.result?.rejected ?? 0 });
+        }, '');
+      }
+
+      function voidBatch(group) {
+        if (group.batch === null) return;
+        void runAction(`batch-void:${group.key}`, async () => {
+          const response = await postJson(API.batchVoid, { id: group.batch.id });
+          setBatchVoidConfirm(null);
+          return fill(t('batchVoided'), { count: response?.result?.voided ?? 0 });
+        }, '');
+      }
+
       function approveOperation(operation) {
         void runAction(`op-approve:${operation.id}`, async () => {
-          await postJson(API.operationApprove, { id: operation.id, actor: 'panel' });
-          return t('operationApproved');
+          const response = await postJson(API.operationApprove, { id: operation.id, actor: 'panel' });
+          const refreshed = response?.operation?.approved?.refreshedDrafts?.drafts ?? 0;
+          return refreshed > 0
+            ? fill(t('operationApprovedUnblocked'), { count: refreshed })
+            : t('operationApproved');
         }, '');
       }
 
@@ -1828,8 +2133,13 @@ window.__ModuleLoader__.load({
           const response = await postJson(API.operationApproveAll, {});
           const approved = response?.approved ?? 0;
           const failed = (response?.failed ?? []).length;
+          const refreshed = (response?.results ?? []).reduce(
+            (total, result) => total + (result?.operation?.approved?.refreshedDrafts?.drafts ?? 0),
+            0,
+          );
           const done = fill(t('approvedAllOps'), { count: approved });
-          return failed > 0 ? `${done}；${fill(t('approveAllFailed'), { count: failed })}` : done;
+          const base = refreshed > 0 ? `${done}；${fill(t('operationApprovedUnblocked'), { count: refreshed })}` : done;
+          return failed > 0 ? `${base}；${fill(t('approveAllFailed'), { count: failed })}` : base;
         }, '');
       }
 
@@ -2548,11 +2858,60 @@ window.__ModuleLoader__.load({
         );
       }
 
+      function operationRows(operation) {
+        const payload = operation.payload ?? {};
+        const rows = [];
+        const push = (label, value) => {
+          if (value === null || value === undefined || value === '') return;
+          rows.push([label, String(value)]);
+        };
+        if (operation.kind === 'account-open') {
+          push(t('opAccount'), payload.account);
+          push(t('opAlias'), payload.alias);
+          push(t('opOpenDate'), payload.date);
+          push(t('opCurrencies'), (payload.currencies ?? []).join(', '));
+          push(t('opPeriod'), payload.reconcile);
+        } else if (operation.kind === 'account-redate') {
+          push(t('opTargetDate'), payload.date);
+          push(t('opScope'), payload.all === true ? t('opAllAccounts') : `${(payload.accounts ?? []).length}`);
+          if (payload.all !== true) push(t('opAccounts'), (payload.accounts ?? []).join(', '));
+        } else if (operation.kind === 'account-metadata') {
+          push(t('opAccount'), payload.account);
+          push(t('opAlias'), payload.alias);
+          push(t('opPeriod'), payload.reconcile);
+        } else if (operation.kind === 'balance') {
+          push(t('opAccount'), payload.account);
+          push(t('opAmount'), `${payload.amount ?? ''} ${payload.currency ?? ''}`.trim());
+          push(t('opTargetDate'), payload.date);
+        }
+        return rows;
+      }
+
+      function operationUnblocks(operation) {
+        if (operation.kind === 'account-redate') {
+          return pendingDrafts.filter((draft) => draft.issues.some((issue) => issue.code === 'before_account_open')).length;
+        }
+        if (operation.kind !== 'account-open') return 0;
+        const canonical = operation.payload?.account;
+        if (typeof canonical !== 'string' || canonical === '') return 0;
+        const alias = accountLabel(canonical);
+        return pendingDrafts.filter((draft) =>
+          draft.issues.some((issue) => {
+            if (issue.code !== 'funding_unresolved' && issue.code !== 'before_account_open') return false;
+            const posting = typeof issue.postingIndex === 'number' ? draft.postings[issue.postingIndex] : undefined;
+            if (posting === undefined) return false;
+            return posting.account === alias || posting.suggested === canonical;
+          }),
+        ).length;
+      }
+
       function renderOperations() {
         if (pendingOperations.length === 0) return null;
         const cards = pendingOperations.map((operation) => {
           const blocked = operation.issues.length > 0;
           const kindName = operationKindName(t, operation.kind);
+          const rows = operationRows(operation);
+          const unblocks = operationUnblocks(operation);
           return h(
             'div',
             { key: operation.id, style: S.card },
@@ -2568,7 +2927,20 @@ window.__ModuleLoader__.load({
               h(Badge, { tone: 'pending' }, t('statusPending')),
             ),
             operation.reason
-              ? h('div', { style: S.label }, `${t('rejectReason')}: ${operation.reason}`)
+              ? h('div', { style: S.label }, `${t('operationReason')}: ${operation.reason}`)
+              : null,
+            rows.length > 0
+              ? h(
+                  'div',
+                  { style: { display: 'grid', gridTemplateColumns: 'auto 1fr', gap: '2px 12px', marginTop: 6 } },
+                  rows.flatMap(([label, value], at) => [
+                    h('span', { key: `${operation.id}-k-${at}`, style: S.label }, label),
+                    h('span', { key: `${operation.id}-v-${at}`, style: S.canonical }, value),
+                  ]),
+                )
+              : null,
+            unblocks > 0
+              ? h('div', { style: { ...S.canonical, marginTop: 6 } }, fill(t('opUnblocks'), { count: unblocks }))
               : null,
             blocked
               ? h(
@@ -2629,134 +3001,390 @@ window.__ModuleLoader__.load({
         );
       }
 
-      function renderReview() {
-        const cards = pendingDrafts.map((draft) => {
-          const postings = draft.postings;
-          const unresolvedCount = postings.filter((posting) => posting.account === null).length;
-          const edit = draftEdit(draft);
-          const index = fundingIndex(draft);
-          const funding = index >= 0 ? postings[index].account : '';
-          const blocking = draft.issues.filter((issue) => {
-            if (issue.code === 'unresolved_account') {
-              const posting = typeof issue.postingIndex === 'number' ? postings[issue.postingIndex] : undefined;
-              return posting === undefined || posting.account !== null;
-            }
-            return ['unbalanced', 'before_account_open', 'closed_account'].includes(issue.code);
-          });
-          const changed = edit.narration !== (draft.narration ?? '')
-            || (index >= 0 && edit.funding !== funding);
-          const ledgerMetadata = draftLedgerMetadata(t, draft);
-          return h(
+      function renderDraftCard(draft) {
+        const postings = draft.postings;
+        const edit = draftEdit(draft);
+        const index = fundingIndex(draft);
+        const funding = index >= 0 ? postings[index].account : '';
+        const fundingPosting = index >= 0 ? postings[index] : null;
+        const hasFunding = postings.some((posting) => isFundingPosting(posting));
+        const blocking = blockingIssues(draft);
+        const unclassified = postings.filter((posting) => posting.account === null && !isFundingPosting(posting)).length;
+        const changed = edit.narration !== (draft.narration ?? '')
+          || (edit.funding ?? '') !== (funding ?? '');
+        const ledgerMetadata = draftLedgerMetadata(t, draft);
+        // 原始账单行只在「只看异常」时展示：人在这里核对描述与资金账户。
+        const sourceRow = draftOnlyIssues ? draftSourceRow(draft) : [];
+        return h(
+          'div',
+          { key: draft.id, style: S.card },
+          h(
             'div',
-            { key: draft.id, style: S.card },
+            { style: S.spread },
             h(
               'div',
-              { style: S.spread },
-              h(
-                'div',
-                { style: S.grow },
-                h('div', { style: S.name }, `${draft.date} · ${draft.payee || draft.narration}`),
-                draftMetaLine(t, draft) ? h('div', { style: S.canonical }, draftMetaLine(t, draft)) : null,
-                ledgerMetadata ? h('div', { style: S.canonical }, ledgerMetadata) : null,
-              ),
-              h(Badge, { tone: 'pending' }, t('statusPending')),
+              { style: S.grow },
+              h('div', { style: S.name }, `${draft.date} · ${draft.payee || draft.narration}`),
+              draftMetaLine(t, draft) ? h('div', { style: S.canonical }, draftMetaLine(t, draft)) : null,
+              ledgerMetadata ? h('div', { style: S.canonical }, ledgerMetadata) : null,
             ),
-            h(
-              'ul',
-              { style: S.postings },
-              postings.map((posting, at) =>
+            h(Badge, { tone: 'pending' }, t('statusPending')),
+          ),
+          h(
+            'ul',
+            { style: S.postings },
+            postings.map((posting, at) =>
+              h(
+                'li',
+                { key: `${draft.id}-${at}`, style: S.posting },
                 h(
-                  'li',
-                  { key: `${draft.id}-${at}`, style: S.posting },
+                  'span',
+                  { style: { ...S.value, display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' } },
                   h(
                     'span',
-                    { style: { ...S.value, display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' } },
-                    h(
-                      'span',
-                      null,
-                      posting.account ?? `${t('unresolved')}: ${posting.suggested || '—'}`,
-                    ),
+                    null,
+                    posting.account ?? `${isFundingPosting(posting) ? t('fundingUnresolved') : t('unresolved')}: ${posting.suggested || '—'}`,
                   ),
-                  h('span', { style: S.mono }, formatMoney(posting.amount, posting.currency)),
+                  posting.fallback ? h('span', { style: S.canonical }, `→ ${posting.fallback === 'expense' ? FALLBACK_EXPENSE : FALLBACK_INCOME}`) : null,
                 ),
+                h('span', { style: S.mono }, formatMoney(posting.amount, posting.currency)),
               ),
             ),
-            unresolvedCount > 0 ? h('p', { style: S.hint }, t('draftUnclassifiedFallback')) : null,
+          ),
+          unclassified > 0 ? h('p', { style: S.hint }, t('draftUnclassifiedFallback')) : null,
+          !hasFunding ? h('p', { style: S.hint }, t('draftFundingRepairHint')) : null,
+          fundingPosting !== null && fundingPosting.account === null
+            ? h('p', { style: { ...S.hint, ...S.issueBlocking } }, fill(t('draftFundingUnresolved'), { account: fundingPosting.suggested || '—' }))
+            : null,
+          sourceRow.length > 0
+            ? h(
+                'div',
+                { style: S.sourceBlock },
+                h('span', { style: S.label }, t('draftSourceRow')),
+                h(
+                  'div',
+                  { style: S.sourceGrid },
+                  sourceRow.map(([key, value], at) =>
+                    h('div', { key: `${draft.id}-source-${at}`, style: S.sourceField }, h('span', { style: S.sourceKey }, key), value),
+                  ),
+                ),
+                h('span', { style: S.hint }, t('draftSourceRowHint')),
+              )
+            : null,
+          h(
+            'div',
+            { style: S.row },
+            h(
+              Field,
+              { label: t('draftEditNarration') },
+              h('input', {
+                style: { ...S.input, width: 280 },
+                disabled: busy !== null,
+                value: edit.narration,
+                onChange: (event) => updateDraftEdit(draft, { narration: event.target.value }),
+              }),
+            ),
+            index >= 0 || !hasFunding
+              ? h(
+                  Field,
+                  { label: t('draftChooseFunding') },
+                  h(
+                    Button,
+                    { variant: 'outline', onClick: () => openFundingPicker(draft), disabled: busy !== null },
+                    (edit.funding ?? '') === '' ? t('draftChooseFundingMissing') : accountLabel(edit.funding),
+                  ),
+                )
+              : null,
+            h(
+              Button,
+              {
+                variant: 'outline',
+                onClick: () => saveDraft(draft),
+                busy: busy === `draft-save:${draft.id}`,
+                disabled: busy !== null || !changed,
+              },
+              busy === `draft-save:${draft.id}` ? t('saving') : t('draftSaveEdit'),
+            ),
+          ),
+          blocking.length > 0
+            ? h(
+                'div',
+                { style: { display: 'grid', gap: 2 } },
+                h('span', { style: S.label }, t('issues')),
+                blocking.map((issue, at) => h('span', { key: at, style: { ...S.issue, ...S.issueBlocking } }, issueText(t, issue))),
+              )
+            : null,
+          h(
+            'div',
+            { style: S.spread },
             h(
               'div',
               { style: S.row },
               h(
-                Field,
-                { label: t('draftEditNarration') },
-                h('input', {
-                  style: { ...S.input, width: 280 },
-                  disabled: busy !== null,
-                  value: edit.narration,
-                  onChange: (event) => updateDraftEdit(draft, { narration: event.target.value }),
-                }),
-              ),
-              index >= 0
-                ? h(
-                    Field,
-                    { label: t('draftChooseFunding') },
-                    h(
-                      Button,
-                      { variant: 'outline', onClick: () => openFundingPicker(draft), disabled: busy !== null },
-                      accountLabel(edit.funding),
-                    ),
-                  )
-                : null,
-              h(
-                Button,
+                'input',
                 {
-                  variant: 'outline',
-                  onClick: () => saveDraft(draft),
-                  busy: busy === `draft-save:${draft.id}`,
-                  disabled: busy !== null || !changed,
+                  style: { ...S.input, width: 220 },
+                  placeholder: t('rejectReasonPlaceholder'),
+                  'aria-label': t('rejectReason'),
+                  disabled: busy !== null,
+                  value: rejectReasons[draft.id] ?? '',
+                  onChange: (event) => setRejectReasons((previous) => ({ ...previous, [draft.id]: event.target.value })),
                 },
-                busy === `draft-save:${draft.id}` ? t('saving') : t('draftSaveEdit'),
               ),
+              h(Button, { variant: 'danger', onClick: () => rejectDraft(draft), busy: busy === `reject:${draft.id}`, disabled: busy !== null }, busy === `reject:${draft.id}` ? t('rejecting') : t('reject')),
             ),
-            blocking.length > 0
-              ? h(
-                  'div',
-                  { style: { display: 'grid', gap: 2 } },
-                  h('span', { style: S.label }, t('issues')),
-                  blocking.map((issue, at) => h('span', { key: at, style: { ...S.issue, ...S.issueBlocking } }, issueText(t, issue))),
-                )
-              : null,
+            h(
+              Button,
+              {
+                variant: 'primary',
+                onClick: () => approveDraft(draft),
+                busy: busy === `approve:${draft.id}`,
+                disabled: blocking.length > 0 || busy !== null,
+              },
+              busy === `approve:${draft.id}` ? t('approving') : t('approve'),
+            ),
+          ),
+        );
+      }
+
+      function accountInfo(account) {
+        return accounts.find((item) => item.account === account) ?? null;
+      }
+
+      function batchStatusLabel(status) {
+        if (status === 'approved') return t('batchStatusApproved');
+        if (status === 'rejected') return t('batchStatusRejected');
+        if (status === 'voided') return t('batchStatusVoided');
+        if (status === 'empty') return t('batchStatusEmpty');
+        return t('statusPending');
+      }
+
+      function batchStatusTone(status) {
+        if (status === 'approved') return 'approved';
+        if (status === 'rejected') return 'rejected';
+        if (status === 'voided') return 'scheduled';
+        return 'pending';
+      }
+
+      function batchGroups(drafts) {
+        const summaries = Array.isArray(data?.batches) ? data.batches : [];
+        const byId = new Map(summaries.map((batch) => [batch.id, batch]));
+        const groups = [];
+        const index = new Map();
+        const ensure = (key, factory) => {
+          if (!index.has(key)) {
+            const group = factory();
+            index.set(key, group);
+            groups.push(group);
+          }
+          return index.get(key);
+        };
+        for (const draft of drafts) {
+          const batch = typeof draft.batch === 'string' ? byId.get(draft.batch) : undefined;
+          if (batch !== undefined) {
+            ensure(`batch:${batch.id}`, () => ({ key: `batch:${batch.id}`, batch, ref: null, drafts: [] })).drafts.push(draft);
+            continue;
+          }
+          const ref = (draft.source?.ref ?? '').trim();
+          if (ref !== '') {
+            ensure(`ref:${ref}`, () => ({ key: `ref:${ref}`, batch: null, ref, drafts: [] })).drafts.push(draft);
+            continue;
+          }
+          ensure('manual', () => ({ key: 'manual', batch: null, ref: null, drafts: [] })).drafts.push(draft);
+        }
+        // Recently approved, voided or duplicate-only batches have no pending
+        // drafts; keep a few cards visible so the human can reconcile or void.
+        if (drafts.length === pendingDrafts.length) {
+          for (const batch of summaries) {
+            ensure(`batch:${batch.id}`, () => ({ key: `batch:${batch.id}`, batch, ref: null, drafts: [] }));
+          }
+        }
+        groups.sort((left, right) => {
+          const rank = (group) => (group.drafts.length > 0 ? 0 : 1);
+          if (rank(left) !== rank(right)) return rank(left) - rank(right);
+          return (right.batch?.createdAt ?? '').localeCompare(left.batch?.createdAt ?? '');
+        });
+        const pendingGroups = groups.filter((group) => group.drafts.length > 0);
+        const recentGroups = groups.filter((group) => group.drafts.length === 0).slice(0, 5);
+        return [...pendingGroups, ...recentGroups];
+      }
+
+      function renderBatchCard(group) {
+        const batch = group.batch;
+        const drafts = group.drafts;
+        const status = batch?.status ?? 'pending';
+        const counts = batch?.countsByStatus ?? { pending: drafts.length, approved: 0, rejected: 0, voided: 0 };
+        const expanded = batchExpanded[group.key] ?? drafts.length <= 3;
+        const sourceRef = batch?.source?.ref ?? group.ref ?? t('manualGroup');
+        const coverage = batch?.coverage ?? null;
+        const totals = batch?.totals ?? null;
+        const skipped = Array.isArray(batch?.skipped) ? batch.skipped : [];
+        const batchAccounts = Array.isArray(batch?.accounts) ? batch.accounts : [];
+        const reconcileRows = batchAccounts
+          .map((entry) => {
+            const account = accountInfo(entry.account);
+            return {
+              account: entry.account,
+              name: entry.name,
+              period: account?.period ?? null,
+              status: account?.status ?? null,
+              unreconciled: account?.unreconciled === true,
+            };
+          })
+          .filter((entry) => entry.period === null || entry.unreconciled || entry.status === 'due' || entry.status === 'overdue');
+        const isVoiding = batchVoidConfirm === group.key;
+        const filtering = draftQuery.trim() !== '' || draftOnlyIssues;
+        const blockedCount = drafts.filter((draft) => blockingIssues(draft).length > 0).length;
+        const showReconcile = (counts.approved ?? 0) > 0 || status === 'approved';
+        return h(
+          'div',
+          { key: group.key, style: S.card },
+          h(
+            'div',
+            { style: S.spread },
             h(
               'div',
-              { style: S.spread },
+              { style: S.grow },
               h(
                 'div',
-                { style: S.row },
-                h(
-                  'input',
-                  {
-                    style: { ...S.input, width: 220 },
-                    placeholder: t('rejectReasonPlaceholder'),
-                    'aria-label': t('rejectReason'),
-                    disabled: busy !== null,
-                    value: rejectReasons[draft.id] ?? '',
-                    onChange: (event) => setRejectReasons((previous) => ({ ...previous, [draft.id]: event.target.value })),
-                  },
-                ),
-                h(Button, { variant: 'danger', onClick: () => rejectDraft(draft), busy: busy === `reject:${draft.id}`, disabled: busy !== null }, busy === `reject:${draft.id}` ? t('rejecting') : t('reject')),
+                { style: { ...S.name, display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' } },
+                sourceRef,
+                h(Badge, { tone: batchStatusTone(status) }, batchStatusLabel(status)),
+                coverage !== null && coverage.ok === true ? h(Badge, { tone: 'approved' }, fill(t('batchCoverage'), { covered: coverage.covered, rows: coverage.rows })) : null,
+                coverage !== null && coverage.ok === false ? h(Badge, { tone: 'overdue' }, fill(t('batchCoverageBad'), { covered: coverage.covered, rows: coverage.rows })) : null,
               ),
               h(
-                Button,
-                {
-                  variant: 'primary',
-                  onClick: () => approveDraft(draft),
-                  busy: busy === `approve:${draft.id}`,
-                  disabled: blocking.length > 0 || busy !== null,
-                },
-                busy === `approve:${draft.id}` ? t('approving') : t('approve'),
+                'div',
+                { style: S.canonical },
+                fill(t('batchCounts'), {
+                  pending: counts.pending ?? drafts.length,
+                  approved: counts.approved ?? 0,
+                  rejected: counts.rejected ?? 0,
+                }),
+                batch?.counts && ((batch.counts.duplicates ?? 0) + (batch.counts.failed ?? 0)) > 0
+                  ? ` · ${fill(t('batchDuplicates'), {
+                      duplicates: batch.counts.duplicates ?? 0,
+                      failed: batch.counts.failed ?? 0,
+                    })}`
+                  : '',
               ),
+              blockedCount > 0
+                ? h('div', { style: { ...S.canonical, color: 'var(--dsw-alias-state-error-primary)' } }, fill(t('batchBlocked'), { count: blockedCount }))
+                : null,
+              batch?.claimed
+                ? h('div', { style: S.canonical }, fill(t('batchClaimed'), {
+                    net: formatMoney(batch.claimed.net, batch.claimed.currency ?? ledgerCurrency),
+                  }))
+                : null,
+              totals
+                ? h('div', { style: S.canonical }, fill(t('batchTotals'), {
+                    expense: formatMoney(totals.expense, ledgerCurrency),
+                    credit: formatMoney(totals.credit, ledgerCurrency),
+                    income: formatMoney(totals.income, ledgerCurrency),
+                    outflow: formatMoney(totals.netOutflow ?? String(-Number(totals.funding)), ledgerCurrency),
+                  }))
+                : null,
             ),
-          );
+            drafts.length > 0
+              ? h(
+                  Button,
+                  { variant: 'outline', onClick: () => setBatchExpanded((previous) => ({ ...previous, [group.key]: !expanded })), disabled: busy !== null },
+                  expanded ? t('batchCollapse') : fill(t('batchExpand'), { count: drafts.length }),
+                )
+              : null,
+          ),
+          skipped.length > 0
+            ? h(
+                'details',
+                { style: { marginTop: 6 } },
+                h('summary', { style: { ...S.canonical, cursor: 'pointer' } }, fill(t('batchSkipped'), { count: batch?.skippedCount ?? skipped.length })),
+                h(
+                  'ul',
+                  { style: { ...S.postings, marginTop: 6 } },
+                  skipped.map((row, at) =>
+                    h(
+                      'li',
+                      { key: `${group.key}-skip-${at}`, style: S.posting },
+                      h('span', null, `${row.date ?? ''} ${row.payee ?? ''} · ${row.reason}`),
+                      row.amount ? h('span', { style: S.mono }, row.amount) : null,
+                    ),
+                  ),
+                ),
+              )
+            : null,
+          showReconcile && reconcileRows.length > 0
+            ? h(
+                'div',
+                { style: { ...S.alert, ...S.alertInfo, marginTop: 8, display: 'grid', gap: 6 } },
+                h('span', { style: S.label }, fill(t('batchAccounts'), { count: reconcileRows.length })),
+                h(
+                  'div',
+                  { style: { display: 'flex', gap: 8, flexWrap: 'wrap' } },
+                  reconcileRows.map((row) =>
+                    h(
+                      'span',
+                      { key: `${group.key}-account-${row.account}`, style: { display: 'flex', gap: 6, alignItems: 'center' } },
+                      h('span', { style: S.canonical }, row.name),
+                      row.period === null
+                        ? h(Badge, { tone: 'scheduled' }, t('batchNoPeriod'))
+                        : h(Badge, { tone: row.status === 'overdue' ? 'overdue' : 'due' }, row.unreconciled ? t('batchUnreconciled') : t('batchDue')),
+                      row.period === null
+                        ? h(Button, { variant: 'outline', onClick: () => { setTab('accounts'); selectAccountNow(row.account); }, disabled: busy !== null }, t('batchGoAccounts'))
+                        : h(Button, { variant: 'outline', onClick: () => { const target = document.getElementById('ledger-reconcile'); if (target !== null) target.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, disabled: busy !== null }, t('batchGoReconcile')),
+                    ),
+                  ),
+                ),
+              )
+            : null,
+          h(
+            'div',
+            { style: { ...S.row, marginTop: 10, flexWrap: 'wrap' } },
+            drafts.length > 0
+              ? h(
+                  Button,
+                  { variant: 'primary', onClick: () => approveBatch(group), busy: busy === `batch-approve:${group.key}`, disabled: busy !== null || filtering },
+                  fill(t('batchApprove'), { count: drafts.length }),
+                )
+              : null,
+            batch !== null && (counts.pending ?? 0) > 0
+              ? h(
+                  Button,
+                  { variant: 'danger', onClick: () => rejectBatch(group), busy: busy === `batch-reject:${group.key}`, disabled: busy !== null || filtering },
+                  t('batchReject'),
+                )
+              : null,
+            batch !== null && (counts.approved ?? 0) > 0 && (counts.pending ?? 0) === 0 && status !== 'voided'
+              ? (isVoiding
+                  ? h(
+                      'span',
+                      { style: { display: 'flex', gap: 8, alignItems: 'center' } },
+                      h(Button, { variant: 'danger', onClick: () => voidBatch(group), busy: busy === `batch-void:${group.key}`, disabled: busy !== null }, fill(t('batchVoidConfirm'), { count: counts.approved })),
+                      h(Button, { variant: 'outline', onClick: () => setBatchVoidConfirm(null), disabled: busy !== null }, t('batchVoidCancel')),
+                    )
+                  : h(Button, { variant: 'outline', onClick: () => setBatchVoidConfirm(group.key), disabled: busy !== null }, t('batchVoid')))
+              : null,
+          ),
+          filtering && drafts.length > 0
+            ? h('p', { style: S.hint }, t('batchFilteredHint'))
+            : null,
+          expanded && drafts.length > 0
+            ? h('div', { style: { display: 'grid', gap: 10, marginTop: 10 } }, drafts.map(renderDraftCard))
+            : null,
+        );
+      }
+
+      function renderReview() {
+        const query = draftQuery.trim().toLowerCase();
+        const visible = pendingDrafts.filter((draft) => {
+          if (query !== '') {
+            const haystack = `${draft.date ?? ''} ${draft.payee ?? ''} ${draft.narration ?? ''}`.toLowerCase();
+            if (!haystack.includes(query)) return false;
+          }
+          if (draftOnlyIssues && blockingIssues(draft).length === 0) return false;
+          return true;
         });
+        const groups = batchGroups(visible);
+        const hasBatches = (data?.batches ?? []).length > 0;
         return h(
           'section',
           { style: S.panel },
@@ -2786,17 +3414,49 @@ window.__ModuleLoader__.load({
                 : null,
             ),
           ),
+          pendingDrafts.length > 0
+            ? h(
+                'div',
+                { style: { ...S.row, marginTop: 8 } },
+                h('input', {
+                  style: { ...S.input, width: 240 },
+                  placeholder: t('draftSearchPlaceholder'),
+                  'aria-label': t('draftSearchPlaceholder'),
+                  value: draftQuery,
+                  onChange: (event) => setDraftQuery(event.target.value),
+                }),
+                h(
+                  'label',
+                  { style: { ...S.canonical, display: 'flex', gap: 6, alignItems: 'center' } },
+                  h('input', { type: 'checkbox', checked: draftOnlyIssues, onChange: (event) => setDraftOnlyIssues(event.target.checked) }),
+                  t('draftOnlyIssues'),
+                ),
+                h('span', { style: S.canonical }, fill(t('draftMatchCount'), { count: visible.length })),
+              )
+            : null,
           pendingDrafts.length > 0 ? h('p', { style: S.hint }, t('draftReadonlyHint')) : null,
           entryOpen ? renderEntryForm() : null,
           renderOperations(),
-          pendingDrafts.length === 0 ? h('div', { style: S.empty }, t('pendingEmpty')) : h('div', { style: { display: 'grid', gap: 10 } }, cards),
+          pendingDrafts.length === 0 && !hasBatches
+            ? h('div', { style: S.empty }, t('pendingEmpty'))
+            : null,
+          visible.length === 0 && pendingDrafts.length > 0
+            ? h('div', { style: S.empty }, t('draftNoMatch'))
+            : null,
+          groups.length > 0 ? h('div', { style: { display: 'grid', gap: 10 } }, groups.map(renderBatchCard)) : null,
           fundingPicker !== null ? renderFundingPicker() : null,
         );
       }
 
       function renderAccounts() {
         const query = accountQuery.trim();
-        const displayTree = accountTree.filter((node) => countTreeLeaves(node) > 0);
+        // The five top-level groups are structural: keep them visible when the
+        // chart has no account under one of them (e.g. a fresh ledger without a
+        // credit card), so the documented five-root shape never disappears.
+        // While searching, still prune empty groups so a miss shows "no accounts".
+        const displayTree = accountTree.filter(
+          (node) => countTreeLeaves(node) > 0 || (query === '' && ACCOUNT_ROOTS.includes(node.path)),
+        );
         const isExpanded = (node, depth) => {
           if (Object.hasOwn(accountExpanded, node.path)) return accountExpanded[node.path] === true;
           if (query !== '') return node.children.length > 0;
