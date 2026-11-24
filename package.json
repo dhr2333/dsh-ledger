@@ -1,6 +1,6 @@
 {
   "name": "@dhr2333/dsh-ledger",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "type": "module",
   "main": "./index.js",
   "description": "本地、纯文本、复式的 DSH 账本面板（Beancount）：Agent 提案，你审批和对账。",
@@ -58,12 +58,12 @@
     }
   },
   "optionalDependencies": {
-    "@dhr2333/dsh-ledger-runtime-win32-x64": "0.3.2",
-    "@dhr2333/dsh-ledger-runtime-win32-arm64": "0.3.2",
-    "@dhr2333/dsh-ledger-runtime-darwin-x64": "0.3.2",
-    "@dhr2333/dsh-ledger-runtime-darwin-arm64": "0.3.2",
-    "@dhr2333/dsh-ledger-runtime-linux-x64": "0.3.2",
-    "@dhr2333/dsh-ledger-runtime-linux-arm64": "0.3.2"
+    "@dhr2333/dsh-ledger-runtime-win32-x64": "0.3.3",
+    "@dhr2333/dsh-ledger-runtime-win32-arm64": "0.3.3",
+    "@dhr2333/dsh-ledger-runtime-darwin-x64": "0.3.3",
+    "@dhr2333/dsh-ledger-runtime-darwin-arm64": "0.3.3",
+    "@dhr2333/dsh-ledger-runtime-linux-x64": "0.3.3",
+    "@dhr2333/dsh-ledger-runtime-linux-arm64": "0.3.3"
   },
   "scripts": {
     "check": "node scripts/check-bundle.mjs",
